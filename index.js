@@ -3786,8 +3786,8 @@ async function load_resources() {
 	return;*/
 
 
-	//let git_src="https://akukamil.github.io/durak/"
-	git_src=""
+	let git_src="https://akukamil.github.io/durak/"
+	//git_src=""
 
 	PIXI.Loader.registerPlugin(PIXI.gif.AnimatedGIFLoader);
 	game_res=new PIXI.Loader();
