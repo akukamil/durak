@@ -143,15 +143,14 @@
 
 <script>
 firebase.initializeApp({
-	apiKey: "AIzaSyC9NMPdTEUR-YfxLBYiwEhcEDUoX4PzL5c",
-	authDomain: "hex-battle.firebaseapp.com",
-	databaseURL: "https://hex-battle-default-rtdb.europe-west1.firebasedatabase.app",
-	projectId: "hex-battle",
-	storageBucket: "hex-battle.appspot.com",
-	messagingSenderId: "736374316797",
-	appId: "1:736374316797:web:c02debce7a6278ee6c6894"
+	apiKey: "AIzaSyBQUa5_8Y199x5xT91sZMsPoD59fOmKckU",
+	authDomain: "durak-ca1cd.firebaseapp.com",
+	databaseURL: "https://durak-ca1cd-default-rtdb.europe-west1.firebasedatabase.app",
+	projectId: "durak-ca1cd",
+	storageBucket: "durak-ca1cd.appspot.com",
+	messagingSenderId: "985954923087",
+	appId: "1:985954923087:web:ac332499e962122d28303a"
 });
-
 
 
 //СОСТОЯНИЕ КОМНАТ
@@ -180,9 +179,6 @@ async function update_room_quick_stat() {
 
 }
 
-
-
-
 //ВСЕ ИГРОКИ С ОПРЕДЕЛЕННОГО ВРЕМЕНИ
 function all_players() {
 	
@@ -191,26 +187,25 @@ function all_players() {
 
 	firebase.database().ref("players").orderByChild("tm").limitToLast(max_players).once("value").then((snapshot) => {
 		var data = snapshot.val();
+		
 		//меняем дату на нормальный вид
-		Object.keys(data).forEach(k=>{data[k].tm = new Date(data[k].tm).toLocaleString();delete data[k].pic_url});
+		Object.keys(data).forEach(k=>{data[k].tm2 = new Date(data[k].tm).toLocaleString();delete data[k].pic_url});
 		
 		//создаем массив для последующей работы
 		let uids = Object.keys(data);
 		let _data = [];
 		for (let i = 0 ; i < uids.length ; i++) {
 					
-			_data.push([uids[i], data[uids[i]].name, data[uids[i]].rating, data[uids[i]].games, data[uids[i]].level, data[uids[i]].tm])		
+			_data.push([uids[i], data[uids[i]].name, data[uids[i]].rating, data[uids[i]].games, data[uids[i]].level, data[uids[i]].tm2, data[uids[i]].tm])		
 			
 		}	
 		
 		//это заголовки
-		let header = ['uid','name','rating','games','level','last_seen'];
+		let header = ['uid','name','rating','games','level','last_seen','ts'];
 
 		my_table.create(_data, header, 'none', 'list');	
 	})
 }
-
-
 
 //КОНКРЕТНЫЙ ИГРОК
 async function player_info() {
@@ -236,12 +231,10 @@ async function player_info() {
 	my_table.create(_data, header, 'none', 'list');	
 }
 
-
 //удалить историю игр
 function delete_game_results(ref) {	
 	firebase.database().ref(ref).remove();
 }
-
 
 //удалить старых игроков
 async function delete_old_players() {	
@@ -275,8 +268,6 @@ async function delete_old_players() {
 	alert("Удалено игроков: "+total_removed);
 
 }
-
-
 
 //ИГРЫ
 async function get_games(ref) {
@@ -340,7 +331,6 @@ function show_leaders() {
 	})
 }
 
-
 //СОСТОЯНИЕ КОМНАТ
 async function states_room(room) {
 
@@ -382,7 +372,6 @@ async function states_room(room) {
 	document.body.innerHTML = "";
 	my_table.create(_data, header, room, 'states');	
 }
-
 
 //firebase.database().ref("finishes").remove();
 //firebase.database().ref("players/vNx2vRus1XIPlMFllQmDnqWfV3YZp7Ff5hYis5eKllc=/rating").set(2100);
@@ -487,9 +476,7 @@ var my_table = {
 		document.body.appendChild(my_table.table_element);
 	
 	},
-	
-	
-	
+		
 	sort : function(h) {
 		
 		let col_num = this.header.indexOf(h);
