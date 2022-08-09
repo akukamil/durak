@@ -175,7 +175,7 @@ class playing_cards_class extends PIXI.Container {
 	}
 	
 	set_shirt () {
-		return
+		//return
 		this.text_value.visible = false;
 		this.suit_img.texture = gres.cards_shirt.texture;		
 		
@@ -1731,7 +1731,9 @@ var table = {
 		
 	take : async function() {
 		
-		if (anim2.any_on()) return;
+		if (anim2.any_on() || this.state === 'stop') return;
+		
+		
 						
 		//анимация карты из центра идут в мою колоду
 		for (let card of this.center_deck.cards) {
@@ -1778,7 +1780,7 @@ var table = {
 		
 	done : async function() {
 				
-		if (anim2.any_on()) return;
+		if (anim2.any_on() || this.state === 'stop') return;
 				
 		//анимация карты из центра идут в битую колоду
 		for (let card of this.center_deck.cards)		
