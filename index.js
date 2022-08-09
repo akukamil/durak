@@ -793,6 +793,8 @@ var mp_game = {
 		anim2.add(objects.my_card_cont,{x:[-100,objects.my_card_cont.sx]}, true, 0.6,'easeOutBack');	
 		anim2.add(objects.opp_card_cont,{x:[900,objects.opp_card_cont.sx]}, true, 0.6,'easeOutBack');	
 
+		objects.game_buttons_cont.visible = true;
+
 		//сколько сделано ходов
 		this.made_moves = 0;
 				
@@ -832,6 +834,8 @@ var mp_game = {
 			this.reset_timer(OPP_TURN);
 		
 		this.me_conf_play = 1;
+		
+		this.made_moves++;
 		
 		//отправляем ход онайлн сопернику
 		firebase.database().ref("inbox/"+opp_data.uid).set(data);
@@ -1323,8 +1327,8 @@ var sp_game = {
 	
 	switch_close : function() {
 		
-		//objects.sbg_button.visible=false;
-		//anim2.add(objects.level_title,{x:[ objects.level_title.x,-100]}, false, 1,'easeOutBack');	
+		table.set_action_button('HIDE');
+		objects.sbg_button.visible=false;
 		
 	}
 
@@ -1343,10 +1347,13 @@ var table = {
 	last_cards : [],
 		
 	init : function(role, seed) {
+		
+		
+		//убираем все карты
+		objects.pcards.forEach(card => card.visible = false)
+		
 					
-		//создаем большую колоду и добавляем случайное число
-		
-		
+		//создаем большую колоду и добавляем случайное число		
 		this.my_deck = new deck_class('my');
 		this.opp_deck = new deck_class('opp');
 		this.big_deck = new deck_class('big');
@@ -1377,16 +1384,14 @@ var table = {
 			}
 			this.state = 'opp_attack'			
 		}
-		
-							
+								
 			
 		//большая колода
 		objects.trump_card.alpha = 1;
 		objects.big_deck_cover.visible = objects.trump_card.visible = objects.cards_left.visible = true;
 		objects.cards_left.text = this.big_deck.size;
 		anim2.add(objects.big_deck_cont,{x:[-200, objects.big_deck_cont.sx]}, true, 0.25,'easeInOutCubic');		
-		
-			
+				
 		
 		this.my_deck.organize();
 		this.opp_deck.organize();
