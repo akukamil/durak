@@ -1,7 +1,7 @@
 var M_WIDTH=800, M_HEIGHT=450;
 var app, game_res, game, objects={}, LANG = 0, state="", game_tick=0, game_id=0, connected = 1, h_state=0, game_platform="",
 hidden_state_start = 0,room_name = 'states2', pending_player='', opponent = {}, my_data={opp_id : ''},
-opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2;
+opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0;
 
 irnd = function(min,max) {	
     min = Math.ceil(min);
@@ -802,10 +802,10 @@ var mp_game = {
 		
 		
 		//счетчик времени таймер		
-		//this.timer_id = setTimeout(function(){mp_game.timer_tick()}, 1000);
-		//objects.timer_text.tint=0xffffff;
-		//objects.timer_cont.visible = true;
-		//this.reset_timer(20);			
+		this.timer_id = setTimeout(function(){mp_game.timer_tick()}, 1000);
+		objects.timer_text.tint=0xffffff;
+		objects.timer_cont.visible = true;
+		this.reset_timer(role === 'master' ? MY_TURN : OPP_TURN);			
 
 		
 		//отображаем главные кнопки		
@@ -828,6 +828,12 @@ var mp_game = {
 		
 	send_move : function(data) {
 		
+		if (data.message !== 'TOSS')
+			this.reset_timer(OPP_TURN);
+		
+		this.me_conf_play = 1;
+		
+		//отправляем ход онайлн сопернику
 		firebase.database().ref("inbox/"+opp_data.uid).set(data);
 		
 	},
@@ -836,7 +842,7 @@ var mp_game = {
 
 		this.move_time_left--;
 		
-		if (this.move_time_left < 0 && turn === MY)	{
+		if (this.move_time_left < 0 && turn === MY_TURN)	{
 			
 			if (this.me_conf_play === 1)
 				this.stop('my_timeout');
@@ -846,7 +852,7 @@ var mp_game = {
 			return;
 		}
 
-		if (this.move_time_left < -5 && turn === OPP) {
+		if (this.move_time_left < -5 && turn === OPP_TURN) {
 			
 			if (this.opp_conf_play === 1)
 				this.stop('opp_timeout');
@@ -857,7 +863,7 @@ var mp_game = {
 			return;
 		}
 
-		if (connected === 0 && turn === OPP) {
+		if (connected === 0 && turn === OPP_TURN) {
 			this.disconnect_time ++;
 			if (this.disconnect_time > 5) {
 				game.stop('my_no_connection');
@@ -882,13 +888,13 @@ var mp_game = {
 		
 		//обовляем время разъединения
 		this.disconnect_time = 0;
-		
+		turn = t;
 		//перезапускаем таймер хода		
-		this.move_time_left = t || 32;
+		this.move_time_left = 25;
 		objects.timer_text.text="0:"+this.move_time_left;
 		objects.timer_text.tint=0xffffff;
 		
-		if (turn === MY)
+		if (turn === MY_TURN)
 			objects.timer_cont.x = 0;
 		else
 			objects.timer_cont.x = 680;
@@ -964,21 +970,6 @@ var mp_game = {
 		this.close();
 		main_menu.activate();
 		
-	},
-		
-	receive_move : function(msg, data) {
-		
-		//получен ход значит соперник согласен играть
-		this.opp_conf_play = 1;
-		
-		if (msg === 'MOVE')		
-			table.incoming_move(data);
-		
-		if (msg === 'TAKE')
-			table.opp_take();
-		
-		if (msg === 'DONE')
-			table.opp_done();
 	},
 		
 	giveup : async function() {
@@ -1312,7 +1303,7 @@ var sp_game = {
 		})
 		
 		let card_ratio = cards.length /(table.big_deck.size + table.my_deck.size)
-		val -= card_ratio * 1000;
+		val -= card_ratio * 3000;
 		
 		return val;
 		
@@ -1503,6 +1494,7 @@ var table = {
 				}
 			}			
 			
+			
 			//отправляем ход сопернику кем бы он ни был
 			opponent.send_move({sender:my_data.uid, message:'MOVE', tm:Date.now(), data:card.id});
 		
@@ -1533,6 +1525,7 @@ var table = {
 				else
 					opponent.stop('draw')		
 			}	
+			
 			
 			//отправляем ход сопернику кем бы он ни был
 			opponent.send_move({sender:my_data.uid, message:'MOVE', tm:Date.now(), data:card.id});
@@ -1584,8 +1577,14 @@ var table = {
 	
 	process_incoming_move : async function(msg, data) {
 		
-		if (msg === 'TAKE') {	
-
+		
+		if (msg !== 'TOSS')
+			opponent.reset_timer(MY_TURN);
+		
+		//оппонент сделал ход и значит подтвердил игру
+		opponent.opp_conf_play = 1;
+		
+		if (msg === 'TAKE') {
 			if (this.can_toss_cards()) {				
 				this.set_action_button('TOSS');
 				this.state = 'my_toss';				
@@ -1598,15 +1597,12 @@ var table = {
 		
 		if (msg === 'DONE') {
 			this.opp_done(data);
-			this.state = 'my_attack';
+			this.state = 'my_attack';			
 			return;			
 		}
 						
 		if (msg === 'TOSS') {
-			
-			
-			
-			
+
 			this.opp_toss_card(data);
 			return;
 		}
@@ -1624,8 +1620,7 @@ var table = {
 			await this.send_card_to_center(card);			
 			this.state = 'my_defence';	
 			this.set_action_button('TAKE');
-			
-			
+						
 			//проверяем окончание игры
 			if (this.big_deck.size === 0 && this.opp_deck.size === 0) {
 				if (this.my_deck.size > 1) {
@@ -1743,7 +1738,8 @@ var table = {
 			this.my_deck.push(this.center_deck.pop());
 					
 								
-		this.state = 'opp_attack';			
+		this.state = 'opp_attack';		
+		opponent.reset_timer();
 		
 		//скрываем кнопку
 		this.set_action_button('HIDE');		
@@ -1801,7 +1797,8 @@ var table = {
 		this.my_deck.organize();
 		this.opp_deck.organize();	
 		
-		this.state = 'opp_attack';		
+		this.state = 'opp_attack';	
+		opponent.reset_timer();		
 		
 		//отправляем ход сопернику кем бы он ни был
 		opponent.send_move({sender:my_data.uid,message:"DONE",tm:Date.now(),data:null});
