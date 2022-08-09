@@ -3630,6 +3630,10 @@ var auth = function() {
 						my_data.uid 	= _player.getUniqueID().replace(/\//g, "Z");
 						my_data.pic_url = _player.getPhoto('medium');
 
+						//если нету картинки то меняем ее на более прикольную
+						if (my_data.pic_url === 'https://games-sdk.yandex.ru/games/api/sdk/v1/player/avatar/0/islands-retina-medium')
+							my_data.pic_url = 'https://avatars.dicebear.com/api/avataaars/'+my_data.uid+'.svg';
+
 						//console.log(`Получены данные игрока от яндекса:\nимя:${my_data.name}\nid:${my_data.uid}\npic_url:${my_data.pic_url}`);
 
 						//если нет данных то создаем их
@@ -3762,7 +3766,7 @@ var auth = function() {
 				let uid = prompt('Отладка. Введите ID', 100);
 
 				my_data.name = my_data.uid = "debug" + uid;
-				my_data.pic_url = "https://sun9-73.userapi.com/impf/c622324/v622324558/3cb82/RDsdJ1yXscg.jpg?size=223x339&quality=96&sign=fa6f8247608c200161d482326aa4723c&type=album";
+				my_data.pic_url = 'https://avatars.dicebear.com/api/avataaars/'+my_data.uid+'.svg';
 
 				help_obj.process_results();
 
@@ -3781,7 +3785,7 @@ var auth = function() {
 					my_data.rating 		= 	1400;
 					my_data.uid			=	"ls"+rand_uid;
 					my_data.name 		=	 help_obj.get_random_name(my_data.uid);					
-					my_data.pic_url		=	'https://avatars.dicebear.com/v2/male/'+irnd(10,10000)+'.svg';
+					my_data.pic_url		=	'https://avatars.dicebear.com/api/avataaars/'+irnd(10,10000)+'.svg';
 
 					try {
 						localStorage.setItem('uid',my_data.uid);
