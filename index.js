@@ -1782,7 +1782,7 @@ var table = {
 				
 		//анимация карты из центра идут в битую колоду
 		for (let card of this.center_deck.cards)		
-			await anim2.add(card,{x:[card.x, 850]}, false, 0.15,'linear');	
+			 anim2.add(card,{x:[card.x, 850]}, false, 0.1,'linear');	
 		
 		//центральная колода теперь пустая
 		this.center_deck.make_empty();
@@ -1865,7 +1865,7 @@ var table = {
 				
 		//анимация карты из центра идут в битую колоду
 		for (let card of this.center_deck.cards)		
-			await anim2.add(card,{x:[card.x, 850]}, false, 0.15,'linear');	
+			await anim2.add(card,{x:[card.x, 850]}, false, 0.1,'linear');	
 		
 		//центральная колода теперь пустая
 		this.center_deck.make_empty();
