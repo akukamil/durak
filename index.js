@@ -1104,11 +1104,7 @@ var sp_game = {
 		//пытаемся докинуть карты если игрок забрал последние
 		if (data.message === 'TAKE')					
 			await this.process_tossing();			
-
 	
-	
-	
-		
 		
 		//если бот атакует то выбираем карту для атаки
 		if (table.state === 'opp_attack') {
@@ -1136,8 +1132,6 @@ var sp_game = {
 			
 		}
 		
-		
-		
 		if (table.state === 'opp_defence') {
 			
 			//подождем немного
@@ -1152,7 +1146,6 @@ var sp_game = {
 				table.process_incoming_move('MOVE', best_defence_opt);
 
 		}
-		
 		
 	},
 
@@ -1571,6 +1564,14 @@ var table = {
 			await anim2.add(card,{x:[card.x, last_card_x + 60], y:[card.y, 225],scale_xy : [card.scale_xy, 0.7]}, true, 0.25,'easeInOutCubic');					
 		}		
 		
+		//пододвигаем центральную колоду
+		if (this.center_deck.size > 3 ) {
+			
+			this.center_deck.cards.forEach(card => {
+				anim2.add(card,{x:[card.x, card.x - 30]}, true, 0.25,'linear');	
+			})
+		}
+		
 	},
 		
 	bring_to_front : function(card) {
@@ -1617,6 +1618,10 @@ var table = {
 			await this.send_card_to_center(this.opp_deck.pop_by_id(data));			
 			this.state = 'my_attack';
 			this.set_action_button('DONE');
+			
+			//проверяем окончание игры
+			if (this.big_deck.size === 0 && this.opp_deck.size === 0 && this.my_deck.size > 1)
+				opponent.stop('opp_win')	
 		}
 		
 		if (this.state === 'opp_attack') {
