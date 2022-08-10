@@ -1723,7 +1723,7 @@ var table = {
 		
 		if (action === 'TOSS') {
 			
-			objects.ab_title.text = 'Можно подкинуть карту или нажать для отмены';
+			objects.ab_title.text = 'Беру, можно подкинуть или нажать для отмены';
 			objects.ab_cont.pointerdown = this.toss_done.bind(this);
 		}
 		
@@ -2586,7 +2586,7 @@ var rules = {
 		anim2.add(objects.rules_back_button,{x:[800, objects.rules_back_button.sx]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.rules_text,{alpha:[0, 1]}, true, 1,'linear');
 				
-		objects.rules_text.text = ['Карточная игра в дурака'][LANG];
+		objects.rules_text.text = ['Добро пожаловать в игру Дурак!\n\nЭто самая популярная в России карточная игра. В игре используется колода из 36 карт. Цель игры – избавиться от всех карт. Первым ходом кидайте любую карту. Кроющийся должен покрыть каждую подкинутую под него карту картой той же масти, но большего достоинства, или любым козырем. Козырную карту можно покрыть только козырем большего достоинства. Козырная масть определяется картой под колодой.Проигрывает игрок, последним оставшийся с картами на руках.'][LANG];
 	},
 	
 	back_button_down : async function() {
