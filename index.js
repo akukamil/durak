@@ -1433,7 +1433,7 @@ var table = {
 					
 	card_down : async function (card) {
 		
-		if (anim2.any_on()) return;
+		if (anim2.any_on() || state === 'stop') return;
 		
 		//проверяем что выбрали мою колоду
 		if (this.my_deck.include_card(card) === false) {
@@ -2949,6 +2949,10 @@ var cards_menu={
 			case "p":
 				return this.state_tint.p;
 			break;
+			
+			case "bot":
+				return this.state_tint.bot;
+			break;
 
 		}
 	},
@@ -3150,7 +3154,7 @@ var cards_menu={
 		objects.mini_cards[0].avatar2.visible = false;
 		objects.mini_cards[0].rating_bcg.visible = false;
 
-		objects.mini_cards[0].bcg.tint=0x777777;
+		objects.mini_cards[0].bcg.tint=this.state_tint.bot;
 		objects.mini_cards[0].visible=true;
 		objects.mini_cards[0].uid="BOT";
 		objects.mini_cards[0].name=['Дурак (бот)', 'Chapaev (bot)'][LANG];
