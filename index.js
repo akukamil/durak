@@ -165,7 +165,7 @@ class playing_cards_class extends PIXI.Container {
 		
 		
 		//this.scale_xy=0.3;
-		this.addChild(this.trump_hl,this.bcg,this.suit_img,this.text_value);
+		this.addChild(this.bcg,this.suit_img,this.text_value);
 	}	
 		
 	set (suit, value) {
