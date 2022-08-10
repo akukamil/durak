@@ -132,6 +132,13 @@ class playing_cards_class extends PIXI.Container {
 		this.value = Math.floor(id%9);
 		this.visible = false;
 		
+		
+		this.trump_hl = new PIXI.Sprite(gres.trump_hl.texture);
+		this.trump_hl.visible = true;
+		this.trump_hl.anchor.set(0.5,0.5);	
+		this.trump_hl.y=-50;
+		
+		
 		this.bcg = new PIXI.Sprite(gres.pcard_bcg.texture);
 		this.bcg.anchor.set(0.5,0.5);	
 		this.interactive = true;
@@ -158,7 +165,7 @@ class playing_cards_class extends PIXI.Container {
 		
 		
 		//this.scale_xy=0.3;
-		this.addChild(this.bcg,this.suit_img,this.text_value);
+		this.addChild(this.trump_hl,this.bcg,this.suit_img,this.text_value);
 	}	
 		
 	set (suit, value) {
@@ -786,6 +793,9 @@ var mp_game = {
 		
 		opponent = this;
 	
+		objects.desktop.texture = gres.desktop.texture;
+		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.6,'linear');
+	
 		//инициируем стол
 		table.init(role, seed);
 		
@@ -810,16 +820,13 @@ var mp_game = {
 		this.reset_timer(role === 'master' ? MY_TURN : OPP_TURN);			
 
 		
-		//отображаем главные кнопки		
-		//objects.game_buttons_cont.visible = true;
-		
 		//фиксируем врему начала игры для статистики
 		this.start_time = Date.now();
 		
 		//вычиcляем рейтинг при проигрыше и устанавливаем его в базу он потом изменится
-		//let lose_rating = this.calc_new_rating(my_data.rating, LOSE);
-		//if (lose_rating >100 && lose_rating<9999)
-		//	firebase.database().ref("players/"+my_data.uid+"/rating").set(lose_rating);
+		let lose_rating = this.calc_new_rating(my_data.rating, LOSE);
+		if (lose_rating >100 && lose_rating<9999)
+			firebase.database().ref("players/"+my_data.uid+"/rating").set(lose_rating);
 		
 		//устанавливаем локальный и удаленный статус
 		set_state({state : 'p'});	
