@@ -131,26 +131,22 @@ class playing_cards_class extends PIXI.Container {
 		this.id=id;
 		this.value = Math.floor(id%9);
 		this.visible = false;
-		
-		
+				
 		this.trump_hl = new PIXI.Sprite(gres.trump_hl.texture);
-		this.trump_hl.visible = true;
+		this.trump_hl.visible = false;
 		this.trump_hl.anchor.set(0.5,0.5);	
-		this.trump_hl.y=-50;
-		
+
 		
 		this.bcg = new PIXI.Sprite(gres.pcard_bcg.texture);
 		this.bcg.anchor.set(0.5,0.5);	
 		this.interactive = true;
 		this.buttonMode = true;
 		this.pointerdown = function(){table.card_down(this)};
-		this.type = 'COMMON';
-				
+		this.type = 'COMMON';			
 		
 		this.suit = ['h','d','s','c'][Math.floor(id/9)];		
 		this.suit_img = new PIXI.Sprite(gres[this.suit+'_bcg'].texture);
 		this.suit_img.anchor.set(0.5,0.5);
-
 		
 		let _val = ['6','7','8','9','10','J','Q','K','T'][id%9];	
 		this.text_value = new PIXI.BitmapText(_val, {fontName: 'mfont',fontSize: 50});
@@ -161,11 +157,9 @@ class playing_cards_class extends PIXI.Container {
 			this.text_value.tint = 0xff0000;
 		else
 			this.text_value.tint = 0x000000;
-		
-		
-		
+				
 		//this.scale_xy=0.3;
-		this.addChild(this.bcg,this.suit_img,this.text_value);
+		this.addChild( this.bcg, this.trump_hl, this.suit_img, this.text_value);
 	}	
 		
 	set (suit, value) {
@@ -235,6 +229,7 @@ class deck_class {
 		
 		objects.pcards.forEach (c => {			
 			c.rnum = generator.next().value;
+			c.trump_hl.visible = false;
 			context.push(c);
 		});
 		
@@ -402,7 +397,9 @@ class deck_class {
 			
 			
 			
-		this.cards.forEach((c,i)=> {			
+		this.cards.forEach((c,i)=> {
+			if (this.type === 'my' && c.suit === table.trump.suit)
+				c.trump_hl.visible = true;
 			c.y = tar_y;			
 			let tar_x = deck_start + i * interval;	
 			anim2.add(c,{x:[c.x, tar_x]}, true, 0.25,'easeInOutCubic');		
@@ -1543,6 +1540,10 @@ var table = {
 	
 	send_card_to_center : async function(card) {
 		
+		
+		
+		sound.play('card');
+		
 		let tx,ty;
 		
 		this.bring_to_front(card);	
@@ -1740,14 +1741,16 @@ var table = {
 		
 		if (anim2.any_on() || this.state === 'stop') return;
 		
-		
+		sound.play('click');
 						
 		//анимация карты из центра идут в мою колоду
 		for (let card of this.center_deck.cards) {
 			
 			//запоминаем карты чтобы знать как подкинуть
 			this.last_cards.push(card);	
-
+			
+			sound.play('card_take');
+			
 			//перемещаем из центр в мою колоду
 			await anim2.add(card,{x:[card.x, 400],y:[card.y, 400]}, true, 0.15,'linear');	
 		}	
@@ -1789,6 +1792,9 @@ var table = {
 				
 		if (anim2.any_on() || this.state === 'stop') return;
 				
+		sound.play('click');
+		sound.play('done');
+				
 		//анимация карты из центра идут в битую колоду
 		for (let card of this.center_deck.cards)		
 			 anim2.add(card,{x:[card.x, 850]}, false, 0.1,'linear');	
@@ -1809,14 +1815,11 @@ var table = {
 			this.opp_deck.push(this.big_deck.pop());
 		
 
-		this.update_big_deck_info();
-		
-		//this.check_game_end();
-		
+		this.update_big_deck_info();		
 		this.my_deck.organize();
-		this.opp_deck.organize();	
-		
+		this.opp_deck.organize();			
 		this.state = 'opp_attack';	
+		
 		opponent.reset_timer();		
 		
 		//отправляем ход сопернику кем бы он ни был
@@ -1843,6 +1846,7 @@ var table = {
 		
 		//анимация карты из центра идут в колоду оппонента и переворачиваются рубашкой
 		for (let card of this.center_deck.cards) {
+			sound.play('card_take');
 			await anim2.add(card,{x:[card.x, 400],y:[card.y, 50]}, true, 0.15,'linear');				
 			card.set_shirt();
 		}
@@ -1871,7 +1875,9 @@ var table = {
 	
 	opp_done : async function (card_ids) {
 				
-				
+		
+		sound.play('done');
+		
 		//анимация карты из центра идут в битую колоду
 		for (let card of this.center_deck.cards)		
 			await anim2.add(card,{x:[card.x, 850]}, false, 0.1,'linear');	
@@ -1891,13 +1897,10 @@ var table = {
 		for (let i = 0 ; i < new_cards_available ; i++)		
 			this.my_deck.push(this.big_deck.pop());
 
+
 		this.update_big_deck_info();
-		
-		//this.check_game_end();
-		
 		this.my_deck.organize();
-		this.opp_deck.organize();	
-		
+		this.opp_deck.organize();			
 		this.set_action_button('HIDE');
 	},
 	
@@ -4173,8 +4176,8 @@ async function load_resources() {
 	return;*/
 
 
-	//let git_src="https://akukamil.github.io/durak/"
-	git_src=""
+	let git_src="https://akukamil.github.io/durak/"
+	//git_src=""
 
 	PIXI.Loader.registerPlugin(PIXI.gif.AnimatedGIFLoader);
 	game_res=new PIXI.Loader();
@@ -4182,7 +4185,6 @@ async function load_resources() {
 	
 	game_res.add("m2_font", git_src+"fonts/MS_Comic_Sans/font.fnt");
 
-	game_res.add('note',git_src+'sounds/note.mp3');
 	game_res.add('receive_sticker',git_src+'sounds/receive_sticker.mp3');
 	game_res.add('message',git_src+'sounds/message.mp3');
 	game_res.add('lose',git_src+'sounds/lose.mp3');
@@ -4191,10 +4193,11 @@ async function load_resources() {
 	game_res.add('close',git_src+'sounds/close.mp3');
 	game_res.add('locked',git_src+'sounds/locked.mp3');
 	game_res.add('clock',git_src+'sounds/clock.mp3');
-	game_res.add('enemy_move',git_src+'sounds/enemy_move.mp3');
+	game_res.add('card',git_src+'sounds/card2.mp3');
+	game_res.add('card_take',git_src+'sounds/card.mp3');
 	game_res.add('confirm_dialog',git_src+'sounds/confirm_dialog.mp3');
 	game_res.add('move',git_src+'sounds/move.mp3');
-	game_res.add('flip',git_src+'sounds/flip.mp3');
+	game_res.add('done',git_src+'sounds/done.mp3');
 	
     //добавляем из листа загрузки
     for (var i = 0; i < load_list.length; i++) {
