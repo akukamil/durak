@@ -1870,8 +1870,7 @@ var table = {
 		
 
 		this.state='my_attack';
-		this.set_action_button('HIDE');
-		
+				
 		//анимация карты из центра идут в колоду оппонента и переворачиваются рубашкой
 		for (let card of this.center_deck.cards) {
 			sound.play('card_take');
