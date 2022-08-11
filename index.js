@@ -176,7 +176,7 @@ class playing_cards_class extends PIXI.Container {
 	}
 	
 	set_shirt () {
-		//return
+		
 		this.text_value.visible = false;
 		this.suit_img.texture = gres.cards_shirt.texture;		
 		
@@ -1317,7 +1317,7 @@ var sp_game = {
 			if (card.suit === table.trump.suit) val += 900;
 		})
 		
-		let card_ratio = cards.length /(table.big_deck.size + table.my_deck.size)
+		let card_ratio = cards.length /(table.big_deck.size + 1)
 		val -= card_ratio * 3000;
 		
 		return val;
@@ -1397,7 +1397,7 @@ var table = {
 			}
 			this.state = 'opp_attack'			
 		}
-								
+	
 			
 		//большая колода
 		objects.trump_card.alpha = 1;
@@ -1537,13 +1537,9 @@ var table = {
 			
 			
 			//проверяем окончание игры
-			if (this.big_deck.size === 0 && this.my_deck.size === 0) {
-				if (this.opp_deck.size > 0)
-					opponent.stop('my_win')					
-				else
-					opponent.stop('draw')		
-			}	
-			
+			if (this.big_deck.size === 0 && this.my_deck.size === 0)
+				opponent.stop(this.opp_deck.size > 0 ? 'my_win' : 'draw')					
+
 			
 			//отправляем ход сопернику кем бы он ни был
 			opponent.send_move({sender:my_data.uid, message:'MOVE', tm:Date.now(), data:card.id});
@@ -1642,11 +1638,14 @@ var table = {
 			
 			await this.send_card_to_center(this.opp_deck.pop_by_id(data));			
 			this.state = 'my_attack';
-			this.set_action_button('DONE');
 			
 			//проверяем окончание игры
-			if (this.big_deck.size === 0 && this.opp_deck.size === 0 && this.my_deck.size > 1)
-				opponent.stop('opp_win')	
+			if (this.big_deck.size === 0 && this.opp_deck.size === 0) {
+				opponent.stop(this.my_deck.size > 1 ? 'opp_win' : 'draw');					
+				return;
+			}
+			
+			this.set_action_button('DONE');			
 		}
 		
 		if (this.state === 'opp_attack') {
