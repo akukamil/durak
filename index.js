@@ -1615,7 +1615,8 @@ var table = {
 		opponent.opp_conf_play = 1;
 		
 		if (msg === 'TAKE') {
-			if (this.can_toss_cards()) {				
+			if (this.can_toss_cards()) {	
+				sound.play('take');
 				this.set_action_button('TOSS');
 				this.state = 'my_toss';				
 			} else {
@@ -1725,30 +1726,33 @@ var table = {
 		
 	set_action_button (action) {
 		
-		objects.ab_cont.visible = true;
-			
+		
 		if (action === 'TAKE') {
 			
 			objects.ab_title.text = 'Забрать';
 			objects.ab_cont.pointerdown = this.take.bind(this);
+			anim2.add(objects.ab_cont,{scale_x:[0, 1]}, true, 0.25,'easeOutBack');		
 		}
 		
 		if (action === 'DONE') {
 			
 			objects.ab_title.text = 'Бито';
 			objects.ab_cont.pointerdown = this.done.bind(this);
+			anim2.add(objects.ab_cont,{scale_x:[0, 1]}, true, 0.25,'easeOutBack');		
 		}
 		
 		if (action === 'HIDE') {
 			
 			objects.ab_cont.pointerdown = function(){};
-			objects.ab_cont.visible = false;
+			if (objects.ab_cont.visible === true)
+				anim2.add(objects.ab_cont,{scale_x:[1, 0]}, false, 0.25,'easeInBack');		
 		}
 		
 		if (action === 'TOSS') {
 			
 			objects.ab_title.text = 'Беру, можно подкинуть или нажать для отмены';
-			objects.ab_cont.pointerdown = this.toss_done.bind(this);
+			objects.ab_cont.pointerdown = this.toss_done.bind(this);			
+			anim2.add(objects.ab_cont,{scale_x:[0, 1]}, true, 0.25,'easeOutBack');		
 		}
 		
 	},
@@ -4232,7 +4236,7 @@ async function load_resources() {
 	game_res.add('razdacha',git_src+'sounds/razdacha.mp3');
 	game_res.add('swift',git_src+'sounds/swift.mp3');
 	game_res.add('inc_card',git_src+'sounds/inc_card.mp3');
-	
+	game_res.add('take',git_src+'sounds/take.mp3');
 	
     //добавляем из листа загрузки
     for (var i = 0; i < load_list.length; i++) {
