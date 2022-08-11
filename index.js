@@ -670,6 +670,20 @@ var sound = {
 		
 		game_res.resources[snd_res].sound.play();	
 		
+	},
+	
+	play_delayed (snd_res, delay) {
+		
+		if (this.on === 0)
+			return;
+		
+		if (game_res.resources[snd_res]===undefined)
+			return;
+		
+		
+		setTimeout(game_res.resources[snd_res].sound.play(), delay);
+			
+		
 	}
 	
 	
@@ -1367,6 +1381,8 @@ var table = {
 						
 		objects.trump_card.set(this.trump.suit,this.trump.value);
 				
+		sound.play('razdacha');
+				
 		//раздаем карты
 		if (role === 'master') {
 			for(let i = 0 ; i < 6 ; i++) {
@@ -1793,11 +1809,13 @@ var table = {
 		if (anim2.any_on() || this.state === 'stop') return;
 				
 		sound.play('click');
-		sound.play('done');
 				
 		//анимация карты из центра идут в битую колоду
-		for (let card of this.center_deck.cards)		
-			 anim2.add(card,{x:[card.x, 850]}, false, 0.1,'linear');	
+		for (let card of this.center_deck.cards) {
+			sound.play('swift');
+			await anim2.add(card,{x:[card.x, 850]}, false, 0.1,'linear');				
+		}
+
 		
 		//центральная колода теперь пустая
 		this.center_deck.make_empty();
@@ -1805,14 +1823,20 @@ var table = {
 		//выбираем карты для меня
 		let new_cards_required = 6 - this.my_deck.size;
 		let new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)		
-			this.my_deck.push(this.big_deck.pop());
+		for (let i = 0 ; i < new_cards_available ; i++)	{
+			sound.play_delayed('inc_card',i*30)
+			this.my_deck.push(this.big_deck.pop());			
+		}	
+
 		
 		//выбираем карты для оппонента
 		new_cards_required = 6 - this.opp_deck.size;
 		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)		
-			this.opp_deck.push(this.big_deck.pop());
+		for (let i = 0 ; i < new_cards_available ; i++)	{
+			sound.play_delayed('inc_card',i*30)
+			this.opp_deck.push(this.big_deck.pop());			
+		}
+
 		
 
 		this.update_big_deck_info();		
@@ -1874,13 +1898,14 @@ var table = {
 	},
 	
 	opp_done : async function (card_ids) {
-				
-		
-		sound.play('done');
+								
 		
 		//анимация карты из центра идут в битую колоду
-		for (let card of this.center_deck.cards)		
-			await anim2.add(card,{x:[card.x, 850]}, false, 0.1,'linear');	
+		for (let card of this.center_deck.cards) {
+			sound.play('swift');
+			await anim2.add(card,{x:[card.x, 850]}, false, 0.1,'linear');				
+		}	
+
 		
 		//центральная колода теперь пустая
 		this.center_deck.make_empty();
@@ -1888,14 +1913,20 @@ var table = {
 		//выбираем карты для оппонента
 		let new_cards_required = 6 - this.opp_deck.size;
 		let new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)		
-			this.opp_deck.push(this.big_deck.pop());	
+		for (let i = 0 ; i < new_cards_available ; i++)	{
+			sound.play_delayed('inc_card',i*30)
+			this.opp_deck.push(this.big_deck.pop());			
+		}
+	
 	
 		//выбираем карты для меня
 		new_cards_required = 6 - this.my_deck.size;
 		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)		
-			this.my_deck.push(this.big_deck.pop());
+		for (let i = 0 ; i < new_cards_available ; i++)	{
+			sound.play_delayed('inc_card',i*30)
+			this.my_deck.push(this.big_deck.pop());			
+		}	
+
 
 
 		this.update_big_deck_info();
@@ -4198,6 +4229,10 @@ async function load_resources() {
 	game_res.add('confirm_dialog',git_src+'sounds/confirm_dialog.mp3');
 	game_res.add('move',git_src+'sounds/move.mp3');
 	game_res.add('done',git_src+'sounds/done.mp3');
+	game_res.add('razdacha',git_src+'sounds/razdacha.mp3');
+	game_res.add('swift',git_src+'sounds/swift.mp3');
+	game_res.add('inc_card',git_src+'sounds/inc_card.mp3');
+	
 	
     //добавляем из листа загрузки
     for (var i = 0; i < load_list.length; i++) {
