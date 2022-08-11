@@ -1046,7 +1046,7 @@ var sp_game = {
 		
 		//инициируем стол
 		let seed2 = irnd(0,999999)
-		//seed2 = 363146
+		//seed2 = 441379
 		console.log(seed2)
 		table.init(role, seed2);
 		
@@ -1244,7 +1244,7 @@ var sp_game = {
 		let cur_deck_value = this.get_deck_value(mini_deck);
 				
 		//это если нужно обязательно ходить
-		let best_val = -9999;	
+		let best_val = -99999999;	
 		
 		//если подкидываем то находим вариант лучше текущей колоды
 		if (toss === true) best_val = cur_deck_value;
@@ -1455,6 +1455,8 @@ var table = {
 		
 		if (anim2.any_on() || state === 'stop') return;
 		
+		
+		console.log(card.value, card.suit)
 		//проверяем что выбрали мою колоду
 		if (this.my_deck.include_card(card) === false) {
 			message.add('Это не ваша карта');
