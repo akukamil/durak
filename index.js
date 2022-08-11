@@ -1431,7 +1431,7 @@ var table = {
 	can_add_card : function(card) {
 		
 		
-		if (this.center_deck.size > 5) return;		
+		if (this.center_deck.size > 5) return false;		
 		
 		if (this.center_deck.size === 0 || this.center_deck.include_value(card.value) === true)
 			return true;
