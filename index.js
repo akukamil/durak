@@ -799,8 +799,6 @@ var mp_game = {
 	
 	activate : async function (role, seed) {
 		
-		
-		seed = 153321;
 		this.my_role = role;
 		
 		opponent = this;
