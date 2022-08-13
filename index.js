@@ -1432,8 +1432,8 @@ var table = {
 	can_add_card : function(card) {
 		
 		
-		if (this.center_deck.size > 5) return false;		
-		
+		if (this.center_deck.size > 7) return false;		
+
 		if (this.center_deck.size === 0 || this.center_deck.include_value(card.value) === true)
 			return true;
 		
@@ -1467,7 +1467,7 @@ var table = {
 		if (this.state === 'my_toss') {
 			
 			if (this.can_add_card(card) === false) {
-				message.add('Нельзя подкинуть эту карту');
+				message.add('Нельзя подкинуть');
 				return;		
 			}							
 		
@@ -1496,7 +1496,7 @@ var table = {
 		if (this.state === 'my_attack') {
 			
 			//можно ли добавить карту
-			if (this.can_add_card(card) === false) {				
+			if (this.can_add_card(card) === false || this.opp_deck.size === 0) {				
 				message.add('Нельзя добавить карту');
 				return;	
 			}
@@ -1681,6 +1681,17 @@ var table = {
 		})		
 	
 	},	
+		
+	replenish_deck : function(deck) {
+		
+		let new_cards_required = 6 - deck.size;
+		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
+		for (let i = 0 ; i < new_cards_available ; i++)	{
+			sound.play_delayed('inc_card',i*30)
+			deck.push(this.big_deck.pop());			
+		}
+		
+	},
 		
 	opp_toss_card : async function (card_id) {
 		
