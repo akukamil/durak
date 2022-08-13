@@ -1703,14 +1703,8 @@ var table = {
 		this.my_deck.push(card);
 		
 		
-		//добавляем карту в колоду оппонента
 		//выбираем карты для оппонента
-		new_cards_required = 6 - this.opp_deck.size;
-		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)	{
-			sound.play_delayed('inc_card',i*30)
-			this.opp_deck.push(this.big_deck.pop());			
-		}
+		this.replenish_deck(this.opp_deck);
 
 		this.update_big_deck_info();
 		//this.check_game_end();
@@ -1721,9 +1715,6 @@ var table = {
 		//проверяем окончание игры
 		if (this.big_deck.size === 0 && this.opp_deck.size === 0)
 			opponent.stop('opp_win')					
-
-		
-		
 		
 	},
 		
@@ -1795,17 +1786,13 @@ var table = {
 		await opponent.send_move({sender:my_data.uid,message:"TAKE",tm:Date.now(),data:null});
 			
 		//выбираем карты для оппонента
-		new_cards_required = 6 - this.opp_deck.size;
-		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)		
-			this.opp_deck.push(this.big_deck.pop());
+		this.replenish_deck(this.opp_deck);
 		
 		this.update_big_deck_info();
 		
 		
 		table.last_cards =[];
-		//this.check_game_end();
-		
+
 		
 		this.opp_deck.organize();			
 	
@@ -1828,23 +1815,10 @@ var table = {
 		this.center_deck.make_empty();
 			
 		//выбираем карты для меня
-		let new_cards_required = 6 - this.my_deck.size;
-		let new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)	{
-			sound.play_delayed('inc_card',i*30)
-			this.my_deck.push(this.big_deck.pop());			
-		}	
-
+		this.replenish_deck(this.my_deck);
 		
 		//выбираем карты для оппонента
-		new_cards_required = 6 - this.opp_deck.size;
-		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)	{
-			sound.play_delayed('inc_card',i*30)
-			this.opp_deck.push(this.big_deck.pop());			
-		}
-
-		
+		this.replenish_deck(this.opp_deck);
 
 		this.update_big_deck_info();		
 		this.my_deck.organize();
@@ -1886,11 +1860,8 @@ var table = {
 		while (this.center_deck.size > 0)
 			this.opp_deck.push(this.center_deck.pop());
 		
-		//выбираем карты для меня
-		new_cards_required = 6 - this.my_deck.size;
-		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)		
-			this.my_deck.push(this.big_deck.pop());
+		//выбираем карты для оппонента
+		this.replenish_deck(this.my_deck);	
 		
 		this.update_big_deck_info();
 		
@@ -1917,23 +1888,10 @@ var table = {
 		this.center_deck.make_empty();
 	
 		//выбираем карты для оппонента
-		let new_cards_required = 6 - this.opp_deck.size;
-		let new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)	{
-			sound.play_delayed('inc_card',i*30)
-			this.opp_deck.push(this.big_deck.pop());			
-		}
+		this.replenish_deck(this.opp_deck);	
 	
-	
-		//выбираем карты для меня
-		new_cards_required = 6 - this.my_deck.size;
-		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
-		for (let i = 0 ; i < new_cards_available ; i++)	{
-			sound.play_delayed('inc_card',i*30)
-			this.my_deck.push(this.big_deck.pop());			
-		}	
-
-
+		//выбираем карты для оппонента
+		this.replenish_deck(this.my_deck);
 
 		this.update_big_deck_info();
 		this.my_deck.organize();
