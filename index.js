@@ -176,7 +176,6 @@ class playing_cards_class extends PIXI.Container {
 	}
 	
 	set_shirt () {
-		
 		this.text_value.visible = false;
 		this.suit_img.texture = gres.cards_shirt.texture;		
 		
@@ -279,7 +278,7 @@ class deck_class {
 
 		let index = this.cards.findIndex(x => x.id === card_id);	
 		if (index === -1) {
-			alert('Не нашли индекс в колоде!!!')			
+			alert('Не нашли индекс в колоде!!!', card_id)			
 			throw Error()
 		}
 
@@ -681,7 +680,7 @@ var sound = {
 			return;
 		
 		
-		setTimeout(game_res.resources[snd_res].sound.play(), delay);
+		setTimeout(function(){game_res.resources[snd_res].sound.play()}, delay);
 			
 		
 	}
@@ -800,13 +799,17 @@ var mp_game = {
 	
 	activate : async function (role, seed) {
 		
+		
+		seed = 153321;
 		this.my_role = role;
 		
 		opponent = this;
 	
 		objects.desktop.texture = gres.desktop.texture;
 		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.6,'linear');
-	
+		
+		console.log('seed ',seed);
+		
 		//инициируем стол
 		table.init(role, seed);
 		
@@ -912,7 +915,7 @@ var mp_game = {
 		this.disconnect_time = 0;
 		turn = t;
 		//перезапускаем таймер хода		
-		this.move_time_left = 25;
+		this.move_time_left = 30;
 		objects.timer_text.text="0:"+this.move_time_left;
 		objects.timer_text.tint=0xffffff;
 		
@@ -1456,7 +1459,6 @@ var table = {
 		if (anim2.any_on() || state === 'stop') return;
 		
 		
-		console.log(card.value, card.suit)
 		//проверяем что выбрали мою колоду
 		if (this.my_deck.include_card(card) === false) {
 			message.add('Это не ваша карта');
@@ -1484,7 +1486,8 @@ var table = {
 					
 			//отправляем ход сопернику кем бы он ни был
 			opponent.send_move({sender:my_data.uid,message:"TOSS",tm:Date.now(),data:card.id});
-			
+			console.log('TOSS ',card.value, card.suit)
+
 		
 			//выходим
 			return;
@@ -1514,7 +1517,8 @@ var table = {
 				}
 			}			
 			
-			
+			console.log('my_attack ',card.value, card.suit)
+
 			//отправляем ход сопернику кем бы он ни был
 			opponent.send_move({sender:my_data.uid, message:'MOVE', tm:Date.now(), data:card.id});
 		
@@ -1536,7 +1540,8 @@ var table = {
 			
 			
 			this.set_action_button('HIDE');
-			
+			console.log('my_defence ',card.value, card.suit)
+
 			
 			//проверяем окончание игры
 			if (this.big_deck.size === 0 && this.my_deck.size === 0)
@@ -1679,21 +1684,6 @@ var table = {
 	
 	},	
 		
-	send_toss_card : function(card) {
-			
-		let tx = this.last_attack_card.x + 60;
-		let ty = 250;				
-		//this.set_action_button('HIDE');
-		anim2.add(card,{x:[card.x, tx], y:[card.y, ty]}, true, 0.25,'easeInOutCubic');	
-		this.last_attack_card = card;
-		
-		let my_deck_index = this.my_deck.findIndex(x => x.id === card.id);
-		this.my_deck.splice(my_deck_index, 1)[0];
-		
-		this.center_deck.push(card);
-		this.organize_my_deck();
-	},
-		
 	opp_toss_card : async function (card_id) {
 		
 		let card = this.opp_deck.pop_by_id(card_id);
@@ -1705,9 +1695,12 @@ var table = {
 		
 		
 		//добавляем карту в колоду оппонента
-		if (this.big_deck.size > 0) {
-			new_opp_card = this.big_deck.pop();		
-			this.opp_deck.push(new_opp_card);			
+		//выбираем карты для оппонента
+		new_cards_required = 6 - this.opp_deck.size;
+		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
+		for (let i = 0 ; i < new_cards_available ; i++)	{
+			sound.play_delayed('inc_card',i*30)
+			this.opp_deck.push(this.big_deck.pop());			
 		}
 
 		this.update_big_deck_info();
