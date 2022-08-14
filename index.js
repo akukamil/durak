@@ -278,7 +278,7 @@ class deck_class {
 
 		let index = this.cards.findIndex(x => x.id === card_id);	
 		if (index === -1) {
-			alert('Не нашли индекс в колоде!!!', card_id)			
+			alert('Не нашли индекс в колоде!!!' + card_id)			
 			throw Error()
 		}
 
