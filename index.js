@@ -144,7 +144,7 @@ class playing_cards_class extends PIXI.Container {
 		this.pointerdown = function(){table.card_down(this)};
 		this.type = 'COMMON';			
 		
-		this.suit = ['h','d','s','c','','','',''][Math.floor(id/9)];		
+		this.suit = ['h','d','s','c','h','h','h','h'][Math.floor(id/9)];		
 		this.suit_img = new PIXI.Sprite(gres[this.suit+'_bcg'].texture);
 		this.suit_img.anchor.set(0.5,0.5);
 		
