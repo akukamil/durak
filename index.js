@@ -1029,7 +1029,6 @@ var sp_game = {
 
 	name :'bot',
 	on : 0,
-	level_id : 0,
 	state : 'opp_move',
 	center_size : 0,
 
@@ -1196,11 +1195,6 @@ var sp_game = {
 		else
 			bee = objects.bee_lose	
 
-		//передвигаемся к следующему уровню если выиграли
-		if (result_number === WIN) {
-			this.level_id++;
-			firebase.database().ref("players/"+my_data.uid+"/level").set(this.level_id);
-		}
 		
 		
 		//воспроизводим звук
@@ -4099,13 +4093,10 @@ async function init_game_env(l) {
 		my_data.games = 0 :
 		my_data.games = other_data.games || 0;
 		
-	other_data===null ?
-		my_data.level = 0 :
-		my_data.level = other_data.level || 0;
-		
+	
 			
 	//номер комнаты
-	if (my_data.rating >= 1500)
+	if (my_data.rating >= 11500)
 		room_name= 'states2';			
 	else
 		room_name= 'states';			
