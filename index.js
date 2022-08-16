@@ -3186,6 +3186,7 @@ var cards_menu={
 			return
 		};
 
+		sound.play('click');
 		
 		anim2.add(objects.td_cont,{y:[-150, objects.td_cont.sy]}, true, 0.5,'easeOutBack');
 		
