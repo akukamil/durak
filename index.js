@@ -808,6 +808,10 @@ var mp_game = {
 		
 		console.log('seed ',seed);
 		
+		//если открыт лидерборд то закрываем его
+		if (objects.lb_1_cont.visible===true)
+			lb.close();
+		
 		//инициируем стол
 		table.init(role, seed);
 		
@@ -1973,27 +1977,6 @@ var make_text = function (obj, text, max_width) {
 	}
 
 	obj.text =  text;
-}
-
-var social_dialog = {
-	
-
-	invite_down : function() {
-				
-		gres.click.sound.play();
-		vkBridge.send('VKWebAppShowInviteBox');		
-		
-	},
-	
-	share_down: function() {
-		
-		
-		gres.click.sound.play();
-		vkBridge.send('VKWebAppShowWallPostBox', {"message": `Помог пчелке защитить улей, теперь мой рейтинг ${my_data.rating}. Сможешь победить меня?`,
-		"attachments": "https://vk.com/app8220670"});
-
-	}
-	
 }
 
 var	show_ad = async function(){
@@ -4101,6 +4084,7 @@ async function init_game_env(l) {
 	else
 		room_name= 'states';			
 
+	
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
 
