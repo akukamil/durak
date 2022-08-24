@@ -495,7 +495,7 @@ var my_table = {
 		
 	},
 	
-	delete_row : function(i) {
+	delete_row : async function(i) {
 		
 		if (my_table.type !== 'states')
 			return;
@@ -503,12 +503,14 @@ var my_table = {
 		let uid = my_table.data[i-1][0];
 		let name = my_table.data[i-1][1];
 		
-		if (confirm("Удалить "+name +" ?")) {
-				firebase.database().ref(my_table.room +'/' + uid).remove();
-				my_table.table_element.deleteRow(i);		
-				my_table.data.splice(i - 1, 1);			
-
-		} 
+		
+		
+		//получаем фидбэки
+		let _fb = await firebase.database().ref("fb/" + uid).once('value');
+		let fb_obj =_fb.val();
+		if (fb_obj === null) console.log('Нету отзывов');
+		var fb = Object.keys(fb_obj).map((key) => [fb_obj[key][0],fb_obj[key][1],fb_obj[key][2]]);
+		console.log(fb);
 
 		
 	},
