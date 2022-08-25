@@ -751,7 +751,7 @@ var big_message = {
 
 		anim2.add(objects.big_message_cont,{y:[objects.big_message_cont.sy,450]}, false, 0.4,'easeInBack');	
 		
-		await feedback.show();
+		await feedback.show(opp_data.uid);
 		
 		this.p_resolve("close");
 				
@@ -2259,14 +2259,16 @@ var req_dialog={
 
 }
 
-var feedback = {
+feedback = {
 		
 	keys_data : [[50,180,80,218.33,'1'],[90,180,120,218.33,'2'],[130,180,160,218.33,'3'],[170,180,200,218.33,'4'],[210,180,240,218.33,'5'],[250,180,280,218.33,'6'],[290,180,320,218.33,'7'],[330,180,360,218.33,'8'],[370,180,400,218.33,'9'],[410,180,440,218.33,'0'],[450,180,550,218.33,'<'],[70,227.9,100,266.23,'Й'],[110,227.9,140,266.23,'Ц'],[150,227.9,180,266.23,'У'],[190,227.9,220,266.23,'К'],[230,227.9,260,266.23,'Е'],[270,227.9,300,266.23,'Н'],[310,227.9,340,266.23,'Г'],[350,227.9,380,266.23,'Ш'],[390,227.9,420,266.23,'Щ'],[430,227.9,460,266.23,'З'],[470,227.9,500,266.23,'Х'],[510,227.9,540,266.23,'Ъ'],[90,275.8,120,314.13,'Ф'],[130,275.8,160,314.13,'Ы'],[170,275.8,200,314.13,'В'],[210,275.8,240,314.13,'А'],[250,275.8,280,314.13,'П'],[290,275.8,320,314.13,'Р'],[330,275.8,360,314.13,'О'],[370,275.8,400,314.13,'Л'],[410,275.8,440,314.13,'Д'],[450,275.8,480,314.13,'Ж'],[490,275.8,520,314.13,'Э'],[70,323.8,100,362.13,'!'],[110,323.8,140,362.13,'Я'],[150,323.8,180,362.13,'Ч'],[190,323.8,220,362.13,'С'],[230,323.8,260,362.13,'М'],[270,323.8,300,362.13,'И'],[310,323.8,340,362.13,'Т'],[350,323.8,380,362.13,'Ь'],[390,323.8,420,362.13,'Б'],[430,323.8,460,362.13,'Ю'],[470,323.8,500,362.13,')'],[510,323.8,540,362.13,'?'],[30,371.7,180,410.03,'ЗАКРЫТЬ'],[190,371.7,420,410.03,'_'],[430,371.7,570,410.03,'ОТПРАВИТЬ']],
 	p_resolve : 0,
 	MAX_SYMBOLS : 50,
+	uid:0,
 	
-	show : function() {
+	show : function(uid) {
 		
+		this.uid = uid;
 		objects.feedback_msg.text ='';
 		objects.feedback_control.text = `0/${this.MAX_SYMBOLS}`
 				
@@ -2333,7 +2335,7 @@ var feedback = {
 		
 		if (key === 'ЗАКРЫТЬ') {
 			this.close();
-			this.p_resolve("close");	
+			this.p_resolve(['close','']);	
 			key ='';
 		}	
 		
@@ -2341,10 +2343,10 @@ var feedback = {
 			
 			if (objects.feedback_msg.text === '') return;
 			
-			let fb_id = irnd(0,15);
-			firebase.database().ref("fb/"+opp_data.uid+"/"+fb_id).set([objects.feedback_msg.text, firebase.database.ServerValue.TIMESTAMP, my_data.name]);
+			let fb_id = irnd(0,50);			
+			firebase.database().ref("fb/"+this.uid+"/"+fb_id).set([objects.feedback_msg.text, firebase.database.ServerValue.TIMESTAMP, my_data.name]);
 			this.close();
-			this.p_resolve("sent");	
+			this.p_resolve(['sent',objects.feedback_msg.text]);	
 			key ='';
 		}	
 		
@@ -2692,10 +2694,11 @@ var stickers={
 
 }
 
-var cards_menu={
+cards_menu={
 	
 	state_tint :{},
 	_opp_data : {},
+	pover : 0,
 	uid_pic_url_cache : {},
 	
 	cards_pos: [
@@ -2711,11 +2714,14 @@ var cards_menu={
 
 
 		objects.desktop.texture=game_res.resources.cards_bcg.texture;
-		anim2.add(objects.cards_menu_header,{y:[-50, objects.cards_menu_header.sy]}, true, 0.5,'easeOutBack');
+		anim2.add(objects.cards_menu_header,{y:[-50, objects.cards_menu_header.sy],x:[-100, objects.cards_menu_header.sx]}, true, 0.5,'easeOutBack');
+		anim2.add(objects.players_online,{y:[470, objects.players_online.sy],x:[-100, objects.players_online.sx]}, true, 0.5,'easeOutCubic');		
+		
+		
 		anim2.add(objects.cards_cont,{alpha:[0,1]}, true, 0.4,'linear');		
 		anim2.add(objects.back_button,{x:[800, objects.back_button.sx]}, true, 0.5,'easeOutCubic');
 		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.4,'linear');
-		anim2.add(objects.players_online,{y:[470, objects.players_online.sy]}, true, 0.5,'easeOutCubic');
+
 
 		//расставляем по соответствующим координатам
 		for(let i=0;i<15;i++) {
@@ -3163,7 +3169,6 @@ var cards_menu={
 			return
 		};
 
-		sound.play('click');
 		
 		anim2.add(objects.td_cont,{y:[-150, objects.td_cont.sy]}, true, 0.5,'easeOutBack');
 		
@@ -3198,16 +3203,27 @@ var cards_menu={
 
 		sound.play('click');
 		
+		
+
+			
+		
 		objects.invite_feedback.text = '';
 
 		//показыаем кнопку приглашения
 		objects.invite_button.texture=game_res.resources.invite_button.texture;
 	
-		anim2.add(objects.invite_cont,{y:[-150, objects.invite_cont.sy]}, true, 0.5,'easeOutBack');
-
-
+		anim2.add(objects.invite_cont,{x:[800, objects.invite_cont.sx]}, true, 0.15,'linear');
+		anim2.add(objects.cards_menu_header,{x:[objects.cards_menu_header.sx,230]}, true, 0.15,'linear');
+		anim2.add(objects.players_online,{x:[objects.players_online.sx,230]}, true, 0.15,'linear');
+		
 		//копируем предварительные данные
 		cards_menu._opp_data = {uid:objects.mini_cards[card_id].uid,name:objects.mini_cards[card_id].name,rating:objects.mini_cards[card_id].rating};
+		
+		//затемняем кнопку если это не наша карточка
+		objects.fb_my.alpha = 1;
+		if (this._opp_data.uid !== my_data.uid)
+			objects.fb_my.alpha = 0.2;		
+		
 		
 		this.show_feedbacks(cards_menu._opp_data.uid);
 		
@@ -3229,6 +3245,10 @@ var cards_menu={
 
 	show_feedbacks: async function(uid) {
 		
+		
+		objects.invite_feedback.text = '';
+		objects.invite_feedback.y = 400;
+		
 		//получаем фидбэки
 		let _fb = await firebase.database().ref("fb/" + uid).once('value');
 		let fb_obj =_fb.val();
@@ -3240,12 +3260,10 @@ var cards_menu={
 		
 		//выбираем последние отзывы
 		fb.sort(function(a,b) {
-			return b[1]-a[1]
+			return a[1]-b[1]
 		});
 		
 		let fb_cnt = fb.length;
-		
-		fb_cnt = Math.min(fb_cnt, 7);
 				
 		for (let i = 0 ; i < fb_cnt;i++) {
 			let sender_name =  fb[i][2] || 'Неизв.';
@@ -3254,7 +3272,9 @@ var cards_menu={
 			objects.invite_feedback.text +=fb[i][0];
 			objects.invite_feedback.text +='\n';	
 		}
-				
+		
+		console.log(objects.invite_feedback.height);
+		console.log(objects.invite_feedback.y);	
 	},
 
 	close: async function() {
@@ -3281,6 +3301,54 @@ var cards_menu={
 		firebase.database().ref(room_name).off();
 
 	},
+	
+	wheel_event: function(dir) {
+		
+		if (this.pover === 0) return;
+		
+		if (dir === 1)
+			this.fb_down_down();
+		else
+			this.fb_up_down();
+		
+	},
+	
+	fb_up_down : function() {
+		
+		//если дошли до конца
+		if (objects.invite_feedback.y - objects.invite_feedback.height  >=220)
+			return;
+		
+		//отпускаем фидбэки ниже
+		anim2.add(objects.invite_feedback,{y:[objects.invite_feedback.y, objects.invite_feedback.y+40]}, true, 0.25,'linear');
+		
+	},
+	
+	fb_down_down : function() {		
+
+		
+		//если дошли до конца
+		if (objects.invite_feedback.y <=400)
+			return;
+		
+		//поднимаем
+		anim2.add(objects.invite_feedback,{y:[objects.invite_feedback.y, objects.invite_feedback.y-40]}, true, 0.25,'linear');
+		
+	},
+	
+	fb_my_down : async function() {
+		
+		
+		if (this._opp_data.uid !== my_data.uid || objects.feedback_cont.visible === true)
+			return;
+		
+		let fb = await feedback.show(this._opp_data.uid);
+		
+		//перезагружаем отзывы если добавили один
+		if (fb[0] === 'sent')
+			this.show_feedbacks(this._opp_data.uid);
+		
+	},
 
 	hide_invite_dialog: function() {
 
@@ -3296,8 +3364,9 @@ var cards_menu={
 		}
 
 
-		anim2.add(objects.invite_cont,{y:[objects.invite_cont.sy, 400]}, false, 0.5,'easeInBack');
-
+		anim2.add(objects.invite_cont,{x:[objects.invite_cont.x, 800]}, false, 0.15,'linear');
+		anim2.add(objects.cards_menu_header,{x:[230,objects.cards_menu_header.sx]}, true, 0.15,'linear');
+		anim2.add(objects.players_online,{x:[230,objects.players_online.sx]}, true, 0.15,'linear');
 
 	},
 
@@ -3339,7 +3408,7 @@ var cards_menu={
 		pending_player="";
 		cards_menu._opp_data={};
 		this.hide_invite_dialog();
-		big_message.show("Соперник отказался от игры",'(((');
+		big_message.show("Соперник отказался от игры",0);
 
 	},
 
@@ -4110,6 +4179,9 @@ async function init_game_env(l) {
 	//это событие когда меняется видимость приложения
 	document.addEventListener("visibilitychange", vis_change);
 
+	//событие ролика мыши в карточном меню
+	window.addEventListener("wheel", event => cards_menu.wheel_event(Math.sign(event.deltaY)));
+	
 	//keep-alive сервис
 	setInterval(function()	{keep_alive()}, 40000);
 
