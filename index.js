@@ -2300,8 +2300,9 @@ feedback = {
 		let key = -1;
 		let key_x = 0;
 		let key_y = 0;
+		let margin = 5;
 		for (let k of this.keys_data) {			
-			if (mx > k[0] && mx <k[2] && my > k[1] && my < k[3]) {
+			if (mx > k[0] - margin && mx <k[2] + margin  && my > k[1] - margin && my < k[3] + margin) {
 				key = k[4];
 				key_x = k[0];
 				key_y = k[1];
@@ -2342,6 +2343,15 @@ feedback = {
 		if (key === 'ОТПРАВИТЬ') {
 			
 			if (objects.feedback_msg.text === '') return;
+			
+			//если нашли ненормативную лексику то закрываем
+			let mats = /[её]б[ауиёелн]|у[её]б|п[иёе]зд|пзд|сук[аи]|сучк|ху[йяиеё]|г[ао]нд|сос[ауиёе]|пид[ор]|педер|педр|шлю[чш]|письк|хули|чурк|жоп[ауе]|манд|бля[дт]|г[ао]вн|др[ао]ч|жоп|лох|минет|мудак|мудил|залуп|мудо|[оау]срал|шалав/i;
+			if (objects.feedback_msg.text.match(mats)) {
+				this.close();
+				this.p_resolve(['close','']);	
+				key ='';
+				return;
+			}
 			
 			let fb_id = irnd(0,50);			
 			firebase.database().ref("fb/"+this.uid+"/"+fb_id).set([objects.feedback_msg.text, firebase.database.ServerValue.TIMESTAMP, my_data.name]);
