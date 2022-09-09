@@ -997,7 +997,7 @@ var mp_game = {
 		this.disconnect_time = 0;
 		turn = t;
 		//перезапускаем таймер хода		
-		this.move_time_left = 30;
+		this.move_time_left = 35;
 		objects.timer_text.text="0:"+this.move_time_left;
 		objects.timer_text.tint=0xffffff;
 		
