@@ -967,6 +967,7 @@ var mp_game = {
 		}
 		
 		if (min_button_id !== -1) {
+			sound.play('click');
 			
 			objects.hl_main_button.x=buttons_pos[min_button_id][0]+objects.game_buttons.sx;
 			objects.hl_main_button.y=buttons_pos[min_button_id][1]+objects.game_buttons.sy;
@@ -2449,6 +2450,7 @@ feedback = {
 			this.close();
 			this.p_resolve(['close','']);	
 			key ='';
+			sound.play('keypress');
 			return;	
 		}	
 		
@@ -2468,6 +2470,7 @@ feedback = {
 			this.close();
 			this.p_resolve(['sent',objects.feedback_msg.text]);	
 			key ='';
+			sound.play('keypress');
 			return;	
 		}	
 		
@@ -3478,8 +3481,11 @@ cards_menu={
 		let fb = await feedback.show(this._opp_data.uid);
 		
 		//перезагружаем отзывы если добавили один
-		if (fb[0] === 'sent')
-			this.show_feedbacks(this._opp_data.uid);
+		if (fb[0] === 'sent') {
+			let fb_id = irnd(0,50);			
+			await firebase.database().ref("fb/"+this._opp_data.uid+"/"+fb_id).set([fb[1], firebase.database.ServerValue.TIMESTAMP, my_data.name]);
+			this.show_feedbacks(this._opp_data.uid);			
+		}
 		
 	},
 
@@ -4285,6 +4291,8 @@ async function load_resources() {
 	game_res.add('swift',git_src+'sounds/swift.mp3');
 	game_res.add('inc_card',git_src+'sounds/inc_card.mp3');
 	game_res.add('take',git_src+'sounds/take.mp3');
+	game_res.add('keypress',git_src+'sounds/keypress.mp3');
+	
 	
     //добавляем из листа загрузки
     for (var i = 0; i < load_list.length; i++) {
