@@ -692,28 +692,37 @@ var message =  {
 	
 	promise_resolve :0,
 	
-	add : async function(text) {
+	add : async function(text, timeout) {
 		
 		if (this.promise_resolve!==0)
 			this.promise_resolve("forced");
+		
+		if (timeout === undefined) timeout = 3000;
 		
 		//воспроизводим звук
 		sound.play('message');
 
 		objects.message_text.text=text;
 
-		await anim2.add(objects.message_cont,{x:[-200,objects.message_cont.sx]}, true, 0.5,'easeOutBack');
+		await anim2.add(objects.message_cont,{x:[-200,objects.message_cont.sx]}, true, 0.25,'easeOutBack');
 
 		let res = await new Promise((resolve, reject) => {
 				message.promise_resolve = resolve;
-				setTimeout(resolve, 3000)
+				setTimeout(resolve, timeout)
 			}
 		);
 		
 		if (res === "forced")
 			return;
 
-		anim2.add(objects.message_cont,{x:[objects.message_cont.sx, -200]}, false, 0.5,'easeInBack');			
+		anim2.add(objects.message_cont,{x:[objects.message_cont.sx, -200]}, false, 0.25,'easeInBack');			
+	},
+	
+	clicked : function() {
+		
+		
+		message.promise_resolve();
+		
 	}
 
 }
@@ -751,7 +760,13 @@ var big_message = {
 
 		anim2.add(objects.big_message_cont,{y:[objects.big_message_cont.sy,450]}, false, 0.4,'easeInBack');	
 		
-		await feedback.show(opp_data.uid);
+		//пишем отзыв и отправляем его		
+		let fb = await feedback.show(opp_data.uid);		
+		if (fb[0] === 'sent') {
+			let fb_id = irnd(0,50);			
+			await firebase.database().ref("fb/"+opp_data.uid+"/"+fb_id).set([fb[1], firebase.database.ServerValue.TIMESTAMP, my_data.name]);
+		
+		}
 		
 		this.p_resolve("close");
 				
@@ -780,6 +795,9 @@ var mp_game = {
 	timer_id : 0,
 	made_moves: 0,
 	my_role : "",
+	stickers_button_pos:[0,0,0],
+	chat_button_pos:[0,0,0],
+	giveup_button_pos:[0,0,0],
 	
 	calc_new_rating : function (old_rating, game_result) {
 		
@@ -819,7 +837,7 @@ var mp_game = {
 		anim2.add(objects.my_card_cont,{x:[-100,objects.my_card_cont.sx]}, true, 0.6,'easeOutBack');	
 		anim2.add(objects.opp_card_cont,{x:[900,objects.opp_card_cont.sx]}, true, 0.6,'easeOutBack');	
 
-		objects.game_buttons_cont.visible = true;
+		objects.game_buttons.visible = true;
 
 		//сколько сделано ходов
 		this.made_moves = 0;
@@ -911,6 +929,68 @@ var mp_game = {
 		this.timer_id = setTimeout(function(){mp_game.timer_tick()}, 1000);		
 	},
 	
+	send_message : async function() {
+		
+		let msg_data = await feedback.show();
+		
+		if (msg_data[0] === 'sent') {			
+			firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"CHAT",tm:Date.now(),data:msg_data[1]});	
+
+		} else {			
+			message.add('Сообщение не отправлено');
+		}
+		
+	},
+	
+	game_buttons_down: function(e) {
+		
+		
+		let mx = e.data.global.x/app.stage.scale.x - objects.game_buttons.sx;
+		let my = e.data.global.y/app.stage.scale.y - objects.game_buttons.sy;	
+			
+		let buttons_pos = [this.stickers_button_pos, this.chat_button_pos, this.giveup_button_pos];
+		
+		let min_dist = 999;
+		let min_button_id = -1;
+		
+		for (let b = 0 ; b < 3 ; b++) {			
+			
+			let anchor_pos = buttons_pos[b];	
+			let dx = mx - anchor_pos[0] - 35;
+			let dy = my - anchor_pos[1] - 35;
+			let d = Math.sqrt(dx * dx + dy * dy);		
+
+			if (d < 40 && d < min_dist) {
+				min_dist = d;
+				min_button_id = b;
+			}
+		}
+		
+		if (min_button_id !== -1) {
+			
+			objects.hl_main_button.x=buttons_pos[min_button_id][0]+objects.game_buttons.sx;
+			objects.hl_main_button.y=buttons_pos[min_button_id][1]+objects.game_buttons.sy;
+				
+			anim2.add(objects.hl_main_button,{alpha:[1,0]}, false, 0.6,'linear');				
+		}
+	
+					
+		if (min_button_id === 0)
+			stickers.show_panel();
+		if (min_button_id === 1)
+			this.send_message();
+		if (min_button_id === 2)
+			this.giveup();
+		
+		
+	},
+	
+	chat : function(data) {
+		
+		message.add(data, 10000);
+		
+	},
+	
 	reset_timer : function(t) {
 		
 		//обовляем время разъединения
@@ -969,7 +1049,7 @@ var mp_game = {
 				
 		//убираем элементы
 		objects.timer_cont.visible = false;
-		objects.game_buttons_cont.visible = false;
+		objects.game_buttons.visible = false;
 		
 		
 		//воспроизводим звук
@@ -1024,7 +1104,7 @@ var mp_game = {
 		anim2.add(objects.my_card_cont,{x:[objects.my_card_cont.x, -100]}, false, 0.6,'easeInBack');	
 		anim2.add(objects.opp_card_cont,{x:[objects.opp_card_cont.x,900]}, false, 0.6,'easeInBack');	
 		objects.timer_cont.visible = false;
-		objects.game_buttons_cont.visible = false;
+		objects.game_buttons.visible = false;
 	}
 	
 }
@@ -2116,6 +2196,10 @@ var process_new_message=function(msg) {
 			//получение сообщение с сдаче
 			if (msg.message==="GIVEUP" )
 				mp_game.stop('opp_giveup');
+			
+			//получение сообщение с ходом игорка
+			if (msg.message==="CHAT")
+				mp_game.chat(msg.data);
 
 			//получение сообщение с ходом игорка
 			if (msg.message==='MOVE' || msg.message==='TAKE' || msg.message==='DONE' || msg.message==='TOSS')
@@ -2293,22 +2377,59 @@ feedback = {
 		return gres.hl_key0.texture;
 	},
 	
-	pointerdown : function(e) {
+	key_down : function(key) {
 		
-		let mx = e.data.global.x/app.stage.scale.x - objects.feedback_cont.x;
-		let my = e.data.global.y/app.stage.scale.y- objects.feedback_cont.y;;
+		
+		if (objects.feedback_cont.visible === false || objects.feedback_cont.ready === false) return;
+		
+		key = key.toUpperCase();
+		
+		if (key === 'ESCAPE') key = 'ЗАКРЫТЬ';			
+		if (key === 'ENTER') key = 'ОТПРАВИТЬ';
+		if (key === 'BACKSPACE') key = '<';
+		if (key === ' ') key = '_';
+			
+		var result = this.keys_data.find(k => {
+			return k[4] === key
+		})
+		
+		if (result === undefined) return;
+		this.pointerdown(null,result)
+		
+
+		
+	},
+	
+	pointerdown : function(e, inp_key) {
+		
 		let key = -1;
 		let key_x = 0;
-		let key_y = 0;
-		let margin = 5;
-		for (let k of this.keys_data) {			
-			if (mx > k[0] - margin && mx <k[2] + margin  && my > k[1] - margin && my < k[3] + margin) {
-				key = k[4];
-				key_x = k[0];
-				key_y = k[1];
-				break;
-			}
+		let key_y = 0;		
+		
+		if (e !== null) {
+			
+			let mx = e.data.global.x/app.stage.scale.x - objects.feedback_cont.x;
+			let my = e.data.global.y/app.stage.scale.y- objects.feedback_cont.y;;
+
+			let margin = 5;
+			for (let k of this.keys_data) {			
+				if (mx > k[0] - margin && mx <k[2] + margin  && my > k[1] - margin && my < k[3] + margin) {
+					key = k[4];
+					key_x = k[0];
+					key_y = k[1];
+					break;
+				}
+			}			
+			
+		} else {
+			
+			key = inp_key[4];
+			key_x = inp_key[0];
+			key_y = inp_key[1];
+			
 		}
+		
+		
 		
 		//не нажата кнопка
 		if (key === -1) return;			
@@ -2324,6 +2445,34 @@ feedback = {
 			key ='';
 		}			
 		
+		if (key === 'ЗАКРЫТЬ') {
+			this.close();
+			this.p_resolve(['close','']);	
+			key ='';
+			return;	
+		}	
+		
+		if (key === 'ОТПРАВИТЬ') {
+			
+			if (objects.feedback_msg.text === '') return;
+			
+			//если нашли ненормативную лексику то закрываем
+			let mats = /(?<=^|[^а-я])(([уyu]|[нзnz3][аa]|(хитро|не)?[вvwb][зz3]?[ыьъi]|[сsc][ьъ']|(и|[рpr][аa4])[зсzs]ъ?|([оo0][тбtb6]|[пp][оo0][дd9])[ьъ']?|(.\B)+?[оаеиeo])?-?([еёe][бb6](?!о[рй])|и[пб][ае][тц]).*?|([нn][иеаaie]|([дпdp]|[вv][еe3][рpr][тt])[оo0]|[рpr][аa][зсzc3]|[з3z]?[аa]|с(ме)?|[оo0]([тt]|дно)?|апч)?-?[хxh][уuy]([яйиеёюuie]|ли(?!ган)).*?|([вvw][зы3z]|(три|два|четыре)жды|(н|[сc][уuy][кk])[аa])?-?[бb6][лl]([яy](?!(х|ш[кн]|мб)[ауеыио]).*?|[еэe][дтdt][ь']?)|([рp][аa][сзc3z]|[знzn][аa]|[соsc]|[вv][ыi]?|[пp]([еe][рpr][еe]|[рrp][оиioеe]|[оo0][дd])|и[зс]ъ?|[аоao][тt])?[пpn][иеёieu][зz3][дd9].*?|([зz3][аa])?[пp][иеieu][дd][аоеaoe]?[рrp](ну.*?|[оаoa][мm]|([аa][сcs])?([иiu]([лl][иiu])?[нщктлtlsn]ь?)?|([оo](ч[еиei])?|[аa][сcs])?[кk]([оo]й)?|[юu][гg])[ауеыauyei]?|[мm][аa][нnh][дd]([ауеыayueiи]([лl]([иi][сзc3щ])?[ауеыauyei])?|[оo][йi]|[аоao][вvwb][оo](ш|sh)[ь']?([e]?[кk][ауеayue])?|юк(ов|[ауи])?)|[мm][уuy][дd6]([яyаиоaiuo0].*?|[еe]?[нhn]([ьюия'uiya]|ей))|мля([тд]ь)?|лять|([нз]а|по)х|м[ао]л[ао]фь([яию]|[её]й))(?=($|[^а-я]))/i;
+			if (objects.feedback_msg.text.match(mats)) {
+				this.close();
+				this.p_resolve(['close','']);	
+				key ='';
+				return;
+			}
+			
+			this.close();
+			this.p_resolve(['sent',objects.feedback_msg.text]);	
+			key ='';
+			return;	
+		}	
+		
+		
+		
 		if (objects.feedback_msg.text.length >= this.MAX_SYMBOLS)  {
 			sound.play('locked');
 			return;			
@@ -2333,32 +2482,6 @@ feedback = {
 			objects.feedback_msg.text += ' ';	
 			key ='';
 		}			
-		
-		if (key === 'ЗАКРЫТЬ') {
-			this.close();
-			this.p_resolve(['close','']);	
-			key ='';
-		}	
-		
-		if (key === 'ОТПРАВИТЬ') {
-			
-			if (objects.feedback_msg.text === '') return;
-			
-			//если нашли ненормативную лексику то закрываем
-			let mats = /[её]б[ауиёелн]|у[её]б|п[иёе]зд|пзд|сук[аи]|сучк|ху[йяиеё]|г[ао]нд|сос[ауиёе]|пид[ор]|педер|педр|трах|шлю[чш]|письк|хули|чурк|жоп[ауе]|манд|бля[дт]|г[ао]вн|др[ао]ч|жоп|лох|минет|мудак|мудил|залуп|мудо|[оау]срал|шалав/i;
-			if (objects.feedback_msg.text.match(mats)) {
-				this.close();
-				this.p_resolve(['close','']);	
-				key ='';
-				return;
-			}
-			
-			let fb_id = irnd(0,50);			
-			firebase.database().ref("fb/"+this.uid+"/"+fb_id).set([objects.feedback_msg.text, firebase.database.ServerValue.TIMESTAMP, my_data.name]);
-			this.close();
-			this.p_resolve(['sent',objects.feedback_msg.text]);	
-			key ='';
-		}	
 		
 
 		sound.play('keypress');
@@ -3456,103 +3579,6 @@ cards_menu={
 
 }
 
-var stickers = {
-	
-	promise_resolve_send :0,
-	promise_resolve_recive :0,
-
-	show_panel: function() {
-
-
-		if (anim2.any_on()===true ||objects.big_message_cont.visible === true) {
-			sound.play('locked');
-			return
-		};
-
-		if (objects.stickers_cont.ready===false)
-			return;
-		sound.play('click');
-
-
-		//ничего не делаем если панель еще не готова
-		if (objects.stickers_cont.ready===false || objects.stickers_cont.visible===true || state!=="p")
-			return;
-
-		//анимационное появление панели стикеров
-		anim2.add(objects.stickers_cont,{y:[450, objects.stickers_cont.sy]}, true, 0.5,'easeOutBack');
-
-	},
-
-	hide_panel: function() {
-
-		sound.play('close');
-
-		if (objects.stickers_cont.ready===false)
-			return;
-
-		//анимационное появление панели стикеров
-		anim2.add(objects.stickers_cont,{y:[objects.stickers_cont.sy, -450]}, false, 0.5,'easeInBack');
-
-	},
-
-	send : async function(id) {
-
-		if (objects.stickers_cont.ready===false)
-			return;
-		
-		if (this.promise_resolve_send!==0)
-			this.promise_resolve_send("forced");
-
-		this.hide_panel();
-
-		firebase.database().ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"MSG",tm:Date.now(),data:id});
-		message.add("Стикер отправлен сопернику");
-
-		//показываем какой стикер мы отправили
-		objects.sent_sticker_area.texture=game_res.resources['sticker_texture_'+id].texture;
-		
-		await anim2.add(objects.sent_sticker_area,{alpha:[0, 0.5]}, true, 0.5,'linear');
-		
-		let res = await new Promise((resolve, reject) => {
-				stickers.promise_resolve_send = resolve;
-				setTimeout(resolve, 2000)
-			}
-		);
-		
-		if (res === "forced")
-			return;
-
-		await anim2.add(objects.sent_sticker_area,{alpha:[0.5, 0]}, false, 0.5,'linear');
-	},
-
-	receive: async function(id) {
-
-		
-		if (this.promise_resolve_recive!==0)
-			this.promise_resolve_recive("forced");
-
-		//воспроизводим соответствующий звук
-		sound.play('receive_sticker');
-
-		objects.rec_sticker_area.texture=game_res.resources['sticker_texture_'+id].texture;
-	
-		await anim2.add(objects.rec_sticker_area,{x:[-150, objects.rec_sticker_area.sx]}, true, 0.5,'easeOutBack');
-
-		let res = await new Promise((resolve, reject) => {
-				stickers.promise_resolve_recive = resolve;
-				setTimeout(resolve, 2000)
-			}
-		);
-		
-		if (res === "forced")
-			return;
-
-		anim2.add(objects.rec_sticker_area,{x:[objects.rec_sticker_area.sx, -150]}, false, 0.5,'easeInBack');
-
-	}
-
-}
-
 var auth = function() {
 	
 	return new Promise((resolve, reject)=>{
@@ -4158,7 +4184,7 @@ async function init_game_env(l) {
 	
 			
 	//номер комнаты
-	if (my_data.rating > 1420)
+	if (my_data.rating > 1430)
 		room_name= 'states2';			
 	else
 		room_name= 'states';			
@@ -4191,6 +4217,11 @@ async function init_game_env(l) {
 
 	//событие ролика мыши в карточном меню
 	window.addEventListener("wheel", event => cards_menu.wheel_event(Math.sign(event.deltaY)));
+	
+	window.addEventListener('keydown', function(event) {
+	  feedback.key_down(event.key)
+	});
+
 	
 	//keep-alive сервис
 	setInterval(function()	{keep_alive()}, 40000);
