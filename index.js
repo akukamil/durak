@@ -1511,7 +1511,7 @@ var table = {
 	can_add_card : function(card) {
 		
 		
-		if (this.center_deck.size > 7) return false;		
+		if (this.center_deck.size > 9) return false;		
 
 		if (this.center_deck.size === 0 || this.center_deck.include_value(card.value) === true)
 			return true;
@@ -4043,9 +4043,7 @@ async function check_daily_reward (last_seen_ts) {
 async function init_game_env(l) {
 
 	//if (l===1) LANG = 1;
-	
-
-	
+		
 	await load_resources();
 		
 	//убираем загрузочные данные
