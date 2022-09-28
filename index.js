@@ -4188,7 +4188,7 @@ async function init_game_env(l) {
 	
 			
 	//номер комнаты
-	if (my_data.rating > 1440)
+	if (my_data.rating > 1460)
 		room_name= 'states2';			
 	else
 		room_name= 'states';			
