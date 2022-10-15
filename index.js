@@ -1307,7 +1307,7 @@ var sp_game = {
 		
 		let res = await confirm_dialog.show(['Закончить игру?','Stop game?'][LANG])
 		if (res !== 'ok') return;
-		show_ad();
+		//show_ad();
 		set_state({state : 'o'});
 		await this.stop('my_stop');
 		this.close();
