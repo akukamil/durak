@@ -214,18 +214,9 @@ class deck_class {
 		
 	init_big (shuffle_seed) {
 		
-
 		let context = this;
 		let generator = this.get_random_num(shuffle_seed);
-		
-		//создаем большую колоду и добавляем случайное число
-		/*for (let i=0;i<16;i++) {
-			
-			objects.pcards[i].rnum = generator.next().value;
-			context.push(objects.pcards[i]);
-			
-		}*/
-		
+
 		objects.pcards.forEach (c => {			
 			c.rnum = generator.next().value;
 			c.trump_hl.visible = false;
@@ -1635,9 +1626,7 @@ var table = {
 	},
 	
 	send_card_to_center : async function(card) {
-		
-		
-		
+				
 		sound.play('card');
 		
 		let tx,ty;
@@ -1703,6 +1692,11 @@ var table = {
 				
 				this.toss_done();
 			}
+			
+			//проверяем окончание игры
+			if (this.big_deck.size === 0 && this.my_deck.size === 0)
+				opponent.stop('my_win')		
+			
 			return;
 		}
 		
@@ -1736,18 +1730,25 @@ var table = {
 			
 			let card = this.opp_deck.pop_by_id(data);
 			await this.send_card_to_center(card);			
-			this.state = 'my_defence';	
-			this.set_action_button('TAKE');
 						
 			//проверяем окончание игры
 			if (this.big_deck.size === 0 && this.opp_deck.size === 0) {
 				if (this.my_deck.size > 1) {
-					opponent.stop('opp_win')					
+					opponent.stop('opp_win')
+					return;
 				} else {
-					if (this.can_beat(this.my_deck.cards[0], card) === false)
-						opponent.stop('opp_win')		
+					if (this.can_beat(this.my_deck.cards[0], card) === false) {
+						opponent.stop('opp_win')							
+						return;
+					}
+	
 				}
 			}
+			
+			this.state = 'my_defence';	
+			this.set_action_button('TAKE');			
+			
+			
 			
 		}			
 		
@@ -1786,7 +1787,6 @@ var table = {
 		this.replenish_deck(this.opp_deck);
 
 		this.update_big_deck_info();
-		//this.check_game_end();
 			
 		this.my_deck.organize();
 		this.opp_deck.organize();	
@@ -1851,15 +1851,18 @@ var table = {
 		//переводим все карти в мою колоду		
 		while (this.center_deck.size > 0)
 			this.my_deck.push(this.center_deck.pop());
-					
-								
+									
 		this.state = 'opp_attack';		
-		opponent.reset_timer();
+		//opponent.reset_timer();
 		
 		//скрываем кнопку
 		this.set_action_button('HIDE');		
 						
 		this.my_deck.organize();	
+		
+		//проверяем окончание игры
+		if (this.big_deck.size === 0 && this.opp_deck.size === 0)
+			opponent.stop('opp_win')	
 		
 		//отправляем ход сопернику кем бы он ни был
 		await opponent.send_move({sender:my_data.uid,message:"TAKE",tm:Date.now(),data:null});
@@ -1868,10 +1871,8 @@ var table = {
 		this.replenish_deck(this.opp_deck);
 		
 		this.update_big_deck_info();
-		
-		
+				
 		table.last_cards =[];
-
 		
 		this.opp_deck.organize();			
 	
@@ -1904,7 +1905,7 @@ var table = {
 		this.opp_deck.organize();			
 		this.state = 'opp_attack';	
 		
-		opponent.reset_timer();		
+		//opponent.reset_timer();		
 		
 		//отправляем ход сопернику кем бы он ни был
 		opponent.send_move({sender:my_data.uid,message:"DONE",tm:Date.now(),data:null});
@@ -1922,8 +1923,7 @@ var table = {
 				
 	},
 
-	toss_done: async function() {
-		
+	toss_done: async function() {		
 
 		this.state='my_attack';
 				
@@ -1943,8 +1943,6 @@ var table = {
 		this.replenish_deck(this.my_deck);	
 		
 		this.update_big_deck_info();
-		
-		//this.check_game_end();
 		
 		this.my_deck.organize();
 		this.opp_deck.organize();	
@@ -1977,31 +1975,7 @@ var table = {
 		this.opp_deck.organize();			
 		this.set_action_button('HIDE');
 	},
-	
-	check_game_end : function() {
 		
-		if (this.big_deck.size === 0) {
-			
-			
-			if (this.my_deck.size !== 0 && this.opp_deck.size === 0) {
-				this.state = 'stop';
-				opponent.stop('opp_win');				
-			}
-			
-			if (this.my_deck.size === 0 && this.opp_deck.size !== 0) {
-				this.state = 'stop';
-				opponent.stop('my_win');				
-			}
-			
-			if (this.my_deck.size === 0 && this.opp_deck.size === 0) {
-				this.state = 'stop';
-				opponent.stop('draw');				
-			}
-			
-		}		
-		
-	},
-	
 	update_big_deck_info : function() {
 		
 		//обновляем инфо о количестве кард в большой колоде
@@ -4192,7 +4166,6 @@ async function init_game_env(l) {
 		room_name= 'states2';			
 	else
 		room_name= 'states';			
-
 	
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
@@ -4315,8 +4288,8 @@ async function load_resources() {
 
 function loop_anum () {
 	
-					objects.id_loup.x=20*Math.sin(game_tick*8)+90;
-					objects.id_loup.y=20*Math.cos(game_tick*8)+150;
+	objects.id_loup.x=20*Math.sin(game_tick*8)+90;
+	objects.id_loup.y=20*Math.cos(game_tick*8)+150;
 	
 }
 
