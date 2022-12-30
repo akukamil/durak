@@ -191,6 +191,333 @@ class playing_cards_class extends PIXI.Container {
 	
 }
 
+class chat_record_class extends PIXI.Container {
+	
+	constructor() {
+		
+		super();
+		
+		this.tm=0;
+		this.msg_id=0;
+		this.msg_index=0;
+		
+		
+		this.msg_bcg = new PIXI.Sprite(gres.msg_bcg.texture);
+		this.msg_bcg.width=560;
+		this.msg_bcg.height=75;
+		this.msg_bcg.x=90;
+		//this.msg_bcg.tint=Math.random() * 0xffffff;
+		
+
+		this.name = new PIXI.BitmapText('Имя Фамил', {fontName: 'mfont',fontSize: 15});
+		this.name.anchor.set(0.5,0.5);
+		this.name.x=65;
+		this.name.y=55;
+		
+		
+		this.avatar = new PIXI.Sprite(PIXI.Texture.WHITE);
+		this.avatar.width = this.avatar.height = 40;
+		this.avatar.x=65;
+		this.avatar.y=5;
+		this.avatar.interactive=true;
+		this.avatar.pointerdown=feedback.response_message.bind(this,this);
+		this.avatar.anchor.set(0.5,0)
+				
+		
+		this.msg = new PIXI.BitmapText('Имя Фамил', {fontName: 'mfont',fontSize: 20,align: 'left'}); 
+		this.msg.x=140;
+		this.msg.y=37.5;
+		this.msg.maxWidth=400;
+		this.msg.anchor.set(0,0.5);
+		this.msg.tint = 0x333333;
+		
+		this.msg_tm = new PIXI.BitmapText('28.11.22 12:31', {fontName: 'mfont',fontSize: 14}); 
+		this.msg_tm.y=57;
+		this.msg_tm.tint=0x000000;
+		this.msg_tm.alpha=0.5;
+		this.msg_tm.anchor.set(1,0.5);
+		
+		this.visible = false;
+		this.addChild(this.msg_bcg,this.avatar, this.name, this.msg,this.msg_tm);
+		
+	}
+	
+	async update_avatar(uid, tar_sprite) {
+		
+		
+		let pic_url = '';
+		//если есть в кэше то =берем оттуда если нет то загружаем
+		if (cards_menu.uid_pic_url_cache[uid] !== undefined) {
+			
+			pic_url = cards_menu.uid_pic_url_cache[uid];
+			
+		} else {
+			
+			pic_url = await firebase.database().ref("players/" + uid + "/pic_url").once('value');		
+			pic_url = pic_url.val();			
+			cards_menu.uid_pic_url_cache[uid] = pic_url;
+		}
+		
+		
+		//сначала смотрим на загруженные аватарки в кэше
+		if (PIXI.utils.TextureCache[pic_url]===undefined || PIXI.utils.TextureCache[pic_url].width===1) {
+
+			//загружаем аватарку игрока
+			let loader=new PIXI.Loader();
+			loader.add("pic", pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 3000});
+			
+			let texture = await new Promise((resolve, reject) => {				
+				loader.load(function(l,r) {	resolve(l.resources.pic.texture)});
+			})
+			
+			if (texture === undefined || texture.width === 1) {
+				texture = PIXI.Texture.WHITE;
+				texture.tint = this.msg.tint;
+			}
+			
+			tar_sprite.texture = texture;
+			
+		}
+		else
+		{
+			//загружаем текустуру из кэша
+			//console.log(`Текстура взята из кэша ${pic_url}`)	
+			tar_sprite.texture =  PIXI.utils.TextureCache[pic_url];
+		}
+		
+	}
+	
+	async set(msg_data) {
+						
+		//получаем pic_url из фб
+		this.avatar.texture=PIXI.Texture.WHITE;
+		await this.update_avatar(msg_data.uid, this.avatar);
+
+
+
+		this.tm = msg_data.tm;
+			
+		this.msg_id = msg_data.msg_id;
+		this.msg_index=msg_data.msg_index;
+		
+		if (msg_data.name.length > 15) msg_data.name = msg_data.name.substring(0, 15);	
+		this.name.text=msg_data.name ;		
+		
+		this.msg.text=msg_data.msg;
+		
+		if (msg_data.msg.length<25) {
+			this.msg_bcg.texture = gres.msg_bcg_short.texture;			
+			this.msg_tm.x=400;
+		}
+		else {
+			
+			this.msg_bcg.texture = gres.msg_bcg.texture;	
+			this.msg_tm.x=630;
+		}
+
+		
+		this.visible = true;
+		
+		this.msg_tm.text = new Date(msg_data.tm).toLocaleString();
+		
+	}	
+	
+}
+
+var chat = {
+	
+	MESSAGE_HEIGHT : 75,
+	last_record_end : 0,
+	drag : false,
+	data:[],
+	touch_y:0,
+	
+	activate : function() {
+		
+		//firebase.database().ref('chat').remove();
+		//return;
+		
+		objects.desktop.visible=true;
+		objects.desktop.pointerdown=this.down.bind(this);
+		objects.desktop.pointerup=this.up.bind(this);
+		objects.desktop.pointermove=this.move.bind(this);
+		objects.desktop.interactive=true;
+		
+		this.last_record_end = 0;
+		objects.chat_records_cont.y = objects.chat_records_cont.sy;
+		
+		for(let rec of objects.chat_records) {
+			rec.visible = false;			
+			rec.msg_id = -1;	
+			rec.tm=0;
+		}
+
+		if (my_data.rating<-1430)
+			objects.chat_enter_button.visible=false
+		else
+			objects.chat_enter_button.visible=true
+		
+		objects.chat_cont.visible = true;
+		//подписываемся на чат
+		//подписываемся на изменения состояний пользователей
+		firebase.database().ref('chat2').orderByChild('tm').limitToLast(20).once('value', snapshot => {chat.chat_load(snapshot.val());});		
+		firebase.database().ref('chat2').on('child_changed', snapshot => {chat.chat_updated(snapshot.val());});
+	},
+	
+	down : function(e) {
+		
+		this.drag=true;
+        this.touch_y = e.data.global.y / app.stage.scale.y;
+	},
+	
+	up : function(e) {
+		
+		this.drag=false;
+		
+	},
+	
+	move : function(e) {
+		
+		if (this.drag === true) {
+			
+			let cur_y = e.data.global.y / app.stage.scale.y;
+			let dy = this.touch_y - cur_y;
+			if (dy!==0){
+				
+				objects.chat_records_cont.y-=dy;
+				this.touch_y=cur_y;
+				this.wheel_event(0);
+			}
+			
+		}
+		
+	},
+				
+	get_oldest_record : function () {
+		
+		let oldest = objects.chat_records[0];
+		
+		for(let rec of objects.chat_records)
+			if (rec.tm < oldest.tm)
+				oldest = rec;			
+		return oldest;
+
+	},
+	
+	shuffle_array : function(array) {
+		for (let i = array.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[array[i], array[j]] = [array[j], array[i]];
+		}
+	},
+	
+	get_oldest_index : function () {
+		
+		let nums=Array.from(Array(50).keys());
+		this.shuffle_array(nums);
+		loop1:for (let num of nums){
+			
+			for(let rec of objects.chat_records)
+				if (rec.visible===true && rec.msg_index===num)
+					continue loop1;
+			return num;
+		}
+		
+		let oldest = {tm:9671801786406 ,visible:true};		
+		for(let rec of objects.chat_records)
+			if (rec.visible===true && rec.tm < oldest.tm)
+				oldest = rec;	
+		return oldest.msg_index;		
+		
+	},
+		
+	chat_load : async function(data) {
+		
+		if (data === null) return;
+		
+		//превращаем в массив
+		data = Object.keys(data).map((key) => data[key]);
+		
+		//сортируем сообщения от старых к новым
+		data.sort(function(a, b) {	return a.tm - b.tm;});
+			
+		//покаываем несколько последних сообщений
+		for (let c of data)
+			await this.chat_updated(c);	
+	},	
+		
+	chat_updated : async function(data) {		
+	
+		if(data===undefined) return;
+		
+		//если это сообщение уже есть в чате
+		var result = objects.chat_records.find(obj => {
+		  return obj.msg_id === data.msg_id;
+		})
+		
+		if (result !== undefined)		
+			return;
+		
+		let rec = objects.chat_records[data.msg_index];
+		
+		//сразу заносим айди чтобы проверять
+		rec.msg_id = data.msg_id;
+		
+		rec.y = this.last_record_end;
+		
+		await rec.set(data)		
+		
+		this.last_record_end += this.MESSAGE_HEIGHT;		
+		
+		
+		await anim2.add(objects.chat_records_cont,{y:[objects.chat_records_cont.y,objects.chat_records_cont.y-this.MESSAGE_HEIGHT]}, true, 0.05,'linear');		
+		
+	},
+	
+	wheel_event : function(delta) {
+		
+		objects.chat_records_cont.y-=delta*this.MESSAGE_HEIGHT;	
+		const chat_bottom = this.last_record_end;
+		const chat_top = this.last_record_end - objects.chat_records.filter(obj => obj.visible === true).length*this.MESSAGE_HEIGHT;
+		
+		if (objects.chat_records_cont.y+chat_bottom<450)
+			objects.chat_records_cont.y = 450-chat_bottom;
+		
+		if (objects.chat_records_cont.y+chat_top>0)
+			objects.chat_records_cont.y=-chat_top;
+		
+	},
+	
+	close : function() {
+		
+		objects.desktop.interactive=false;
+		objects.desktop.visible=false;
+		objects.chat_cont.visible = false;
+		firebase.database().ref('chat').off();
+		if (objects.feedback_cont.visible === true)
+			feedback.close();
+	},
+	
+	close_down : async function() {
+		
+		this.close();
+		main_menu.activate();
+		
+	},
+	
+	open_keyboard : async function() {
+		
+		//пишем отзыв и отправляем его		
+		let fb = await feedback.show(opp_data.uid,65);		
+		if (fb[0] === 'sent') {			
+			const msg_index=this.get_oldest_index();
+			await firebase.database().ref('chat2/'+msg_index).set({uid:my_data.uid,name:my_data.name,msg:fb[1], tm:firebase.database.ServerValue.TIMESTAMP, msg_id:irnd(0,9999999),rating:my_data.rating,msg_index:msg_index});
+		}		
+	}
+
+	
+}
+
 class deck_class {
 	
 	constructor(type) {
@@ -820,6 +1147,10 @@ var mp_game = {
 		//если открыт лидерборд то закрываем его
 		if (objects.lb_1_cont.visible===true)
 			lb.close();
+		
+		//если открыт чат то закрываем его
+		if (objects.chat_cont.visible===true)
+			chat.close();
 		
 		//инициируем стол
 		table.init(role, seed);
@@ -2320,13 +2651,23 @@ var req_dialog={
 
 feedback = {
 		
-	keys_data : [[50,180,80,218.33,'1'],[90,180,120,218.33,'2'],[130,180,160,218.33,'3'],[170,180,200,218.33,'4'],[210,180,240,218.33,'5'],[250,180,280,218.33,'6'],[290,180,320,218.33,'7'],[330,180,360,218.33,'8'],[370,180,400,218.33,'9'],[410,180,440,218.33,'0'],[450,180,550,218.33,'<'],[70,227.9,100,266.23,'Й'],[110,227.9,140,266.23,'Ц'],[150,227.9,180,266.23,'У'],[190,227.9,220,266.23,'К'],[230,227.9,260,266.23,'Е'],[270,227.9,300,266.23,'Н'],[310,227.9,340,266.23,'Г'],[350,227.9,380,266.23,'Ш'],[390,227.9,420,266.23,'Щ'],[430,227.9,460,266.23,'З'],[470,227.9,500,266.23,'Х'],[510,227.9,540,266.23,'Ъ'],[90,275.8,120,314.13,'Ф'],[130,275.8,160,314.13,'Ы'],[170,275.8,200,314.13,'В'],[210,275.8,240,314.13,'А'],[250,275.8,280,314.13,'П'],[290,275.8,320,314.13,'Р'],[330,275.8,360,314.13,'О'],[370,275.8,400,314.13,'Л'],[410,275.8,440,314.13,'Д'],[450,275.8,480,314.13,'Ж'],[490,275.8,520,314.13,'Э'],[70,323.8,100,362.13,'!'],[110,323.8,140,362.13,'Я'],[150,323.8,180,362.13,'Ч'],[190,323.8,220,362.13,'С'],[230,323.8,260,362.13,'М'],[270,323.8,300,362.13,'И'],[310,323.8,340,362.13,'Т'],[350,323.8,380,362.13,'Ь'],[390,323.8,420,362.13,'Б'],[430,323.8,460,362.13,'Ю'],[470,323.8,500,362.13,')'],[510,323.8,540,362.13,'?'],[30,371.7,180,410.03,'ЗАКРЫТЬ'],[190,371.7,420,410.03,'_'],[430,371.7,570,410.03,'ОТПРАВИТЬ']],
+	rus_keys : [[50,176,80,215.07,'1'],[90,176,120,215.07,'2'],[130,176,160,215.07,'3'],[170,176,200,215.07,'4'],[210,176,240,215.07,'5'],[250,176,280,215.07,'6'],[290,176,320,215.07,'7'],[330,176,360,215.07,'8'],[370,176,400,215.07,'9'],[410,176,440,215.07,'0'],[491,176,541,215.07,'<'],[70,224.9,100,263.97,'Й'],[110,224.9,140,263.97,'Ц'],[150,224.9,180,263.97,'У'],[190,224.9,220,263.97,'К'],[230,224.9,260,263.97,'Е'],[270,224.9,300,263.97,'Н'],[310,224.9,340,263.97,'Г'],[350,224.9,380,263.97,'Ш'],[390,224.9,420,263.97,'Щ'],[430,224.9,460,263.97,'З'],[470,224.9,500,263.97,'Х'],[510,224.9,540,263.97,'Ъ'],[90,273.7,120,312.77,'Ф'],[130,273.7,160,312.77,'Ы'],[170,273.7,200,312.77,'В'],[210,273.7,240,312.77,'А'],[250,273.7,280,312.77,'П'],[290,273.7,320,312.77,'Р'],[330,273.7,360,312.77,'О'],[370,273.7,400,312.77,'Л'],[410,273.7,440,312.77,'Д'],[450,273.7,480,312.77,'Ж'],[490,273.7,520,312.77,'Э'],[70,322.6,100,361.67,'!'],[110,322.6,140,361.67,'Я'],[150,322.6,180,361.67,'Ч'],[190,322.6,220,361.67,'С'],[230,322.6,260,361.67,'М'],[270,322.6,300,361.67,'И'],[310,322.6,340,361.67,'Т'],[350,322.6,380,361.67,'Ь'],[390,322.6,420,361.67,'Б'],[430,322.6,460,361.67,'Ю'],[511,322.6,541,361.67,')'],[451,176,481,215.07,'?'],[30,371.4,180,410.47,'ЗАКРЫТЬ'],[190,371.4,420,410.47,'_'],[430,371.4,570,410.47,'ОТПРАВИТЬ'],[531,273.7,561,312.77,','],[471,322.6,501,361.67,'('],[30,273.7,80,312.77,'EN']],	
+	eng_keys : [[50,176,80,215.07,'1'],[90,176,120,215.07,'2'],[130,176,160,215.07,'3'],[170,176,200,215.07,'4'],[210,176,240,215.07,'5'],[250,176,280,215.07,'6'],[290,176,320,215.07,'7'],[330,176,360,215.07,'8'],[370,176,400,215.07,'9'],[410,176,440,215.07,'0'],[491,176,541,215.07,'<'],[110,224.9,140,263.97,'Q'],[150,224.9,180,263.97,'W'],[190,224.9,220,263.97,'E'],[230,224.9,260,263.97,'R'],[270,224.9,300,263.97,'T'],[310,224.9,340,263.97,'Y'],[350,224.9,380,263.97,'U'],[390,224.9,420,263.97,'I'],[430,224.9,460,263.97,'O'],[470,224.9,500,263.97,'P'],[130,273.7,160,312.77,'A'],[170,273.7,200,312.77,'S'],[210,273.7,240,312.77,'D'],[250,273.7,280,312.77,'F'],[290,273.7,320,312.77,'G'],[330,273.7,360,312.77,'H'],[370,273.7,400,312.77,'J'],[410,273.7,440,312.77,'K'],[450,273.7,480,312.77,'L'],[471,322.6,501,361.67,'('],[70,322.6,100,361.67,'!'],[150,322.6,180,361.67,'Z'],[190,322.6,220,361.67,'X'],[230,322.6,260,361.67,'C'],[270,322.6,300,361.67,'V'],[310,322.6,340,361.67,'B'],[350,322.6,380,361.67,'N'],[390,322.6,420,361.67,'M'],[511,322.6,541,361.67,')'],[451,176,481,215.07,'?'],[30,371.4,180,410.47,'CLOSE'],[190,371.4,420,410.47,'_'],[430,371.4,570,410.47,'SEND'],[531,273.7,561,312.77,','],[30,273.7,80,312.77,'RU']],
+	keyboard_layout : [],
+	lang : '',
 	p_resolve : 0,
 	MAX_SYMBOLS : 50,
 	uid:0,
 	
-	show : function(uid) {
+	show : function(uid,max_symbols) {
 		
+		if (max_symbols)
+			this.MAX_SYMBOLS=max_symbols
+		else
+			this.MAX_SYMBOLS=50
+		
+		this.set_keyboard_layout(['RU','EN'][LANG]);
+				
 		this.uid = uid;
 		objects.feedback_msg.text ='';
 		objects.feedback_control.text = `0/${this.MAX_SYMBOLS}`
@@ -2338,16 +2679,40 @@ feedback = {
 		
 	},
 	
+	set_keyboard_layout(lang) {
+		
+		this.lang = lang;
+		
+		if (lang === 'RU') {
+			this.keyboard_layout = this.rus_keys;
+			objects.feedback_bcg.texture = gres.feedback_bcg_rus.texture;
+		} 
+		
+		if (lang === 'EN') {
+			this.keyboard_layout = this.eng_keys;
+			objects.feedback_bcg.texture = gres.feedback_bcg_eng.texture;
+		}
+		
+	},
+	
 	close : function() {
 			
 		anim2.add(objects.feedback_cont,{y:[objects.feedback_cont.y,450]}, false, 0.4,'easeInBack');		
 		
 	},
 	
+	response_message:function(s) {
+
+		
+		objects.feedback_msg.text = s.name.text.split(' ')[0]+', ';	
+		objects.feedback_control.text = `${objects.feedback_msg.text.length}/${feedback.MAX_SYMBOLS}`		
+		
+	},
+	
 	get_texture_for_key (key) {
 		
-		if (key === '<') return gres.hl_key1.texture;
-		if (key === 'ЗАКРЫТЬ' || key === 'ОТПРАВИТЬ') return gres.hl_key2.texture;
+		if (key === '<' || key === 'EN' || key === 'RU') return gres.hl_key1.texture;
+		if (key === 'ЗАКРЫТЬ' || key === 'ОТПРАВИТЬ' || key === 'SEND' || key === 'CLOSE') return gres.hl_key2.texture;
 		if (key === '_') return gres.hl_key3.texture;
 		return gres.hl_key0.texture;
 	},
@@ -2359,19 +2724,17 @@ feedback = {
 		
 		key = key.toUpperCase();
 		
-		if (key === 'ESCAPE') key = 'ЗАКРЫТЬ';			
-		if (key === 'ENTER') key = 'ОТПРАВИТЬ';
+		if (key === 'ESCAPE') key = {'RU':'ЗАКРЫТЬ','EN':'CLOSE'}[this.lang];			
+		if (key === 'ENTER') key = {'RU':'ОТПРАВИТЬ','EN':'SEND'}[this.lang];	
 		if (key === 'BACKSPACE') key = '<';
 		if (key === ' ') key = '_';
 			
-		var result = this.keys_data.find(k => {
+		var result = this.keyboard_layout.find(k => {
 			return k[4] === key
 		})
 		
 		if (result === undefined) return;
 		this.pointerdown(null,result)
-		
-
 		
 	},
 	
@@ -2384,10 +2747,10 @@ feedback = {
 		if (e !== null) {
 			
 			let mx = e.data.global.x/app.stage.scale.x - objects.feedback_cont.x;
-			let my = e.data.global.y/app.stage.scale.y- objects.feedback_cont.y;;
+			let my = e.data.global.y/app.stage.scale.y - objects.feedback_cont.y;;
 
 			let margin = 5;
-			for (let k of this.keys_data) {			
+			for (let k of this.keyboard_layout) {			
 				if (mx > k[0] - margin && mx <k[2] + margin  && my > k[1] - margin && my < k[3] + margin) {
 					key = k[4];
 					key_x = k[0];
@@ -2400,8 +2763,7 @@ feedback = {
 			
 			key = inp_key[4];
 			key_x = inp_key[0];
-			key_y = inp_key[1];
-			
+			key_y = inp_key[1];			
 		}
 		
 		
@@ -2420,7 +2782,13 @@ feedback = {
 			key ='';
 		}			
 		
-		if (key === 'ЗАКРЫТЬ') {
+		
+		if (key === 'EN' || key === 'RU') {
+			this.set_keyboard_layout(key)
+			return;	
+		}	
+		
+		if (key === 'ЗАКРЫТЬ' || key === 'CLOSE') {
 			this.close();
 			this.p_resolve(['close','']);	
 			key ='';
@@ -2428,13 +2796,16 @@ feedback = {
 			return;	
 		}	
 		
-		if (key === 'ОТПРАВИТЬ') {
+		if (key === 'ОТПРАВИТЬ' || key === 'SEND') {
 			
 			if (objects.feedback_msg.text === '') return;
 			
 			//если нашли ненормативную лексику то закрываем
-			let mats =/шлю[хш]|п[еи]д[аеор]|суч?ка|г[ао]ндо|х[ую][ейяе]л?|жоп|соси|дроч|чмо|говн|дерьм|трах|секс|сосат|выеб|пизд|срал|уеб[аико]щ?|ебень?|ебу[ч]|ху[йия]|еба[нл]|дроч|еба[тш]|педик|[ъы]еба|ебну|ебл[аои]|ебись|сра[кч]|манда|еб[лн]я|ублюд|пис[юя]/i;
-			if (objects.feedback_msg.text.match(mats)) {
+			let mats =/шлю[хш]|п[еи]д[аеор]|суч?ка|г[ао]ндо|х[ую][ейяе]л?|жоп|соси|дроч|чмо|говн|дерьм|трах|секс|сосат|выеб|пизд|срал|уеб[аико]щ?|ебень?|ебу[ч]|ху[йия]|еба[нл]|дроч|еба[тш]|педик|[ъы]еба|ебну|ебл[аои]|ебись|сра[кч]|манда|еб[лн]я|ублюд|пис[юя]/i;		
+			
+			let text_no_spaces = objects.feedback_msg.text.replace(/ /g,'');
+			if (text_no_spaces.match(mats)) {
+				sound.play('locked');
 				this.close();
 				this.p_resolve(['close','']);	
 				key ='';
@@ -2545,6 +2916,81 @@ var main_menu= {
 		anim2.add(objects.rules_cont,{y:[objects.rules_cont.sy, -450]}, false, 0.5,'easeInBack');
 
 	},
+
+	chat_button_down : async function() {
+		
+		if (anim2.any_on()===true) {
+			sound.play('locked');
+			return
+		};
+
+		sound.play('click');
+
+		await this.close();
+		
+		chat.activate();
+		
+		
+	},
+
+	pref_button_down: function () {
+
+		if (anim2.any_on()===true) {
+			sound.play('locked');
+			return
+		};
+
+		sound.play('click');
+	
+		anim2.add(objects.pref_cont,{y:[-200, objects.pref_cont.sy]}, true, 0.5,'easeOutBack');
+
+
+	},
+
+	pref_ok_down: function() {
+
+		sound.play('close');
+		anim2.add(objects.pref_cont,{y:[objects.pref_cont.sy, -200]}, false, 0.5,'easeInBack');
+
+	},
+	
+	pref_change_nick_down: async function() {
+
+		sound.play('click');
+		const nick=await feedback.show('',15);
+		if (nick[0]==='sent'){
+			my_data.name=nick[1];
+			firebase.database().ref("players/"+my_data.uid+"/name").set(my_data.name);
+			make_text(objects.my_card_name,my_data.name,150);
+			set_state({});
+			message.add(['Ник изменен','nick has been changed'][LANG])
+		}
+
+	},
+
+	pref_sound_switched : function() {
+		
+		if (objects.pref_sound_switch.ready === false) {
+			sound.play('locked');
+			return;
+		}
+		
+		if (sound.on === 1) {
+			anim2.add(objects.pref_sound_switch,{x:[230, 198]}, true, 0.25,'linear');		
+			sound.on = 0;
+			return;
+		}
+
+		if (sound.on === 0){
+			
+			anim2.add(objects.pref_sound_switch,{x:[198, 230]}, true, 0.25,'linear');		
+			sound.on = 1;	
+			sound.play('close');			
+			return;			
+		}
+		
+	}
+	
 
 }
 
@@ -4190,11 +4636,12 @@ async function init_game_env(l) {
 	document.addEventListener("visibilitychange", vis_change);
 
 	//событие ролика мыши в карточном меню
-	window.addEventListener("wheel", event => cards_menu.wheel_event(Math.sign(event.deltaY)));
-	
-	window.addEventListener('keydown', function(event) {
-	  feedback.key_down(event.key)
-	});
+	window.addEventListener("wheel", (event) => {	
+		cards_menu.wheel_event(Math.sign(event.deltaY));
+		chat.wheel_event(Math.sign(event.deltaY));
+	});	
+	window.addEventListener('keydown', function(event) { feedback.key_down(event.key)});
+
 
 	
 	//keep-alive сервис
