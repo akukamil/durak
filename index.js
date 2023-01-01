@@ -4588,24 +4588,20 @@ async function init_game_env(l) {
 	//устанавливаем фотки в попап и другие карточки
 	objects.id_avatar.texture = objects.my_avatar.texture = loader.resources.my_avatar.texture;
 
-	//устанавлием мое имя в карточки
-	make_text(objects.id_name,my_data.name,150);
-	make_text(objects.my_card_name,my_data.name,150);
+
 	
 	//загружаем остальные данные
 	let _other_data = await firebase.database().ref("players/"+my_data.uid).once('value');
 	let other_data = _other_data.val();
 	
 	//это защита от неправильных данных
-	other_data===null ?
-		my_data.rating=1400 :
-		my_data.rating = other_data.rating || 1400;
-
-	other_data===null ?
-		my_data.games = 0 :
-		my_data.games = other_data.games || 0;
+	my_data.rating = (other_data && other_data.rating) || 1400;
+	my_data.games = (other_data && other_data.games) || 0;		
+	my_data.name = (other_data && other_data.name) || my_data.name;
 		
-	
+	//устанавлием мое имя в карточки
+	make_text(objects.id_name,my_data.name,150);
+	make_text(objects.my_card_name,my_data.name,150);	
 			
 	//номер комнаты
 	room_name= 'states2';			
