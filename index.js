@@ -352,7 +352,7 @@ var chat = {
 			rec.tm=0;
 		}
 
-		if (my_data.rating<-1430)
+		if (my_data.rating<1430)
 			objects.chat_enter_button.visible=false
 		else
 			objects.chat_enter_button.visible=true
@@ -4607,7 +4607,7 @@ async function init_game_env(l) {
 	if(my_data.rating>1460)
 		room_name='states2';			
 	else
-		room_name='states';
+		room_name='states';		
 	
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
@@ -4750,4 +4750,3 @@ function main_loop() {
 	
 	
 }
-
