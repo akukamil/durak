@@ -4162,7 +4162,10 @@ async function init_game_env(l) {
 	
 			
 	//номер комнаты
-	room_name= 'states2';			
+	if(my_data.rating>1460)
+		room_name='states2';			
+	else
+		room_name='states';
 	
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
