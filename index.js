@@ -318,13 +318,13 @@ class chat_record_class extends PIXI.Container {
 		if (msg_data.msg.length<25) {
 			this.msg_bcg.texture = gres.msg_bcg_short.texture;			
 			this.msg_tm.x=400;
-			this.invite_button.x=420;
+			this.invite_button.x=410;
 		}
 		else {
 			
 			this.msg_bcg.texture = gres.msg_bcg.texture;	
 			this.msg_tm.x=630;
-			this.invite_button.x=650;
+			this.invite_button.x=640;
 		}
 
 		
