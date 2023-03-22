@@ -464,6 +464,8 @@ var chat = {
 		if (this.name.text===my_data.name)
 			return;
 				
+		objects.chat_records.forEach(c=>c.invite_button.visible=false)
+				
 		if(objects.feedback_cont.visible){			
 			feedback.response_message.bind(this)();			
 		} else {			
@@ -474,7 +476,8 @@ var chat = {
 	
 	send_invite_from_chat(){				
 		
-		if (this.msg_uid){			
+		if (this.msg_uid){		
+			sound.play('click')
 			firebase.database().ref("inbox/"+this.msg_uid).set({sender:my_data.uid,message:"INV",tm:Date.now()});	
 			cards_menu._opp_data.name=this.name.text;
 			cards_menu._opp_data.uid=this.msg_uid;
