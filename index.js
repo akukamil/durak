@@ -9,6 +9,7 @@ irnd = function(min,max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+
 class player_mini_card_class extends PIXI.Container {
 
 	constructor(x,y,id) {
@@ -201,6 +202,9 @@ class chat_record_class extends PIXI.Container {
 		this.msg_id=0;
 		this.msg_index=0;
 		
+		this.msg_uid=0;
+		this.rating=1400;
+		
 		
 		this.msg_bcg = new PIXI.Sprite(gres.msg_bcg.texture);
 		this.msg_bcg.width=560;
@@ -220,9 +224,16 @@ class chat_record_class extends PIXI.Container {
 		this.avatar.x=65;
 		this.avatar.y=5;
 		this.avatar.interactive=true;
-		this.avatar.pointerdown=feedback.response_message.bind(this,this);
+		this.avatar.pointerdown=chat.avatar_clicked.bind(this);
 		this.avatar.anchor.set(0.5,0)
 				
+				
+		this.invite_button=new PIXI.Sprite(gres.chat_invite.texture);
+		this.invite_button.width=this.invite_button.height=70;
+		this.invite_button.interactive=true;
+		this.invite_button.buttonMode=true;
+		this.invite_button.pointerdown=chat.send_invite_from_chat.bind(this);
+		this.invite_button.height=this.invite_button.width=75;
 		
 		this.msg = new PIXI.BitmapText('Имя Фамил', {fontName: 'mfont',fontSize: 20,align: 'left'}); 
 		this.msg.x=140;
@@ -238,7 +249,7 @@ class chat_record_class extends PIXI.Container {
 		this.msg_tm.anchor.set(1,0.5);
 		
 		this.visible = false;
-		this.addChild(this.msg_bcg,this.avatar, this.name, this.msg,this.msg_tm);
+		this.addChild(this.msg_bcg,this.avatar,this.invite_button, this.name, this.msg,this.msg_tm);
 		
 	}
 	
@@ -293,11 +304,10 @@ class chat_record_class extends PIXI.Container {
 		this.avatar.texture=PIXI.Texture.WHITE;
 		await this.update_avatar(msg_data.uid, this.avatar);
 
-
-
 		this.tm = msg_data.tm;
-			
+		this.msg_uid= msg_data.uid;
 		this.msg_id = msg_data.msg_id;
+		this.rating = msg_data.rating;
 		this.msg_index=msg_data.msg_index;
 		
 		if (msg_data.name.length > 15) msg_data.name = msg_data.name.substring(0, 15);	
@@ -308,11 +318,13 @@ class chat_record_class extends PIXI.Container {
 		if (msg_data.msg.length<25) {
 			this.msg_bcg.texture = gres.msg_bcg_short.texture;			
 			this.msg_tm.x=400;
+			this.invite_button.x=420;
 		}
 		else {
 			
 			this.msg_bcg.texture = gres.msg_bcg.texture;	
 			this.msg_tm.x=630;
+			this.invite_button.x=650;
 		}
 
 		
@@ -332,7 +344,7 @@ var chat = {
 	data:[],
 	touch_y:0,
 	
-	activate : function() {
+	activate() {
 		
 		//firebase.database().ref('chat').remove();
 		//return;
@@ -350,6 +362,7 @@ var chat = {
 			rec.visible = false;			
 			rec.msg_id = -1;	
 			rec.tm=0;
+			rec.invite_button.visible=false;
 		}
 
 		if (my_data.rating<1430)
@@ -364,19 +377,19 @@ var chat = {
 		firebase.database().ref('chat2').on('child_changed', snapshot => {chat.chat_updated(snapshot.val());});
 	},
 	
-	down : function(e) {
+	down(e) {
 		
 		this.drag=true;
         this.touch_y = e.data.global.y / app.stage.scale.y;
 	},
 	
-	up : function(e) {
+	up(e) {
 		
 		this.drag=false;
 		
 	},
 	
-	move : function(e) {
+	move(e) {
 		
 		if (this.drag === true) {
 			
@@ -393,7 +406,7 @@ var chat = {
 		
 	},
 				
-	get_oldest_record : function () {
+	get_oldest_record () {
 		
 		let oldest = objects.chat_records[0];
 		
@@ -404,14 +417,14 @@ var chat = {
 
 	},
 	
-	shuffle_array : function(array) {
+	shuffle_array(array) {
 		for (let i = array.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[array[i], array[j]] = [array[j], array[i]];
 		}
 	},
 	
-	get_oldest_index : function () {
+	get_oldest_index () {
 		
 		let nums=Array.from(Array(50).keys());
 		this.shuffle_array(nums);
@@ -431,7 +444,7 @@ var chat = {
 		
 	},
 		
-	chat_load : async function(data) {
+	async chat_load(data) {
 		
 		if (data === null) return;
 		
@@ -445,6 +458,33 @@ var chat = {
 		for (let c of data)
 			await this.chat_updated(c);	
 	},	
+		
+	avatar_clicked(){
+								
+		if (this.name.text===my_data.name)
+			return;
+				
+		if(objects.feedback_cont.visible){			
+			feedback.response_message.bind(this)();			
+		} else {			
+			anim2.add(this.invite_button,{alpha:[0,1]}, true, 0.4,'linear');		
+		}
+		
+	},
+	
+	send_invite_from_chat(){				
+		
+		if (this.msg_uid){			
+			firebase.database().ref("inbox/"+this.msg_uid).set({sender:my_data.uid,message:"INV",tm:Date.now()});	
+			cards_menu._opp_data.name=this.name.text;
+			cards_menu._opp_data.uid=this.msg_uid;
+			cards_menu._opp_data.rating=this.rating;
+			objects.invite_avatar.texture=this.avatar.texture;		
+			pending_player=this.msg_uid;
+			anim2.add(this.invite_button,{alpha:[1,0]}, false, 0.4,'linear');	
+		}
+		
+	},
 		
 	chat_updated : async function(data) {		
 	
@@ -474,7 +514,7 @@ var chat = {
 		
 	},
 	
-	wheel_event : function(delta) {
+	wheel_event (delta) {
 		
 		objects.chat_records_cont.y-=delta*this.MESSAGE_HEIGHT;	
 		const chat_bottom = this.last_record_end;
@@ -488,8 +528,9 @@ var chat = {
 		
 	},
 	
-	close : function() {
+	close () {
 		
+		pending_player='';
 		objects.desktop.interactive=false;
 		objects.desktop.visible=false;
 		objects.chat_cont.visible = false;
@@ -1173,7 +1214,7 @@ var mp_game = {
 		this.timer_id = setTimeout(function(){mp_game.timer_tick()}, 1000);
 		objects.timer_text.tint=0xffffff;
 		objects.timer_cont.visible = true;
-		this.reset_timer(role === 'master' ? MY_TURN : OPP_TURN);			
+		this.reset_timer(role === 'master' ? MY_TURN : OPP_TURN, 12);			
 
 		
 		//фиксируем врему начала игры для статистики
@@ -1314,13 +1355,13 @@ var mp_game = {
 		
 	},
 	
-	reset_timer : function(t) {
+	reset_timer : function(t,time) {
 		
 		//обовляем время разъединения
 		this.disconnect_time = 0;
 		turn = t;
 		//перезапускаем таймер хода		
-		this.move_time_left = 35;
+		this.move_time_left = time||35;
 		objects.timer_text.text="0:"+this.move_time_left;
 		objects.timer_text.tint=0xffffff;
 		
@@ -2701,10 +2742,10 @@ feedback = {
 		
 	},
 	
-	response_message:function(s) {
+	response_message:function() {
 
 		
-		objects.feedback_msg.text = s.name.text.split(' ')[0]+', ';	
+		objects.feedback_msg.text = this.name.text.split(' ')[0]+', ';	
 		objects.feedback_control.text = `${objects.feedback_msg.text.length}/${feedback.MAX_SYMBOLS}`		
 		
 	},
@@ -4598,6 +4639,7 @@ async function init_game_env(l) {
 	my_data.rating = (other_data && other_data.rating) || 1400;
 	my_data.games = (other_data && other_data.games) || 0;		
 	my_data.name = (other_data && other_data.name) || my_data.name;
+	my_data.rating=1500;
 		
 	//устанавлием мое имя в карточки
 	make_text(objects.id_name,my_data.name,150);
