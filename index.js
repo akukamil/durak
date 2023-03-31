@@ -2889,7 +2889,7 @@ var main_menu= {
 
 	activate: async function() {
 
-		message.add('Произошел сбой в базе данных. Рейтинги временно отключены',5);
+		message.add('Произошел сбой в базе данных. Рейтинги временно отключены',5000);
 
 		some_process.main_menu = this.process;
 		anim2.add(objects.mb_cont,{x:[800,objects.mb_cont.sx]}, true, 1,'easeInOutCubic');
