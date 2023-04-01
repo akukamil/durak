@@ -4519,13 +4519,13 @@ async function init_game_env(l) {
 	//инициируем файербейс
 	if (firebase.apps.length===0) {
 		firebase.initializeApp({			
-			apiKey: "AIzaSyAU7ifYZkilv4kJJqyJ2BzV8n65gg3S4Rc",
-			authDomain: "durak2-7bda9.firebaseapp.com",
-			databaseURL: "https://durak2-7bda9-default-rtdb.europe-west1.firebasedatabase.app",
-			projectId: "durak2-7bda9",
-			storageBucket: "durak2-7bda9.appspot.com",
-			messagingSenderId: "318453016845",
-			appId: "1:318453016845:web:04ce63afd45cce615ee844"
+			apiKey: "AIzaSyBQUa5_8Y199x5xT91sZMsPoD59fOmKckU",
+			authDomain: "durak-ca1cd.firebaseapp.com",
+			databaseURL: "https://durak-ca1cd-default-rtdb.europe-west1.firebasedatabase.app",
+			projectId: "durak-ca1cd",
+			storageBucket: "durak-ca1cd.appspot.com",
+			messagingSenderId: "985954923087",
+			appId: "1:985954923087:web:ac332499e962122d28303a"
 		});
 	}
 
@@ -4709,7 +4709,6 @@ async function init_game_env(l) {
 	});
 
 	//показыаем основное меню
-	message.add('Произошел сбой в базе данных. Рейтинги временно отключены',5000);
 	main_menu.activate();
 
 
