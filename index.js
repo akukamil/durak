@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app, game_res, game, objects={}, LANG = 0, state="", game_tick=0, game_id=0, connected = 1, h_state=0, game_platform="",
+var app ={stage:{},renderer:{}}, game_res, game, objects={}, LANG = 0, state="", game_tick=0, game_id=0, connected = 1, h_state=0, game_platform="",
 hidden_state_start = 0,room_name = 'states2', pending_player='', opponent = {}, my_data={opp_id : ''},
 opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0;
 
@@ -8,7 +8,6 @@ irnd = function(min,max) {
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
 
 class player_mini_card_class extends PIXI.Container {
 
@@ -560,6 +559,114 @@ var chat = {
 	}
 
 	
+}
+
+dialog={
+	
+	vk_invite:0,
+	vk_share:0,
+	
+	show(type){		
+
+		
+		objects.dialog_no.pointerdown=function(){};
+		objects.dialog_ok.pointerdown=function(){};
+		
+		if(type==='ad_break'){
+			anim2.add(objects.dialog_cont,{alpha:[0, 1]},true,0.4,'linear');	
+			objects.dialog_card.texture=gres.ad_break_img.texture;	
+			objects.dialog_no.visible=false;
+			objects.dialog_ok.visible=false;
+			setTimeout(function(){dialog.close()},3000);
+			return new Promise(resolver=>{				
+				objects.dialog_card.resolver=resolver;			
+			})
+			
+		}
+		
+		if(type==='share'){
+			this.vk_share=1;
+			anim2.add(objects.dialog_cont,{alpha:[0, 1]},true,0.4,'linear');	
+			objects.dialog_card.texture=gres.share_img.texture;	
+			objects.dialog_card.resolver=function(){};
+			objects.dialog_no.visible=true;
+			objects.dialog_ok.visible=true;
+			
+			objects.dialog_ok.pointerdown=function(){
+				if(anim2.any_on())return;
+				
+				my_data.vk_share=Date.now();
+				firebase.database().ref("players/"+my_data.uid+"/vk_share").set(my_data.vk_share);
+				dialog.close();						
+				sound.play('click');
+				vkBridge.send('VKWebAppShowWallPostBox', { message: 'Я играю в Дурака и мне нравится!',attachments: 'https://vk.com/app51395017_39099558'})
+				objects.dialog_card.resolver();
+
+			};
+			objects.dialog_no.pointerdown=function(){
+				if(anim2.any_on())return;
+				objects.dialog_no.visible=false;
+				objects.dialog_ok.visible=false;
+				objects.dialog_card.texture=gres.thanks_img.texture;	
+				dialog.close_delayed();	
+				sound.play('click');				
+				
+
+			};
+			return new Promise(resolver=>{				
+				objects.dialog_card.resolver=resolver;			
+			})
+		}
+			
+		if(type==='invite_friends'){
+			this.vk_invite=1;
+			anim2.add(objects.dialog_cont,{alpha:[0, 1]},true,0.4,'linear');	
+			objects.dialog_card.texture=gres.invite_friends_img.texture;	
+			objects.dialog_card.resolver=function(){};
+			objects.dialog_no.visible=true;
+			objects.dialog_ok.visible=true;
+			
+			objects.dialog_ok.pointerdown=function(){
+				if(anim2.any_on())return;
+				
+				my_data.vk_invite=Date.now();
+				firebase.database().ref("players/"+my_data.uid+"/vk_invite").set(my_data.vk_invite);
+				dialog.close();	
+				sound.play('click');
+				vkBridge.send('VKWebAppShowInviteBox');
+				objects.dialog_card.resolver();
+
+			};
+			objects.dialog_no.pointerdown=function(){
+				if(anim2.any_on())return;
+				objects.dialog_no.visible=false;
+				objects.dialog_ok.visible=false;
+				objects.dialog_card.texture=gres.thanks_img.texture;	
+				dialog.close_delayed();	
+				sound.play('click');
+
+			};
+			return new Promise(resolver=>{				
+				objects.dialog_card.resolver=resolver;			
+			})
+		}
+		
+		
+	},
+	
+	close(){
+		if(objects.dialog_card.resolver && typeof objects.dialog_card.resolver === 'function')
+			objects.dialog_card.resolver();
+		anim2.add(objects.dialog_cont,{alpha:[1, 0]},false,0.3,'linear');	
+		
+	},
+	
+	close_delayed(){
+		
+		setTimeout(function(){objects.dialog_card.resolver();dialog.close()},2000);
+		
+	}
+
 }
 
 class deck_class {
@@ -1155,6 +1262,7 @@ var mp_game = {
 	me_conf_play : 0,
 	opp_conf_play : 0,
 	timer_id : 0,
+	timer_prv_time:0,
 	made_moves: 0,
 	my_role : "",
 	stickers_button_pos:[0,0,0],
@@ -1214,6 +1322,7 @@ var mp_game = {
 		
 		
 		//счетчик времени таймер		
+		this.timer_prv_time=Date.now();
 		this.timer_id = setTimeout(function(){mp_game.timer_tick()}, 1000);
 		objects.timer_text.tint=0xffffff;
 		objects.timer_cont.visible = true;
@@ -1250,6 +1359,16 @@ var mp_game = {
 	},
 		
 	timer_tick : function () {
+		
+		//проверка таймера
+		const cur_time=Date.now();
+		if (cur_time-this.timer_prv_time>5000){
+			this.stop('timer_error');
+			return;
+		}
+		this.timer_prv_time=cur_time;
+		
+		
 
 		this.move_time_left--;
 		
@@ -1383,6 +1502,7 @@ var mp_game = {
 			['my_win',WIN , ['Вы выиграли!\n','You win!\nOpponent out of time']],		
 			['opp_win',LOSE, ['Вы проиграли!\n','You lose!\nYou out of time']],
 			['draw' ,DRAW, ['Ничья','Draw!']],
+			['timer_error' ,NOSYNC, ['Ошибка таймера!','Timer error!']],
 			['my_timeout',LOSE, ['Вы проиграли!\nУ вас закончилось время','You lose!\nYou out of time']],
 			['opp_timeout',WIN , ['Вы выиграли!\nУ соперника закончилось время','You win!\nOpponent out of time']],
 			['my_giveup' ,LOSE, ['Вы сдались!','You gave up!']],
@@ -1439,11 +1559,10 @@ var mp_game = {
 		}
 			
 		await big_message.show(result_info, ['Рейтинг','Rating'][LANG]+`: ${old_rating} > ${my_data.rating}`, 3)
-		show_ad();
 		set_state({state : 'o'});	
 		this.close();
 		main_menu.activate();
-		
+	
 	},
 		
 	giveup : async function() {
@@ -1656,10 +1775,11 @@ var sp_game = {
 		
 
 		await big_message.show (result_info, ["Сыграйте с реальным соперником для получения рейтинга","Play online and become a leader"][LANG], true);
-		show_ad();
 		set_state({state : 'o'});	
 		this.close();
 		main_menu.activate();
+		
+		ad.check_and_show();
 
 	},
 	
@@ -1673,11 +1793,8 @@ var sp_game = {
 		
 		let res = await confirm_dialog.show(['Закончить игру?','Stop game?'][LANG])
 		if (res !== 'ok') return;
-		//show_ad();
 		set_state({state : 'o'});
 		await this.stop('my_stop');
-		this.close();
-		main_menu.activate();
 
 	},
 		
@@ -2379,6 +2496,29 @@ var table = {
 		this.set_action_button('HIDE');
 		
 		objects.pcards.forEach(card => card.visible = false)
+			
+
+		//здесь показываем рекламу
+		if (game_platform==='VK'){
+			
+			const cur_time=Date.now();
+			
+			if (cur_time-my_data.vk_share>432000000&&dialog.vk_share===0&&game_tick>10){
+				dialog.show('share');				
+				return;
+			}
+
+			if (cur_time-my_data.vk_invite>432000000&&dialog.vk_invite===0&&game_tick>10){
+				dialog.show('invite_friends');				
+				return;
+			}			
+
+			ad.check_and_show();	
+			return;
+		}
+		
+		ad.check_and_show();		
+		
 		
 	}
 
@@ -2409,39 +2549,96 @@ var make_text = function (obj, text, max_width) {
 	obj.text =  text;
 }
 
-var	show_ad = async function(){
-		
-	if (game_platform==="YANDEX") {			
-		try {
-			await new Promise((resolve, reject) => {			
-				window.ysdk.adv.showFullscreenAdv({  callbacks: {onClose: function() {resolve()}, onError: function() {resolve()}}});			
-			});				
-			
-		} catch (e) {
-			
-			console.error(e);
-		}
-	}
+ad={
 	
-	if (game_platform==="VK") {
-				 
-		try {
-			await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"});			
-		} catch (e) {			
-			console.error(e);
-		}		
-	}		
+	prv_show : Date.now(),
+		
+	async check_and_show(){
+		
+		if ((Date.now() - this.prv_show) < 90000 )
+			return false;
+		this.prv_show = Date.now();
+		
+		if (game_platform==='YANDEX')
+			await this.show();
+		else
+			await Promise.all([dialog.show('ad_break'), this.show()])
 
-	if (game_platform==="CRAZYGAMES") {
-				 
-		try {
-			const crazysdk = window.CrazyGames.CrazySDK.getInstance();
-			crazysdk.init();
-			crazysdk.requestAd('midgame');		
-		} catch (e) {			
-			console.error(e);
+	},
+	
+	async show() {
+				
+		if (game_platform==="YANDEX") {			
+			//показываем рекламу
+			await new Promise(resolver=>{
+				
+				window.ysdk.adv.showFullscreenAdv({
+					callbacks: {
+						onClose: function() {resolver()}, 
+						onError: function() {resolver()},
+					}
+				})				
+				
+			})
+
 		}
-	}		
+		
+		if (game_platform==="VK") {
+					 
+			await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
+
+		}		
+
+		if (game_platform==="MY_GAMES") {
+					 
+			my_games_api.showAds({interstitial:true});
+		}			
+		
+		if (game_platform==='GOOGLE_PLAY') {
+			if (typeof Android !== 'undefined') {
+				Android.showAdFromJs();
+			}			
+		}
+		
+		
+	},
+	
+	show2 : async function() {
+		
+		
+		if (game_platform ==="YANDEX") {
+			
+			let res = await new Promise(function(resolve, reject){				
+				window.ysdk.adv.showRewardedVideo({
+						callbacks: {
+						  onOpen: () => {},
+						  onRewarded: () => {resolve('ok')},
+						  onClose: () => {resolve('err')}, 
+						  onError: (e) => {resolve('err')}
+					}
+				})
+			
+			})
+			return res;
+		}
+		
+		if (game_platform === "VK") {	
+
+			let res = '';
+			try {
+				res = await vkBridge.send("VKWebAppShowNativeAds", { ad_format: "reward" })
+			}
+			catch(error) {
+				res ='err';
+			}
+			
+			return res;				
+			
+		}	
+		
+		return 'err';
+		
+	}
 
 }
 
@@ -4530,8 +4727,10 @@ async function init_game_env(l) {
 	}
 
 	//создаем приложение пикси и добавляем тень
-	app = new PIXI.Application({width:M_WIDTH, height:M_HEIGHT,antialias:true});
-	document.body.appendChild(app.view).style["boxShadow"] = "0 0 15px #000000";
+	app.stage = new PIXI.Container();
+	app.renderer = new PIXI.Renderer({width:M_WIDTH, height:M_HEIGHT,antialias:true});
+	document.body.appendChild(app.renderer.view).style["boxShadow"] = "0 0 15px #000000";
+	document.body.style.backgroundColor = 'rgb(141,211,200)';
 	
 	//изменение размера окна
 	resize();
@@ -4631,7 +4830,6 @@ async function init_game_env(l) {
 	//устанавливаем фотки в попап и другие карточки
 	objects.id_avatar.texture = objects.my_avatar.texture = loader.resources.my_avatar.texture;
 
-
 	
 	//загружаем остальные данные
 	let _other_data = await firebase.database().ref("players/"+my_data.uid).once('value');
@@ -4641,7 +4839,8 @@ async function init_game_env(l) {
 	my_data.rating = (other_data && other_data.rating) || 1400;
 	my_data.games = (other_data && other_data.games) || 0;		
 	my_data.name = (other_data && other_data.name) || my_data.name;
-
+	my_data.vk_invite = (other_data && other_data.vk_invite) || 0;
+	my_data.vk_share = (other_data && other_data.vk_share) || 0;
 		
 	//устанавлием мое имя в карточки
 	make_text(objects.id_name,my_data.name,150);
@@ -4652,6 +4851,7 @@ async function init_game_env(l) {
 		room_name='states2';			
 	else
 		room_name='states';		
+
 	
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
@@ -4753,12 +4953,10 @@ async function load_resources() {
 	
 	
     //добавляем из листа загрузки
-    for (var i = 0; i < load_list.length; i++) {
+    for (var i = 0; i < load_list.length; i++)
         if (load_list[i].class === "sprite" || load_list[i].class === "image" )
-            game_res.add(load_list[i].name, git_src+"res/" + load_list[i].name + "." +  load_list[i].image_format);
-        if (load_list[i].class === "asprite" )
-            game_res.add(load_list[i].name, git_src+"gifs/" + load_list[i].res_name);
-	}
+            game_res.add(load_list[i].name, git_src+"res/RUS/" + load_list[i].name + "." +  load_list[i].image_format);
+
 
 	//добавляем текстуры стикеров
 	for (var i=0;i<16;i++)
@@ -4790,6 +4988,7 @@ function main_loop() {
 	for (let key in some_process)
 		some_process[key]();	
 	
+	app.renderer.render(app.stage);	
 	requestAnimationFrame(main_loop);
 	
 	
