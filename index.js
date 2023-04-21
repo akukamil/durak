@@ -2503,12 +2503,12 @@ var table = {
 			
 			const cur_time=Date.now();
 			
-			if (cur_time-my_data.vk_share>432000000&&dialog.vk_share===0&&game_tick>10){
+			if (cur_time-my_data.vk_share>432000000&&dialog.vk_share===0&&game_tick>150){
 				dialog.show('share');				
 				return;
 			}
 
-			if (cur_time-my_data.vk_invite>432000000&&dialog.vk_invite===0&&game_tick>10){
+			if (cur_time-my_data.vk_invite>432000000&&dialog.vk_invite===0&&game_tick>150){
 				dialog.show('invite_friends');				
 				return;
 			}			
