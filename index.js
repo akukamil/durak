@@ -4851,7 +4851,7 @@ async function init_game_env(l) {
 	make_text(objects.my_card_name,my_data.name,150);	
 			
 	//номер комнаты
-	if(my_data.rating>1460)
+	if(my_data.rating>1470)
 		room_name='states2';			
 	else
 		room_name='states';		
