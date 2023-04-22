@@ -335,7 +335,7 @@ class chat_record_class extends PIXI.Container {
 	
 }
 
-var chat = {
+chat = {
 	
 	MESSAGE_HEIGHT : 75,
 	last_record_end : 0,
@@ -880,7 +880,7 @@ class deck_class {
 	
 }
 
-var confirm_dialog = {
+confirm_dialog = {
 	
 	p_resolve : 0,
 		
@@ -922,7 +922,7 @@ var confirm_dialog = {
 
 }
 
-var anim2 = {
+anim2 = {
 		
 	c1: 1.70158,
 	c2: 1.70158 * 1.525,
@@ -1124,7 +1124,7 @@ var anim2 = {
 	}
 }
 
-var sound = {
+sound = {
 	
 	on : 1,
 	
@@ -1157,7 +1157,7 @@ var sound = {
 	
 }
 
-var message =  {
+message =  {
 	
 	promise_resolve :0,
 	
@@ -1196,7 +1196,7 @@ var message =  {
 
 }
 
-var big_message = {
+big_message = {
 	
 	p_resolve : 0,
 		
@@ -1253,16 +1253,18 @@ var big_message = {
 
 }
 
-var mp_game = {
+mp_game = {
 	
 	name : 'online',
 	start_time : 0,
 	disconnect_time : 0,
 	move_time_left : 0,
+	move_time_start:0,
+	time_for_move:0,
 	me_conf_play : 0,
 	opp_conf_play : 0,
 	timer_id : 0,
-	timer_prv_time:0,
+	timer_prv_time:0,	
 	made_moves: 0,
 	my_role : "",
 	stickers_button_pos:[0,0,0],
@@ -1367,10 +1369,9 @@ var mp_game = {
 			return;
 		}
 		this.timer_prv_time=cur_time;
-		
-		
-
-		this.move_time_left--;
+				
+		//определяем сколько времени прошло
+		this.move_time_left=this.time_for_move-~~((Date.now()-this.move_time_start)*0.001);
 		
 		if (this.move_time_left < 0 && turn === MY_TURN)	{
 			
@@ -1483,7 +1484,8 @@ var mp_game = {
 		this.disconnect_time = 0;
 		turn = t;
 		//перезапускаем таймер хода		
-		this.move_time_left = time||35;
+		this.move_time_start=Date.now();
+		this.time_for_move=this.move_time_left = time||35;
 		objects.timer_text.text="0:"+this.move_time_left;
 		objects.timer_text.tint=0xffffff;
 		
@@ -1502,7 +1504,7 @@ var mp_game = {
 			['my_win',WIN , ['Вы выиграли!\n','You win!\nOpponent out of time']],		
 			['opp_win',LOSE, ['Вы проиграли!\n','You lose!\nYou out of time']],
 			['draw' ,DRAW, ['Ничья','Draw!']],
-			['timer_error' ,NOSYNC, ['Ошибка таймера!','Timer error!']],
+			['timer_error' ,LOSE, ['Ошибка таймера!','Timer error!']],
 			['my_timeout',LOSE, ['Вы проиграли!\nУ вас закончилось время','You lose!\nYou out of time']],
 			['opp_timeout',WIN , ['Вы выиграли!\nУ соперника закончилось время','You win!\nOpponent out of time']],
 			['my_giveup' ,LOSE, ['Вы сдались!','You gave up!']],
@@ -1595,7 +1597,7 @@ var mp_game = {
 	
 }
 
-var sp_game = {
+sp_game = {
 
 	name :'bot',
 	on : 0,
@@ -1908,7 +1910,7 @@ var sp_game = {
 
 }
 
-var table = {
+table = {
 	
 	my_deck : new deck_class('my'),
 	opp_deck : new deck_class('opp'),
@@ -2642,7 +2644,7 @@ ad={
 
 }
 
-var confirm_dialog = {
+confirm_dialog = {
 	
 	p_resolve : 0,
 		
@@ -2684,7 +2686,7 @@ var confirm_dialog = {
 
 }
 
-var keep_alive= function() {
+keep_alive= function() {
 	
 	if (h_state === 1) {		
 		
@@ -2703,7 +2705,7 @@ var keep_alive= function() {
 	set_state({});
 }
 
-var process_new_message=function(msg) {
+process_new_message=function(msg) {
 
 	//проверяем плохие сообщения
 	if (msg===null || msg===undefined)
@@ -2769,7 +2771,7 @@ var process_new_message=function(msg) {
 
 }
 
-var req_dialog={
+req_dialog={
 
 	_opp_data : {} ,
 	
@@ -3082,7 +3084,7 @@ feedback = {
 	
 }
 
-var main_menu= {
+main_menu= {
 
 	activate: async function() {
 
@@ -3234,7 +3236,7 @@ var main_menu= {
 
 }
 
-var lb = {
+lb = {
 	
 	active : 0,
 	cards_pos: [[370,10],[380,70],[390,130],[380,190],[360,250],[330,310],[290,370]],
@@ -3355,7 +3357,7 @@ var lb = {
 
 }
 
-var rules = {
+rules = {
 	
 	active : 0,
 	
@@ -3396,7 +3398,7 @@ var rules = {
 	
 }
 
-var stickers={
+stickers={
 	
 	promise_resolve_send :0,
 	promise_resolve_recive :0,
