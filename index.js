@@ -3161,7 +3161,7 @@ main_menu= {
 
 	chat_button_down : async function() {
 		
-		message.add(['Закрыто','Closed'][LANG]);
+		message.add(['Закрыто до 1 июня','Closed'][LANG]);
 		return;
 		if (anim2.any_on()===true) {
 			sound.play('locked');
