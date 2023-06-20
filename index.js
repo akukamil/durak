@@ -439,7 +439,7 @@ chat = {
 				
 	async chat_updated(data) {		
 	
-		console.log('receive message',data)
+		//console.log('receive message',data)
 		if(data===undefined) return;
 		
 		//если это сообщение уже есть в чате
@@ -1269,8 +1269,7 @@ mp_game = {
 		objects.desktop.texture = gres.desktop.texture;
 		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.6,'linear');
 		
-		console.log('seed ',seed);
-		
+	
 		//если открыт лидерборд то закрываем его
 		if (objects.lb_1_cont.visible===true)
 			lb.close();
@@ -1591,8 +1590,6 @@ sp_game = {
 		
 		//инициируем стол
 		let seed2 = irnd(0,999999)
-		//seed2 = 441379
-		console.log(seed2)
 		table.init(role, seed2);
 		
 		//показыаем карточки
@@ -1637,7 +1634,6 @@ sp_game = {
 				let test_deck = [...table.opp_deck.cards];
 				test_deck.splice(i, 1);	
 				let val = this.get_deck_value(test_deck);					
-				console.log(val);
 				if (val > cur_deck_val) {
 					
 					await anim2.add(anim2.empty_spr,{x:[0, 1]}, false, 0.25,'linear');	
@@ -1652,10 +1648,7 @@ sp_game = {
 					return					
 				}				
 			}
-		}		
-				
-		console.log('Нечего подсунуть');
-		
+		}	
 	},
 	
 	send_move : async function(data) {
@@ -1813,13 +1806,11 @@ sp_game = {
 		let mini_deck = [];
 		table.opp_deck.cards.forEach(card => mini_deck.push({value : card.value, suit : card.suit}));
 		let cur_deck_val = this.get_deck_value(mini_deck);
-		console.log('Текущее значение', cur_deck_val)
 		
 		//сколько будет поинтов если забрать все карты
 		let taken_deck = [...mini_deck];
 		table.center_deck.cards.forEach(card => taken_deck.push({value : card.value, suit : card.suit}));
 		let taken_val = this.get_deck_value(taken_deck);		
-		console.log('если забрать', taken_val)
 		
 		//теперь проверяем какие варианты если отбивать
 		let best_defence_val = - 999999;		
@@ -2021,8 +2012,6 @@ table = {
 					
 			//отправляем ход сопернику кем бы он ни был
 			opponent.send_move({sender:my_data.uid,message:"TOSS",tm:Date.now(),data:card.id});
-			console.log('TOSS ',card.value, card.suit)
-
 		
 			//выходим
 			return;
@@ -2052,8 +2041,6 @@ table = {
 				}
 			}			
 			
-			console.log('my_attack ',card.value, card.suit)
-
 			//отправляем ход сопернику кем бы он ни был
 			opponent.send_move({sender:my_data.uid, message:'MOVE', tm:Date.now(), data:card.id});
 		
@@ -2075,8 +2062,6 @@ table = {
 			
 			
 			this.set_action_button('HIDE');
-			console.log('my_defence ',card.value, card.suit)
-
 			
 			//проверяем окончание игры
 			if (this.big_deck.size === 0 && this.my_deck.size === 0)
@@ -3534,7 +3519,7 @@ lobby={
 	header_move(){
 		
 		const header=objects.lobby_header;
-		header.x-=1;
+		header.x-=objects.lobby_header.speed;
 		if (header.x<-750)
 			header.x=800;	
 		
