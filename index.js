@@ -322,7 +322,8 @@ class chat_record_class extends PIXI.Container {
 		this.index = msg_data.index;
 		
 		if (msg_data.name.length > 15) msg_data.name = msg_data.name.substring(0, 15);	
-		this.name.text=msg_data.name ;		
+
+		make_text(this.name,msg_data.name,110);
 		this.msg.text=msg_data.msg;		
 		this.visible = true;		
 		this.msg_tm.text = new Date(msg_data.tm).toLocaleString();
