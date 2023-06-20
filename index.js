@@ -458,7 +458,7 @@ chat = {
 		this.last_record_end += gdata.chat_record_h;			
 		
 		//смещаем на одно сообщение
-		await anim2.add(objects.chat_cont,{y:[objects.chat_cont.y,objects.chat_cont.y-gdata.chat_record_h]}, objects.chat_cont.visible, 0.05,'linear');		
+		await anim2.add(objects.chat_cont,{y:[objects.chat_cont.y,objects.chat_cont.y-gdata.chat_record_h]}, objects.chat_cont.visible, 0.05,'linear',false);		
 		
 	},
 			
@@ -990,12 +990,10 @@ anim2 = {
 		
 	},	
 	
-	add : function(obj, params, vis_on_end, time, func, anim3_origin) {
+	add : function(obj, params, vis_on_end, time, func, vis_on_start=true) {
 				
 		//если уже идет анимация данного спрайта то отменяем ее
 		anim2.kill_anim(obj);
-		/*if (anim3_origin === undefined)
-			anim3.kill_anim(obj);*/
 
 		let f=0;
 		//ищем свободный слот для анимации
@@ -1003,7 +1001,7 @@ anim2 = {
 
 			if (this.slot[i] === null) {
 
-				obj.visible = true;
+				obj.visible = vis_on_start;
 				obj.ready = false;
 
 				//добавляем дельту к параметрам и устанавливаем начальное положение
@@ -1058,6 +1056,9 @@ anim2 = {
 
 	},	
 	
+	
+	
+	
 	process: function () {
 		
 		for (var i = 0; i < this.slot.length; i++)
@@ -1075,7 +1076,7 @@ anim2 = {
 				if (s.progress>=0.999) {
 					for (let key in s.params)				
 						s.obj[key]=s.params[key][1];
-					
+									
 					s.obj.visible=s.vis_on_end;
 					if (s.vis_on_end === false)
 						s.obj.alpha = 1;
@@ -4899,7 +4900,7 @@ async function init_game_env(l) {
 		room_name='states2';			
 	else
 		room_name='states';	
-
+		//room_name='states3';	
 	//это путь к чату
 	chat_path=room_name+'_chat';
 
