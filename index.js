@@ -1001,7 +1001,7 @@ anim2 = {
 
 			if (this.slot[i] === null) {
 
-				obj.visible = vis_on_start;
+				if(vis_on_start) obj.visible = true;
 				obj.ready = false;
 
 				//добавляем дельту к параметрам и устанавливаем начальное положение
@@ -4900,7 +4900,7 @@ async function init_game_env(l) {
 		room_name='states2';			
 	else
 		room_name='states';	
-		//room_name='states3';	
+	//room_name='states3';	
 	//это путь к чату
 	chat_path=room_name+'_chat';
 
