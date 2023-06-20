@@ -4252,7 +4252,7 @@ lobby={
 
 		//закрываем меню и начинаем игру
 		await lobby.close();
-		game.activate(OPP, mp_game ,seed);
+		mp_game.activate('master', seed);
 	},
 
 	async back_button_down() {
