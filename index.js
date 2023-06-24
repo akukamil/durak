@@ -4192,7 +4192,7 @@ lobby={
 	process(){
 		
 		if (objects.inst_msg_cont.visible&&objects.inst_msg_cont.ready)
-			if (Date.now()>objects.inst_msg_cont.tm+5000)
+			if (Date.now()>objects.inst_msg_cont.tm+7000)
 				anim2.add(objects.inst_msg_cont,{alpha:[1, 0]},false,0.4,'linear');		
 
 	},
