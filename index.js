@@ -3536,10 +3536,10 @@ lobby={
 	_opp_data : {},
 	pover : 0,
 	uid_pic_url_cache : {},
-	room_name_num:'',
 	activated:false,
 	rejected_invites:{},
 	fb_cache:{},
+	sw_header:{time:0,index:0,header_list:[]},
 	
 	activate() {
 		
@@ -3567,6 +3567,12 @@ lobby={
 
 			//запускаем чат
 			chat.init();
+			
+			//создаем заголовки
+			const room_desc=['КОМНАТА #','ROOM #'][LANG]+{'states':1,'states2':2,'states3':3,'states4':4,'states4':5}[room_name];
+			this.sw_header.header_list=[['ДОБРО ПОЖАЛОВАТЬ В ИГРУ ДУРАК (ОНЛАЙН ДУЭЛЬ)!','WELCOME!!!'][LANG],room_desc]
+			objects.lobby_header.text=this.sw_header.header_list[0];
+			this.sw_header.time=Date.now()+12000;
 			
 			this.activated=true;
 		}
@@ -4191,11 +4197,28 @@ lobby={
 	
 	process(){
 		
+		const tm=Date.now();
 		if (objects.inst_msg_cont.visible&&objects.inst_msg_cont.ready)
-			if (Date.now()>objects.inst_msg_cont.tm+7000)
+			if (tm>objects.inst_msg_cont.tm+7000)
 				anim2.add(objects.inst_msg_cont,{alpha:[1, 0]},false,0.4,'linear');		
 
+		if (tm>this.sw_header.time){
+			this.switch_header();			
+			this.sw_header.time=tm+12000;
+			this.sw_header.index=(this.sw_header.index+1)%this.sw_header.header_list.length;
+			this.switch_header();
+		}
+
 	},
+	
+	async switch_header(){
+		
+		await anim2.add(objects.lobby_header,{y:[objects.lobby_header.sy, -60],alpha:[1,0]},false,1,'linear',false);	
+		objects.lobby_header.text=this.sw_header.header_list[this.sw_header.index];		
+		anim2.add(objects.lobby_header,{y:[-60,objects.lobby_header.sy],alpha:[0,1]},true,1,'linear',false);	
+
+		
+	},	
 	
 	wheel_event(dir) {
 		
