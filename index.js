@@ -4956,7 +4956,7 @@ async function init_game_env(l) {
 		room_name='states';		
 	
 	//это путь к чату
-	chat_path=room_name+'_chat';
+	chat_path='states_chat';
 	
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
