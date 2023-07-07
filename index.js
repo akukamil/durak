@@ -357,6 +357,7 @@ chat = {
 	drag_sx:0,
 	drag_sy:-999,	
 	recent_msg:[],
+	moderation_mode:0,
 	
 	activate() {		
 
@@ -377,7 +378,6 @@ chat = {
 		objects.desktop.pointerupoutside=this.pointer_up.bind(this);
 		for(let rec of objects.chat_records) {
 			rec.visible = false;			
-			rec.msg_id = -1;	
 			rec.tm=0;
 		}			
 		
@@ -458,6 +458,11 @@ chat = {
 	},
 			
 	avatar_down(player_data){
+		
+		if (this.moderation_mode){
+			console.log(player_data.index,players_data.uid,players_data.name.text,players_data.msg.text);
+			return
+		}
 		
 		if (objects.feedback_cont.visible){			
 			feedback.response_message(player_data.uid,player_data.name.text);
