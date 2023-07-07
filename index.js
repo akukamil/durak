@@ -432,7 +432,7 @@ chat = {
 				
 	async chat_updated(data, first_load) {		
 	
-		console.log('receive message',data)
+		//console.log('receive message',data)
 		if(data===undefined) return;
 		
 		//если это сообщение уже есть в чате
