@@ -202,6 +202,7 @@ class chat_record_class extends PIXI.Container {
 		this.tm=0;
 		this.hash=0;
 		this.index=0;
+		this.uid='';
 	
 		
 		this.msg_bcg = new PIXI.Sprite(gres.msg_bcg_short.texture);
@@ -223,7 +224,7 @@ class chat_record_class extends PIXI.Container {
 		this.avatar.y=gdata.chat_record_avatar_sy;
 		this.avatar.interactive=true;
 		const this_card=this;
-		this.avatar.pointerdown=feedback.response_message.bind(this,this);
+		this.avatar.pointerdown=function(){chat.avatar_down(this_card)};	
 		this.avatar.anchor.set(0,0)
 				
 		
@@ -251,15 +252,13 @@ class chat_record_class extends PIXI.Container {
 		
 		let pic_url = '';
 		//если есть в кэше то =берем оттуда если нет то загружаем
-		if (lobby.uid_pic_url_cache[uid] !== undefined) {
-			
-			pic_url = lobby.uid_pic_url_cache[uid];
-			
-		} else {
-			
+		if (lobby.players_cache[uid]) {			
+			pic_url = lobby.players_cache[uid].pic_url;			
+		} else {			
 			pic_url = await firebase.database().ref("players/" + uid + "/pic_url").once('value');		
-			pic_url = pic_url.val();			
-			lobby.uid_pic_url_cache[uid] = pic_url;
+			pic_url = pic_url.val();
+			//lobby.players_cache[uid]={};
+			//lobby.players_cache[uid].pic_url = pic_url;
 		}
 		
 		
@@ -297,6 +296,7 @@ class chat_record_class extends PIXI.Container {
 		this.avatar.texture=PIXI.Texture.WHITE;
 		await this.update_avatar(msg_data.uid, this.avatar);
 
+		this.uid=msg_data.uid;
 		this.tm = msg_data.tm;			
 		this.hash = msg_data.hash;
 		this.index = msg_data.index;
@@ -452,6 +452,17 @@ chat = {
 			await anim2.add(objects.chat_msg_cont,{y:[objects.chat_msg_cont.y,objects.chat_msg_cont.y-gdata.chat_record_h]},true, 0.05,'linear');		
 		else
 			objects.chat_msg_cont.y-=gdata.chat_record_h
+		
+	},
+			
+	avatar_down(player_data){
+		
+		if (objects.feedback_cont.visible){			
+			feedback.response_message(player_data.uid,player_data.name.text);
+			
+		}else{			
+			lobby.show_invite_dialog_from_chat(player_data.uid,player_data.name.text)
+		}
 		
 	},
 			
@@ -2814,41 +2825,37 @@ req_dialog={
 
 	_opp_data : {} ,
 	
-	show(uid) {
+	async show(uid) {
 
-		firebase.database().ref("players/"+uid).once('value').then((snapshot) => {
-
-			//не показываем диалог если мы в игре
-			if (state === 'p')
-				return;
-
-			player_data=snapshot.val();
-
-			//показываем окно запроса только если получили данные с файербейс
-			if (player_data===null) {
-				//console.log("Не получилось загрузить данные о сопернике");
-			}	else	{
-
-				//так как успешно получили данные о сопернике то показываем окно
-				sound.play('receive_sticker');
+		//если нет в кэше то загружаем из фб
+		if (!lobby.players_cache[uid]){				
+			let player_data=await firebase.database().ref("players/"+uid).once('value');
+			player_data=player_data.val();
 			
-				anim2.add(objects.req_cont,{y:[-260, objects.req_cont.sy]}, true, 0.75,'easeOutElastic');
+			if (!player_data) return;
+			
+			lobby.players_cache[uid]={};
+			lobby.players_cache[uid].name=player_data.name
+			lobby.players_cache[uid].rating=player_data.rating
+			lobby.players_cache[uid].pic_url=player_data.pic_url
+		}
+		sound.play('receive_sticker');
+	
+		anim2.add(objects.req_cont,{y:[-260, objects.req_cont.sy]}, true, 0.75,'easeOutElastic');
 
 
-				//Отображаем  имя и фамилию в окне приглашения
-				req_dialog._opp_data.name=player_data.name;
-				make_text(objects.req_name,player_data.name,200);
-				objects.req_rating.text=player_data.rating;
-				req_dialog._opp_data.rating=player_data.rating;
+		//Отображаем  имя и фамилию в окне приглашения
+		req_dialog._opp_data.name=lobby.players_cache[uid].name;
+		make_text(objects.req_name,lobby.players_cache[uid].name,200);
+		objects.req_rating.text=lobby.players_cache[uid].rating;
+		req_dialog._opp_data.rating=lobby.players_cache[uid].rating;
 
-				//throw "cut_string erroor";
-				req_dialog._opp_data.uid = uid;
+		//throw "cut_string erroor";
+		req_dialog._opp_data.uid=uid;
 
-				//загружаем фото
-				this.load_photo(player_data.pic_url);
+		//загружаем фото
+		this.load_photo(lobby.players_cache[uid].pic_url);
 
-			}
-		});
 	},
 
 	load_photo: function(pic_url) {
@@ -2983,10 +2990,10 @@ feedback = {
 		
 	},
 	
-	response_message:function() {
+	response_message:function(uid, name) {
 
 		
-		objects.feedback_msg.text = this.name.text.split(' ')[0]+', ';	
+		objects.feedback_msg.text = name.split(' ')[0]+', ';	
 		objects.feedback_control.text = `${objects.feedback_msg.text.length}/${feedback.MAX_SYMBOLS}`		
 		
 	},
@@ -3535,8 +3542,8 @@ lobby={
 	state_tint :{},
 	_opp_data : {},
 	pover : 0,
-	uid_pic_url_cache : {},
 	activated:false,
+	players_cache : {},
 	rejected_invites:{},
 	fb_cache:{},
 	sw_header:{time:0,index:0,header_list:[]},
@@ -3616,7 +3623,13 @@ lobby={
 		let p_data = JSON.parse(JSON.stringify(players));
 		
 		//создаем массив свободных игроков
-		for (let uid in players){			
+		for (let uid in players){	
+
+			//обновляем кэш
+			if (!this.players_cache[uid]) this.players_cache[uid]={};
+			this.players_cache[uid].name=players[uid].name;	
+			this.players_cache[uid].rating=players[uid].rating;	
+			
 			if (players[uid].state !== 'p' && players[uid].hidden === 0)
 				single[uid] = players[uid].name;						
 		}
@@ -3947,9 +3960,9 @@ lobby={
 		return new Promise((resolve,reject)=>{
 						
 			//проверяем есть ли у этого id назначенная pic_url
-			if (this.uid_pic_url_cache[uid] !== undefined) {
-				//console.log(`Взяли pic_url из кэша ${this.uid_pic_url_cache[uid]}`);
-				resolve(this.uid_pic_url_cache[uid]);		
+			if (this.players_cache?.[uid]?.pic_url) {
+				//console.log(`Взяли pic_url из кэша ${this.players_cache[uid]}`);
+				resolve(this.players_cache[uid].pic_url);		
 				return;
 			}
 
@@ -3968,7 +3981,7 @@ lobby={
 					
 					//добавляем полученный pic_url в кэш
 					//console.log(`Получили pic_url из ФБ ${pic_url}`)	
-					this.uid_pic_url_cache[uid] = pic_url;
+					this.players_cache[uid].pic_url = pic_url;
 					resolve (pic_url);
 				}
 				
@@ -4097,6 +4110,71 @@ lobby={
 
 	},
 
+	async show_invite_dialog_from_chat(uid,name) {
+
+		//если какая-то анимация или уже сделали запрос
+		if (anim2.any_on() || pending_player!=='') {
+			sound.play('locked');
+			return
+		};		
+				
+		//закрываем диалог стола если он открыт
+		if(objects.td_cont.visible) this.close_table_dialog();
+
+		pending_player="";
+
+		sound.play('click');			
+		
+		objects.invite_feedback.text = '';
+
+		//показыаем кнопку приглашения
+		objects.invite_button.texture=game_res.resources.invite_button.texture;
+	
+		anim2.add(objects.invite_cont,{x:[800, objects.invite_cont.sx]}, true, 0.15,'linear');
+		
+		let player_data={uid};
+		
+		if (this.players_cache[uid]){			
+			player_data.name=this.players_cache[uid].name;
+			player_data.rating=this.players_cache[uid].rating;
+			player_data.pic_url=this.players_cache[uid].pic_url;
+		}else{
+			
+			//загружаем и обновляем кэш
+			let d=await firebase.database().ref("players/"+uid).once('value');
+			d=d.val();				
+			
+			this.players_cache[uid]={};
+			this.players_cache[uid].name=player_data.name=d.name;
+			this.players_cache[uid].rating=player_data.rating=d.rating;
+			this.players_cache[uid].pic_url=player_data.pic_url=d.pic_url;
+		}		
+		
+		//копируем предварительные данные
+		lobby._opp_data = {uid:player_data.uid,name:player_data.name,rating:player_data.rating};
+											
+		this.show_feedbacks(lobby._opp_data.uid);
+		
+		objects.invite_button_title.text=['Пригласить','Send invite'][LANG];
+
+		let invite_available = 	lobby._opp_data.uid !== my_data.uid;
+		invite_available=invite_available && lobby._opp_data.rating >= 50 && my_data.rating >= 50;
+		
+		//кнопка удаления комментариев
+		//objects.fb_delete_button.visible=false;
+		
+		//если мы в списке игроков которые нас недавно отврегли
+		if (this.rejected_invites[lobby._opp_data.uid] && Date.now()-this.rejected_invites[lobby._opp_data.uid]<60000) invite_available=false;
+
+		//показыаем кнопку приглашения только если это допустимо
+		objects.invite_button.visible=objects.invite_button_title.visible=invite_available;
+
+		//заполняем карточу приглашения данными
+		objects.invite_avatar.texture=PIXI.utils.TextureCache[player_data.pic_url];
+		make_text(objects.invite_name,lobby._opp_data.name,230);
+		objects.invite_rating.text=player_data.rating;
+	},
+
 	async show_feedbacks(uid) {	
 
 
@@ -4189,7 +4267,7 @@ lobby={
 		
 		sound.play('inst_msg');
 		anim2.add(objects.inst_msg_cont,{alpha:[0, 1]},true,0.4,'linear',false);		
-		const t=PIXI.utils.TextureCache[this.uid_pic_url_cache[data.uid]];
+		const t=PIXI.utils.TextureCache[this.players_cache?.[data.uid]?.pic_url];
 		objects.inst_msg_avatar.texture=t||PIXI.Texture.WHITE;
 		make_text(objects.inst_msg_text,data.msg,300);
 		objects.inst_msg_cont.tm=Date.now();
