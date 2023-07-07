@@ -460,7 +460,7 @@ chat = {
 	avatar_down(player_data){
 		
 		if (this.moderation_mode){
-			console.log(player_data.index,players_data.uid,players_data.name.text,players_data.msg.text);
+			console.log(player_data.index,player_data.uid,player_data.name.text,player_data.msg.text);
 			return
 		}
 		
