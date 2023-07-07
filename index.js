@@ -360,6 +360,8 @@ chat = {
 	
 	activate() {		
 
+		if (my_data.blocked) objects.chat_enter_button.visible=false;
+		
 		anim2.add(objects.chat_cont,{alpha:[0, 1]}, true, 0.1,'linear');
 
 	},
@@ -4905,6 +4907,17 @@ async function check_daily_reward (last_seen_ts) {
 
 }
 
+async function check_blocked(){
+	
+	//загружаем остальные данные из файербейса
+	let _block_data = await firebase.database().ref("blocked/" + my_data.uid).once('value');
+	let block_data = _block_data.val();
+	
+	if (block_data) my_data.blocked=1;
+	
+}
+
+
 async function init_game_env(l) {
 
 	//if (l===1) LANG = 1;
@@ -5091,7 +5104,8 @@ async function init_game_env(l) {
 	});	
 	window.addEventListener('keydown', function(event) { feedback.key_down(event.key)});
 
-
+	//проверяем блокировку
+	check_blocked();
 	
 	//keep-alive сервис
 	setInterval(function()	{keep_alive()}, 40000);
