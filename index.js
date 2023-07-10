@@ -38,14 +38,14 @@ class player_mini_card_class extends PIXI.Container {
 		this.avatar.width=this.avatar.height=64;
 				
 		this.name="";
-		this.name_text=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 22,align: 'center'});
+		this.name_text=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 27,align: 'center'});
 		this.name_text.anchor.set(0,0);
 		this.name_text.x=95;
 		this.name_text.y=20;
 		this.name_text.tint=0xffffff;		
 
 		this.rating=0;
-		this.rating_text=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 30,align: 'center'});
+		this.rating_text=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 40,align: 'center'});
 		this.rating_text.tint=0xffff00;
 		this.rating_text.anchor.set(0,0.5);
 		this.rating_text.x=100;
@@ -64,13 +64,13 @@ class player_mini_card_class extends PIXI.Container {
 		this.avatar2.y=18;
 		this.avatar2.width=this.avatar2.height=64;
 		
-		this.rating_text1=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
+		this.rating_text1=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 30,align: 'center'});
 		this.rating_text1.tint=0xffff00;
 		this.rating_text1.anchor.set(0.5,0);
 		this.rating_text1.x=55;
 		this.rating_text1.y=60;
 
-		this.rating_text2=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
+		this.rating_text2=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 30,align: 'center'});
 		this.rating_text2.tint=0xffff00;
 		this.rating_text2.anchor.set(0.5,0);
 		this.rating_text2.x=155;
@@ -228,7 +228,7 @@ class chat_record_class extends PIXI.Container {
 		this.avatar.anchor.set(0,0)
 				
 		
-		this.msg = new PIXI.BitmapText('Имя Фамил', {fontName: 'mfont',fontSize: gdata.chat_record_text_font_size,align: 'left'}); 
+		this.msg = new PIXI.BitmapText('Имя Фамил', {fontName: 'mfont',fontSize: gdata.chat_record_text_font_size,align: 'left',lineSpacing:40}); 
 		this.msg.x=gdata.chat_record_text_x;
 		this.msg.y=gdata.chat_record_text_y;
 		this.msg.maxWidth=gdata.chat_record_text_max_w;
@@ -247,47 +247,12 @@ class chat_record_class extends PIXI.Container {
 		
 	}
 	
-	async update_avatar(uid, tar_sprite) {
-		
-		
-		let pic_url = '';
-		//если есть в кэше то =берем оттуда если нет то загружаем
-		if (lobby.players_cache[uid]) {			
-			pic_url = lobby.players_cache[uid].pic_url;			
-		} else {			
-			pic_url = await firebase.database().ref("players/" + uid + "/pic_url").once('value');		
-			pic_url = pic_url.val();
-			//lobby.players_cache[uid]={};
-			//lobby.players_cache[uid].pic_url = pic_url;
-		}
-		
-		
-		//сначала смотрим на загруженные аватарки в кэше
-		if (PIXI.utils.TextureCache[pic_url]===undefined || PIXI.utils.TextureCache[pic_url].width===1) {
-
-			//загружаем аватарку игрока
-			let loader=new PIXI.Loader();
-			loader.add("pic", pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 3000});
-			
-			let texture = await new Promise((resolve, reject) => {				
-				loader.load(function(l,r) {	resolve(l.resources.pic.texture)});
-			})
-			
-			if (texture === undefined || texture.width === 1) {
-				texture = PIXI.Texture.WHITE;
-				texture.tint = this.msg.tint;
-			}
-			
-			tar_sprite.texture = texture;
-			
-		}
-		else
-		{
-			//загружаем текустуру из кэша
-			//console.log(`Текстура взята из кэша ${pic_url}`)	
-			tar_sprite.texture =  PIXI.utils.TextureCache[pic_url];
-		}
-		
+	async update_avatar(uid, tar_sprite) {		
+		//определяем pic_url
+		await lobby.update_players_cache_data(uid);
+		const pic_url=lobby.players_cache[uid].pic_url;
+		const t=await lobby.get_texture(pic_url);
+		tar_sprite.texture = t;	
 	}
 	
 	async set(msg_data) {
@@ -306,10 +271,10 @@ class chat_record_class extends PIXI.Container {
 		//бэкграунд сообщения в зависимости от длины
 		if (msg_data.msg.length>20){
 			this.msg_bcg.texture=gres.msg_bcg_long.texture
-			this.msg_tm.x=470;		
+			this.msg_tm.x=475;		
 		}else{
 			this.msg_bcg.texture=gres.msg_bcg_short.texture
-			this.msg_tm.x=300;		
+			this.msg_tm.x=315;		
 		}
 
 		
@@ -327,11 +292,11 @@ class feedback_record_class extends PIXI.Container {
 	constructor() {
 		
 		super();		
-		this.text=new PIXI.BitmapText('Николай: хорошая игра', {fontName: 'mfont',fontSize: 20,align: 'left'}); 
+		this.text=new PIXI.BitmapText('Николай: хорошая игра', {fontName: 'mfont',fontSize: 23,align: 'left',lineSpacing:40}); 
 		this.text.maxWidth=290;
 		this.text.tint=0xFFFF00;
 		
-		this.name_text=new PIXI.BitmapText('Николай:', {fontName: 'mfont',fontSize: 20,align: 'left'}); 
+		this.name_text=new PIXI.BitmapText('Николай:', {fontName: 'mfont',fontSize: 23,align: 'left'}); 
 		this.name_text.tint=0xFFFFFF;
 		
 		
@@ -2835,19 +2800,9 @@ req_dialog={
 	async show(uid) {
 
 		//если нет в кэше то загружаем из фб
-		if (!lobby.players_cache[uid]){				
-			let player_data=await firebase.database().ref("players/"+uid).once('value');
-			player_data=player_data.val();
-			
-			if (!player_data) return;
-			
-			lobby.players_cache[uid]={};
-			lobby.players_cache[uid].name=player_data.name
-			lobby.players_cache[uid].rating=player_data.rating
-			lobby.players_cache[uid].pic_url=player_data.pic_url
-		}
-		sound.play('receive_sticker');
-	
+		await lobby.update_players_cache_data(uid);
+		
+		sound.play('receive_sticker');	
 		anim2.add(objects.req_cont,{y:[-260, objects.req_cont.sy]}, true, 0.75,'easeOutElastic');
 
 
@@ -2859,9 +2814,8 @@ req_dialog={
 
 		//throw "cut_string erroor";
 		req_dialog._opp_data.uid=uid;
+		objects.req_avatar.texture=await lobby.get_texture(lobby.players_cache[uid].pic_url);
 
-		//загружаем фото
-		this.load_photo(lobby.players_cache[uid].pic_url);
 
 	},
 
@@ -3933,78 +3887,60 @@ lobby={
 
 	},
 
-	get_texture (pic_url) {
+	async get_texture(pic_url) {
 		
-		if (!pic_url) return;
+		if (!pic_url) PIXI.Texture.WHITE;
 		
-		return new Promise((resolve,reject)=>{
+		//меняем адрес который невозможно загрузить
+		if (pic_url==="https://vk.com/images/camera_100.png")
+			pic_url = "https://i.ibb.co/fpZ8tg2/vk.jpg";	
+				
+		if (PIXI.utils.TextureCache[pic_url]===undefined || PIXI.utils.TextureCache[pic_url].width===1) {
+					
+			let loader=new PIXI.Loader();
+			loader.add('pic', pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 5000});			
+			await new Promise((resolve, reject)=> loader.load(resolve))	
+			return loader.resources.pic.texture||PIXI.Texture.WHITE;
+
+		}		
+		
+		return PIXI.utils.TextureCache[pic_url];		
+	},
+	
+	async update_players_cache_data(uid){
+		if (this.players_cache[uid]){
+			if (!this.players_cache[uid].name){
+				let t=await firebase.database().ref('players/' + uid + '/name').once('value');
+				this.players_cache[uid].name=t.val()||'***';
+			}
 			
-			//меняем адрес который невозможно загрузить
-			if (pic_url==="https://vk.com/images/camera_100.png")
-				pic_url = "https://i.ibb.co/fpZ8tg2/vk.jpg";
-
-			//сначала смотрим на загруженные аватарки в кэше
-			if (PIXI.utils.TextureCache[pic_url]===undefined || PIXI.utils.TextureCache[pic_url].width===1) {
-
-				//загружаем аватарку игрока
-				//console.log(`Загружаем url из интернети или кэша браузера ${pic_url}`)	
-				let loader=new PIXI.Loader();
-				loader.add("pic", pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 5000});
-				loader.load(function(l,r) {	resolve(l.resources.pic.texture)});
+			if (!this.players_cache[uid].rating){
+				let t=await firebase.database().ref('players/' + uid + '/rating').once('value');
+				this.players_cache[uid].rating=t.val()||'***';
 			}
-			else
-			{
-				//загружаем текустуру из кэша
-				//console.log(`Текстура взята из кэша ${pic_url}`)	
-				resolve (PIXI.utils.TextureCache[pic_url]);
-			}
-		})
-		
-	},
-	
-	get_uid_pic_url (uid) {
-		
-		return new Promise((resolve,reject)=>{
-						
-			//проверяем есть ли у этого id назначенная pic_url
-			if (this.players_cache?.[uid]?.pic_url) {
-				//console.log(`Взяли pic_url из кэша ${this.players_cache[uid]}`);
-				resolve(this.players_cache[uid].pic_url);		
-				return;
-			}
-
-							
-			//получаем pic_url из фб
-			firebase.database().ref("players/" + uid + "/pic_url").once('value').then((res) => {
-
-				pic_url=res.val();
 				
-				if (pic_url === null) {
-					
-					//загрузить не получилось поэтому возвращаем случайную картинку
-					resolve('https://avatars.dicebear.com/v2/male/'+irnd(10,10000)+'.svg');
-				}
-				else {
-					
-					//добавляем полученный pic_url в кэш
-					//console.log(`Получили pic_url из ФБ ${pic_url}`)	
-					this.players_cache[uid].pic_url = pic_url;
-					resolve (pic_url);
-				}
-				
-			});		
-		})
-		
+			if (!this.players_cache[uid].pic_url){
+				let t=await firebase.database().ref('players/' + uid + '/pic_url').once('value');
+				this.players_cache[uid].pic_url=t.val()||null;
+			}
+			
+		}else{
+			
+			this.players_cache[uid]={};
+			let t=await firebase.database().ref('players/' + uid).once('value');
+			t=t.val();
+			this.players_cache[uid].name=t.name||'***';
+			this.players_cache[uid].rating=t.rating||'***';
+			this.players_cache[uid].pic_url=t.pic_url||'';
+		}		
 	},
-	
-	load_avatar2 (params = {uid : 0, tar_obj : 0, card_id : 0}) {
 		
-		//получаем pic_url
-		this.get_uid_pic_url(params.uid).then(pic_url => {
-			return this.get_texture(pic_url);
-		}).then(t=>{			
-			params.tar_obj.texture=t;			
-		})	
+	async load_avatar2 (params = {uid : 0, tar_obj : 0, card_id : 0}) {		
+
+		await this.update_players_cache_data(params.uid);
+		const pic_url=this.players_cache[params.uid].pic_url;
+		const t=await this.get_texture(pic_url);
+		params.tar_obj.texture=t;			
 	},
 
 	add_card_ai() {
@@ -4139,23 +4075,12 @@ lobby={
 	
 		anim2.add(objects.invite_cont,{x:[800, objects.invite_cont.sx]}, true, 0.15,'linear');
 		
-		let player_data={uid};
+		let player_data={uid};		
+		await this.update_players_cache_data(uid);
 		
-		if (this.players_cache[uid]){			
-			player_data.name=this.players_cache[uid].name;
-			player_data.rating=this.players_cache[uid].rating;
-			player_data.pic_url=this.players_cache[uid].pic_url;
-		}else{
-			
-			//загружаем и обновляем кэш
-			let d=await firebase.database().ref("players/"+uid).once('value');
-			d=d.val();				
-			
-			this.players_cache[uid]={};
-			this.players_cache[uid].name=player_data.name=d.name;
-			this.players_cache[uid].rating=player_data.rating=d.rating;
-			this.players_cache[uid].pic_url=player_data.pic_url=d.pic_url;
-		}		
+		player_data.name=this.players_cache[uid].name;
+		player_data.rating=this.players_cache[uid].rating;
+		player_data.pic_url=this.players_cache[uid].pic_url;
 		
 		//копируем предварительные данные
 		lobby._opp_data = {uid:player_data.uid,name:player_data.name,rating:player_data.rating};
@@ -4232,7 +4157,7 @@ lobby={
 			fb_place.set(sender_name,fb[i][0]);
 			
 			
-			const fb_height=fb_place.text.textHeight*0.85;
+			const fb_height=fb_place.text.textHeight-7;
 			const fb_end=prv_fb_bottom+fb_height;
 			
 			//если отзыв будет выходить за экран то больше ничего не отображаем
@@ -4922,7 +4847,6 @@ async function check_blocked(){
 	
 }
 
-
 async function init_game_env(l) {
 
 	//if (l===1) LANG = 1;
@@ -5154,7 +5078,7 @@ async function load_resources() {
 
 	game_res=new PIXI.Loader();	
 	
-	game_res.add("m2_font", git_src+"fonts/MS_Comic_Sans/font.fnt");
+	game_res.add("m2_font", git_src+'fonts/balsamic/font.fnt');
 
 	game_res.add('receive_sticker',git_src+'sounds/receive_sticker.mp3');
 	game_res.add('message',git_src+'sounds/message.mp3');
