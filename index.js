@@ -151,9 +151,9 @@ class playing_cards_class extends PIXI.Container {
 		this.suit_img.anchor.set(0.5,0.5);
 		
 		let _val = ['6','7','8','9','10','J','Q','K','T'][id%9];	
-		this.text_value = new PIXI.BitmapText(_val, {fontName: 'mfont',fontSize: 50});
+		this.text_value = new PIXI.BitmapText(_val, {fontName: 'comic_sans',fontSize: 55});
 		this.text_value.anchor.set(0.5,0.5);
-		this.text_value.y=-24;
+		this.text_value.y=-26;
 		
 		if (this.suit === 'h' || this.suit === 'd')
 			this.text_value.tint = 0xff0000;
@@ -5081,7 +5081,9 @@ async function load_resources() {
 	game_res=new PIXI.Loader();	
 	
 	game_res.add("m2_font", git_src+'fonts/balsamic/font.fnt');
-
+	game_res.add("m3_font", git_src+'fonts/MS_Comic_Sans/font.fnt');
+	
+	
 	game_res.add('receive_sticker',git_src+'sounds/receive_sticker.mp3');
 	game_res.add('message',git_src+'sounds/message.mp3');
 	game_res.add('lose',git_src+'sounds/lose.mp3');
