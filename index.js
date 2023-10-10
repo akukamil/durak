@@ -326,8 +326,7 @@ chat = {
 	
 	activate() {		
 
-		if (my_data.blocked) objects.chat_enter_button.visible=false;
-		
+		objects.chat_enter_button.visible=my_data.rating>1430&&!my_data.blocked;
 		anim2.add(objects.chat_cont,{alpha:[0, 1]}, true, 0.1,'linear');
 
 	},
