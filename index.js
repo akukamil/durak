@@ -3570,7 +3570,7 @@ lobby={
 		this.add_card_ai();
 
 		//нормальное название комнаты
-		this.room_name_num={'states':1,'states2':2,'states3':3,'states4':4,'states4':5}[room_name];
+		this.room_name_num={'states':1,'states2':2,'states3':3,'states4':4,'states5':5}[room_name];
 		
 		//подписываемся на изменения состояний пользователей
 		fbs.ref(room_name) .on('value', (snapshot) => {lobby.players_list_updated(snapshot.val());});
@@ -4953,12 +4953,18 @@ async function init_game_env(l) {
 	//устанавлием мое имя в карточки
 	make_text(objects.id_name,my_data.name,150);
 	make_text(objects.my_card_name,my_data.name,150);	
-			
+	
+	
 	//номер комнаты
-	if(my_data.rating>1500)
-		room_name='states2';			
-	else
-		room_name='states';		
+	let rooms_ranges = [0,1500,1650,9999]
+	if (my_data.rating > rooms_ranges[0] && my_data.rating <= rooms_ranges[1])
+		room_name= 'states';			
+	if (my_data.rating > rooms_ranges[1] && my_data.rating <= rooms_ranges[2])
+		room_name= 'states2';					
+	if (my_data.rating > rooms_ranges[2] && my_data.rating <= rooms_ranges[3])
+		room_name= 'states3';	
+
+	
 	
 	//это путь к чату
 	chat_path='states_chat';
