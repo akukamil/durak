@@ -905,7 +905,7 @@ confirm_dialog = {
 	
 	p_resolve : 0,
 		
-	show: function(msg) {
+	show(msg) {
 								
 		if (objects.confirm_cont.visible === true) {
 			sound.play('locked')
@@ -923,7 +923,7 @@ confirm_dialog = {
 		});
 	},
 	
-	button_down : function(res) {
+	button_down(res) {
 		
 		if (objects.confirm_cont.ready===false)
 			return;
@@ -935,7 +935,7 @@ confirm_dialog = {
 		
 	},
 	
-	close : function() {
+	close() {
 		
 		anim2.add(objects.confirm_cont,{y:[objects.confirm_cont.sy,450]}, false, 0.4,'easeInBack');		
 		
@@ -1183,7 +1183,7 @@ message =  {
 	
 	promise_resolve :0,
 	
-	add : async function(text, timeout=3000,sound_name='message') {
+	async add(text, timeout=3000,sound_name='message') {
 		
 		if (this.promise_resolve!==0)
 			this.promise_resolve("forced");
@@ -1208,8 +1208,7 @@ message =  {
 		anim2.add(objects.message_cont,{x:[objects.message_cont.sx, -200]}, false, 0.25,'easeInBack');			
 	},
 	
-	clicked : function() {
-		
+	clicked() {		
 		
 		message.promise_resolve();
 		
@@ -1221,7 +1220,7 @@ big_message = {
 	
 	p_resolve : 0,
 		
-	show: async function(t1, t2, feedback_on) {
+	async show(t1, t2, feedback_on) {
 				
 		this.feedback_on = feedback_on;
 				
@@ -1240,7 +1239,7 @@ big_message = {
 	
 	},
 	
-	feedback_down : async function () {
+	async feedback_down() {
 		
 		if (objects.big_message_cont.ready===false) {
 			sound.play('locked');
@@ -1262,7 +1261,7 @@ big_message = {
 				
 	},
 
-	close : async function() {
+	async close() {
 		
 		if (objects.big_message_cont.ready===false)
 			return;
@@ -1292,7 +1291,7 @@ mp_game = {
 	chat_button_pos:[0,0,0],
 	giveup_button_pos:[0,0,0],
 	
-	calc_new_rating : function (old_rating, game_result) {
+	calc_new_rating(old_rating, game_result) {
 		
 		
 		if (game_result === NOSYNC)
@@ -1308,7 +1307,7 @@ mp_game = {
 		
 	},
 	
-	activate : async function (role, seed) {
+	async activate (role, seed) {
 		
 		this.my_role = role;
 		
@@ -1367,7 +1366,7 @@ mp_game = {
 		
 	},
 		
-	send_move : function(data) {
+	send_move (data) {
 		
 		if (data.message !== 'TOSS')
 			this.reset_timer(OPP_TURN);
@@ -1381,11 +1380,11 @@ mp_game = {
 		
 	},
 		
-	timer_tick : function () {
+	timer_tick () {
 		
 		//проверка таймера
 		const cur_time=Date.now();
-		if (cur_time-this.timer_prv_time>5000){
+		if (cur_time-this.timer_prv_time>5000||cur_time<this.prv_tick_time){
 			this.stop('timer_error');
 			return;
 		}
@@ -1436,12 +1435,12 @@ mp_game = {
 		this.timer_id = setTimeout(function(){mp_game.timer_tick()}, 1000);		
 	},
 	
-	send_message : async function() {
+	async send_message() {
 		
 		let msg_data = await feedback.show();
 		
 		if (msg_data[0] === 'sent') {			
-			fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"CHAT",tm:Date.now(),data:msg_data[1]});	
+			fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:'CHAT',tm:Date.now(),data:msg_data[1]});	
 
 		} else {			
 			message.add('Сообщение не отправлено');
@@ -1449,7 +1448,7 @@ mp_game = {
 		
 	},
 	
-	game_buttons_down: function(e) {
+	game_buttons_down(e) {
 		
 		
 		let mx = e.data.global.x/app.stage.scale.x - objects.game_buttons.sx;
@@ -1493,13 +1492,13 @@ mp_game = {
 		
 	},
 	
-	chat : function(data) {
+	chat(data) {
 		
 		message.add(data, 10000,'online_message');
 		
 	},
 	
-	reset_timer : function(t,time) {
+	reset_timer(t,time) {
 		
 		//обовляем время разъединения
 		this.disconnect_time = 0;
@@ -1517,7 +1516,7 @@ mp_game = {
 		
 	},
 		
-	stop : async function (result) {
+	async stop(result) {
 		
 		table.state = 'stop';
 		
@@ -1573,11 +1572,17 @@ mp_game = {
 			
 			//увеличиваем количество игр
 			my_data.games++;
-			fbs.ref("players/"+[my_data.uid]+"/games").set(my_data.games);		
+			fbs.ref("players/"+[my_data.uid]+'/games').set(my_data.games);		
 
 			//записываем результат в базу данных
 			let duration = ~~((Date.now() - this.start_time)*0.001);
 			fbs.ref("finishes/"+game_id).set({'player1':objects.my_card_name.text,'player2':objects.opp_card_name.text, 'res':result_number,'fin_type':result_str,'duration':duration, 'ts':firebase.database.ServerValue.TIMESTAMP});
+		
+			//контрольные концовки
+			if (my_data.rating>2130 || opp_data.rating>2130)
+			{
+				fbs.ref("finishes2").push({uid:my_data.uid,player1:objects.my_card_name.text,player2:objects.opp_card_name.text, res:result_number,fin_type:result_str,duration:duration, rating: [old_rating,my_data.rating],client_id:client_id, ts:firebase.database.ServerValue.TIMESTAMP});	
+			}		
 		
 		}
 			
@@ -1588,7 +1593,7 @@ mp_game = {
 	
 	},
 		
-	giveup : async function() {
+	async giveup() {
 		
 		if (this.made_moves < 3) {
 			message.add(['Нельзя сдаваться в начале игры','Do not give up so early'][LANG])
@@ -1607,7 +1612,7 @@ mp_game = {
 		
 	},
 	
-	close : function() {
+	close() {
 		
 		table.close();
 		anim2.add(objects.my_card_cont,{x:[objects.my_card_cont.x, -100]}, false, 0.6,'easeInBack');	
@@ -1625,7 +1630,7 @@ sp_game = {
 	state : 'opp_move',
 	center_size : 0,
 
-	activate: async function(role, seed) {
+	async activate(role, seed) {
 
 		
 		this.on = 1;		
@@ -1654,7 +1659,7 @@ sp_game = {
 
 	},
 	
-	process : function() {
+	process () {
 		
 		
 	
@@ -1662,7 +1667,7 @@ sp_game = {
 		
 	},
 	
-	can_toss_card : function(card, cards_array) {
+	can_toss_card (card, cards_array) {
 		
 		for (let c of cards_array)
 			if (c.value === card.value)
@@ -1671,7 +1676,7 @@ sp_game = {
 		
 	},
 	
-	process_tossing : async function() {
+	async process_tossing() {
 		
 		//фиксируем текущее состояние колоды
 		let cur_deck_val = this.get_deck_value(table.opp_deck.cards);				
@@ -1706,7 +1711,7 @@ sp_game = {
 		
 	},
 	
-	send_move : async function(data) {
+	async send_move(data) {
 				
 		//***********это сигнал что игрок сделал хода
 		
@@ -1760,12 +1765,12 @@ sp_game = {
 		
 	},
 
-	reset_timer : function() {
+	reset_timer() {
 		
 		
 	},
 		
-	stop : async function(result) {
+	async stop(result) {
 				
 				
 		this.on = 0;
@@ -1806,7 +1811,7 @@ sp_game = {
 
 	},
 	
-	exit_button_down : async function() {
+	async exit_button_down() {
 		
 		if (anim2.any_on()===true)
 			return;
@@ -1821,7 +1826,7 @@ sp_game = {
 
 	},
 		
-	get_attack_card : function (toss) {
+	get_attack_card (toss) {
 				
 		//создаем миниколоду для анализа	
 		let mini_deck = [];		
@@ -1854,7 +1859,7 @@ sp_game = {
 		
 	},
 	
-	get_defence_card : function () {
+	get_defence_card () {
 		console.log('--------------------')
 		
 		//текущее значение 
@@ -1895,7 +1900,7 @@ sp_game = {
 
 	},
 		
-	get_deck_value : function (cards) {
+	get_deck_value (cards) {
 		
 		let val = 0;
 		cards.forEach(card => {			
@@ -1910,7 +1915,7 @@ sp_game = {
 		
 	},
 	
-	close : async function() {
+	async close() {
 		
 		table.close();
 		
@@ -1922,7 +1927,7 @@ sp_game = {
 		
 	},
 	
-	switch_close : function() {
+	switch_close () {
 		
 		table.set_action_button('HIDE');
 		objects.sbg_button.visible=false;
@@ -1943,7 +1948,7 @@ table = {
 	top_zindex : 0,
 	last_cards : [],
 		
-	init : function(role, seed) {
+	init (role, seed) {
 		
 		
 		//убираем все карты
@@ -1997,7 +2002,7 @@ table = {
 		
 	},
 	
-	can_beat : function(my_card, opp_card) {
+	can_beat (my_card, opp_card) {
 		
 		if (my_card.suit === this.trump.suit && opp_card.suit === this.trump.suit)
 			if (my_card.value > opp_card.value)
@@ -2014,7 +2019,7 @@ table = {
 		
 	},
 	
-	can_add_card : function(card) {
+	can_add_card (card) {
 		
 		
 		if (this.center_deck.size > 9) return false;		
@@ -2026,7 +2031,7 @@ table = {
 		
 	},
 					
-	can_toss_cards : function() {
+	can_toss_cards() {
 		
 		for (let my_card of this.my_deck.cards)
 			for (let cen_card of this.center_deck.cards)
@@ -2037,7 +2042,7 @@ table = {
 
 	},
 					
-	card_down : async function (card) {
+	async card_down(card) {
 		
 		if (anim2.any_on() || state === 'stop') return;
 		
@@ -2140,7 +2145,7 @@ table = {
 		
 	},
 	
-	send_card_to_center : async function(card) {
+	async send_card_to_center(card) {
 				
 		sound.play('card');
 		
@@ -2182,14 +2187,14 @@ table = {
 		
 	},
 		
-	bring_to_front : function(card) {
+	bring_to_front (card) {
 		
 		this.top_zindex++;
 		card.zIndex = this.top_zindex;		
 		
 	},
 	
-	process_incoming_move : async function(msg, data) {
+	async process_incoming_move(msg, data) {
 		
 		
 		if (msg !== 'TOSS')
@@ -2269,7 +2274,7 @@ table = {
 		
 	},
 	
-	shift_center_left : async function() {
+	async shift_center_left() {
 		
 		this.center_deck.forEach(card => {			
 			anim2.add(card,{x:[card.x, card.x - this.PAIR_SPACE]}, true, 0.25,'easeInOutCubic');	
@@ -2277,7 +2282,7 @@ table = {
 	
 	},	
 		
-	replenish_deck : function(deck) {
+	replenish_deck(deck) {
 		
 		let new_cards_required = 6 - deck.size;
 		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
@@ -2288,7 +2293,7 @@ table = {
 		
 	},
 		
-	opp_toss_card : async function (card_id) {
+	async opp_toss_card  (card_id) {
 		
 		let card = this.opp_deck.pop_by_id(card_id);
 		
@@ -2345,7 +2350,7 @@ table = {
 		
 	},
 		
-	take : async function() {
+	async take() {
 		
 		if (anim2.any_on() || this.state === 'stop') return;
 		
@@ -2393,7 +2398,7 @@ table = {
 	
 	},
 		
-	done : async function() {
+	async done() {
 				
 		if (anim2.any_on() || this.state === 'stop') return;
 				
@@ -2432,13 +2437,13 @@ table = {
 		
 	},
 
-	opp_take : async function (new_cards_ids) {
+	async opp_take(new_cards_ids) {
 				
 		
 				
 	},
 
-	toss_done: async function() {		
+	async toss_done() {		
 
 		this.state='my_attack';
 				
@@ -2466,7 +2471,7 @@ table = {
 		
 	},
 	
-	opp_done : async function (card_ids) {
+	async opp_done(card_ids) {
 								
 		
 		//анимация карты из центра идут в битую колоду
@@ -2491,7 +2496,7 @@ table = {
 		this.set_action_button('HIDE');
 	},
 		
-	update_big_deck_info : function() {
+	update_big_deck_info () {
 		
 		//обновляем инфо о количестве кард в большой колоде
 		objects.cards_left.text = this.big_deck.size;
@@ -2510,7 +2515,7 @@ table = {
 		
 	},
 	
-	close : function () {
+	close () {
 		
 		
 		objects.trump_card.visible = false;
@@ -2731,7 +2736,6 @@ var kill_game = function() {
 	firebase.app().delete();
 	document.body.innerHTML = 'CLIENT TURN OFF';
 }
-
 
 process_new_message=function(msg) {
 
@@ -4414,7 +4418,7 @@ var auth = function() {
 
 		let help_obj = {
 
-			loadScript : function(src) {
+			loadScript(src) {
 			  return new Promise((resolve, reject) => {
 				const script = document.createElement('script')
 				script.type = 'text/javascript'
@@ -4425,7 +4429,7 @@ var auth = function() {
 			  })
 			},
 
-			init: async function() {
+			async init() {
 
 				let s = window.location.href;
 
@@ -4469,7 +4473,7 @@ var auth = function() {
 
 
 				//-----------ЛОКАЛЬНЫЙ СЕРВЕР--------------------------------
-				if (s.includes("192.168")) {
+				if (s.includes("127.0")) {
 					game_platform="debug";
 					help_obj.debug();
 					return;
@@ -4482,7 +4486,7 @@ var auth = function() {
 
 			},
 
-			get_random_name : function(e_str) {
+			get_random_name(e_str) {
 				
 				let rnd_names = ['Gamma','Жираф','Зебра','Тигр','Ослик','Мамонт','Волк','Лиса','Мышь','Сова','Hot','Енот','Кролик','Бизон','Super','ZigZag','Magik','Alpha','Beta','Foxy','Fazer','King','Kid','Rock'];
 				let chars = '+0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -4505,7 +4509,7 @@ var auth = function() {
 
 			},	
 
-			get_random_name2 : function(e_str) {
+			get_random_name2 (e_str) {
 				
 				let rnd_names = ['Crazy','Monkey','Sky','Mad','Doom','Hash','Sway','Ace','Thor'];
 				let chars = '+0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -4527,7 +4531,7 @@ var auth = function() {
 				}						
 			},	
 			
-			yandex: function() {
+			yandex() {
 
 				
 				if(typeof(YaGames)==='undefined')
@@ -4575,7 +4579,7 @@ var auth = function() {
 				}
 			},
 
-			vk: function() {
+			vk() {
 
 				vkBridge.send('VKWebAppInit').then(()=>{
 					
@@ -4598,7 +4602,7 @@ var auth = function() {
 
 			},
 
-			get_cg_user_data : async function(event) {
+			async get_cg_user_data(event) {
 				
 				return new Promise(function(resolve, reject) {
 
@@ -4614,7 +4618,7 @@ var auth = function() {
 				
 			},
 
-			debug: function() {
+			debug() {
 
 				let uid = prompt('Отладка. Введите ID', 100);
 
@@ -4625,7 +4629,7 @@ var auth = function() {
 
 			},
 
-			local: function(repeat = 0) {
+			local(repeat = 0) {
 
 				//ищем в локальном хранилище
 				let local_uid = localStorage.getItem('uid');
@@ -4687,7 +4691,7 @@ var auth = function() {
 
 			},
 
-			unknown: function () {
+			unknown () {
 
 				game_platform="unknown";
 				alert("Неизвестная платформа! Кто Вы?")
@@ -4696,7 +4700,7 @@ var auth = function() {
 				help_obj.local();
 			},
 
-			process_results: function() {
+			process_results() {
 
 
 				//отображаем итоговые данные
@@ -4964,7 +4968,7 @@ async function init_game_env(l) {
 	if (my_data.rating > rooms_ranges[2] && my_data.rating <= rooms_ranges[3])
 		room_name= 'states3';	
 
-	
+	//room_name= 'states4';	
 	
 	//это путь к чату
 	chat_path='states_chat';
