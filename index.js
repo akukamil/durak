@@ -1570,7 +1570,9 @@ mp_game = {
 			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'opp_timeout'})	
 			try{
 				fbs.ref('BAD_CASE').push(my_log.log_arr);					
-			}catch(e){};
+			}catch(e){
+				fbs.ref('BAD_CASE').push('error_when_pushing_to_bad_case');
+			};
 	
 			this.forced_inbox_check(game_id,opp_data.name);			
 		}		
@@ -2240,7 +2242,7 @@ table = {
 		
 		
 		if (opponent===mp_game)
-			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'process_incoming_move',msg, data})	
+			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'process_incoming_move',msg, data:data||'---'})	
 
 		
 		if (msg !== 'TOSS')
@@ -2789,7 +2791,7 @@ process_new_message=function(msg) {
 	if (msg===null || msg===undefined)
 		return;
 	
-	my_log.add({name:my_data.name,opp_name:opp_data.name,client_id,game_id,connected,tm:Date.now(),info:'process_new_message',msg})	
+	my_log.add({name:my_data.name,opp_name:opp_data.name||'---',client_id,game_id,connected,tm:Date.now(),info:'process_new_message',msg})	
 
 	//принимаем только положительный ответ от соответствующего соперника и начинаем игру
 	if (msg.message==="ACCEPT"  && pending_player===msg.sender && state !== "p") {
