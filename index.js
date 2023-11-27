@@ -3,6 +3,15 @@ var app ={stage:{},renderer:{}},gdata={}, game_res, objects={}, LANG = 0, state=
 hidden_state_start = 0,fbs,room_name = 'states2', pending_player='', opponent = {}, my_data={opp_id : ''},client_id,
 opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0;
 
+my_log={
+	log_arr:[],
+	add(data){		
+		this.log_arr.push(data);
+		if (this.log_arr.length>40)
+			this.log_arr.shift();
+	}	
+};
+
 irnd = function(min,max) {	
     min = Math.ceil(min);
     max = Math.floor(max);
@@ -1309,6 +1318,9 @@ mp_game = {
 	
 	async activate (role, seed) {
 		
+		
+		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'activate'})	
+		
 		this.my_role = role;
 		
 		opponent = this;
@@ -1367,6 +1379,8 @@ mp_game = {
 	},
 		
 	send_move (data) {
+			
+		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'send_move',data})	
 		
 		if (data.message !== 'TOSS')
 			this.reset_timer(OPP_TURN);
@@ -1494,11 +1508,14 @@ mp_game = {
 	
 	chat(data) {
 		
+		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'chat',data})	
 		message.add(data, 10000,'online_message');
 		
 	},
 	
 	reset_timer(t,time) {
+		
+		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'reset_timer'})	
 		
 		//обовляем время разъединения
 		this.disconnect_time = 0;
@@ -1513,6 +1530,17 @@ mp_game = {
 			objects.timer_cont.x = 0;
 		else
 			objects.timer_cont.x = 680;
+		
+	},
+		
+	async forced_inbox_check(game_id,opp_name){
+				
+		let c_data=await fbs.ref('inbox/'+my_data.uid).once('value');
+		c_data=c_data.val();
+		
+		try{
+			fbs.ref('BAD_CASE').push({name:my_data.name,opp_name,game_id,info:'forced_inbox_check',tm:Date.now(),inbox:c_data});					
+		}catch(e){};	
 		
 	},
 		
@@ -1534,7 +1562,16 @@ mp_game = {
 			['my_no_connection',LOSE , ['Потеряна связь!\nИспользуйте надежное интернет соединение.','Lost connection!\nUse a reliable internet connection']]
 		];
 		
-		clearTimeout(this.timer_id);		
+		clearTimeout(this.timer_id);	
+
+
+		if (result==='opp_timeout'&&my_data.rating>2000){	
+			try{
+				fbs.ref('BAD_CASE').push(my_log.log_arr);					
+			}catch(e){};
+	
+			this.forced_inbox_check(game_id,opp_data.name);			
+		}		
 		
 		let result_row = res_array.find( p => p[0] === result);
 		let result_str = result_row[0];		
@@ -1594,6 +1631,9 @@ mp_game = {
 	},
 		
 	async giveup() {
+		
+		
+		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'giveup'})	
 		
 		if (this.made_moves < 3) {
 			message.add(['Нельзя сдаваться в начале игры','Do not give up so early'][LANG])
@@ -2197,6 +2237,10 @@ table = {
 	async process_incoming_move(msg, data) {
 		
 		
+		if (opponent===mp_game)
+			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'process_incoming_move',msg, data})	
+
+		
 		if (msg !== 'TOSS')
 			opponent.reset_timer(MY_TURN);
 		
@@ -2742,6 +2786,8 @@ process_new_message=function(msg) {
 	//проверяем плохие сообщения
 	if (msg===null || msg===undefined)
 		return;
+	
+	my_log.add({name:my_data.name,opp_name:opp_data.name,client_id,game_id,connected,tm:Date.now(),info:'process_new_message',msg})	
 
 	//принимаем только положительный ответ от соответствующего соперника и начинаем игру
 	if (msg.message==="ACCEPT"  && pending_player===msg.sender && state !== "p") {
@@ -3257,7 +3303,7 @@ main_menu= {
 
 }
 
-lb = {
+lb={
 	
 	active : 0,
 	cards_pos: [[370,10],[380,70],[390,130],[380,190],[360,250],[330,310],[290,370]],
