@@ -1318,7 +1318,7 @@ mp_game = {
 	
 	async activate (role, seed) {
 		
-		
+		my_log.log_arr=[];
 		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'activate'})	
 		
 		this.my_role = role;
@@ -4460,6 +4460,27 @@ lobby={
 
 	}
 
+}
+
+checker={
+	
+	
+	async start(){
+		
+		let data=await fbs.ref('BAD_CASE').once('value');
+		data=data.val();
+			
+		
+		for (let block in data){
+			const cur_obj=data[block];
+			console.log(cur_obj)
+			
+		}		
+		
+	}
+	
+	
+	
 }
 
 var auth = function() {
