@@ -1319,7 +1319,7 @@ mp_game = {
 	async activate (role, seed) {
 		
 		my_log.log_arr=[];
-		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'activate'})	
+		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'activate'})	
 		
 		this.my_role = role;
 		
@@ -1380,7 +1380,7 @@ mp_game = {
 		
 	send_move (data) {
 			
-		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'send_move',data})	
+		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'send_move',data})	
 		
 		if (data.message !== 'TOSS')
 			this.reset_timer(OPP_TURN);
@@ -1508,14 +1508,14 @@ mp_game = {
 	
 	chat(data) {
 		
-		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'chat',data})	
+		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'chat',data})	
 		message.add(data, 10000,'online_message');
 		
 	},
 	
 	reset_timer(t,time) {
 		
-		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'reset_timer'})	
+		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'reset_timer'})	
 		
 		//обовляем время разъединения
 		this.disconnect_time = 0;
@@ -1571,7 +1571,7 @@ mp_game = {
 
 		if (result==='opp_timeout'&&(my_data.rating>2000||opp_data.rating>2000)){	
 		
-			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'opp_timeout'})	
+			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'opp_timeout'})	
 			try{
 				fbs.ref('BAD_CASE').push(my_log.log_arr);					
 			}catch(e){
@@ -1641,7 +1641,7 @@ mp_game = {
 	async giveup() {
 		
 		
-		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'giveup'})	
+		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'giveup'})	
 		
 		if (this.made_moves < 3) {
 			message.add(['Нельзя сдаваться в начале игры','Do not give up so early'][LANG])
@@ -2246,7 +2246,7 @@ table = {
 		
 		
 		if (opponent===mp_game)
-			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'process_incoming_move',msg, data:data||'---'})	
+			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'process_incoming_move',msg, data:data||'---'})	
 
 		
 		if (msg !== 'TOSS')
@@ -2795,7 +2795,7 @@ process_new_message=function(msg) {
 	if (msg===null || msg===undefined)
 		return;
 	
-	my_log.add({name:my_data.name,opp_name:opp_data.name||'---',client_id,game_id,connected,tm:Date.now(),info:'process_new_message',msg})	
+	my_log.add({name:my_data.name,opp_name:opp_data.name||'---',client_id,game_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'process_new_message',msg})	
 
 	//принимаем только положительный ответ от соответствующего соперника и начинаем игру
 	if (msg.message==="ACCEPT"  && pending_player===msg.sender && state !== "p") {
@@ -5047,7 +5047,7 @@ async function init_game_env(l) {
 	if (my_data.rating > rooms_ranges[2] && my_data.rating <= rooms_ranges[3])
 		room_name= 'states3';	
 
-	//room_name= 'states3';	
+	//room_name= 'states4';	
 	
 	//это путь к чату
 	chat_path='states_chat';
