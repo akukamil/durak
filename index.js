@@ -1536,10 +1536,10 @@ mp_game = {
 	async forced_inbox_check(game_id,opp_name){
 				
 				
-		let opp_inbox_data=await fbs.ref('inbox/'+opp_data.uid).once('value');
+		let opp_inbox_data=await fbs.ref('inbox/'+opp_data.uid).get();
 		opp_inbox_data=opp_inbox_data.val();
 		
-		let my_inbox_data=await fbs.ref('inbox/'+my_data.uid).once('value');
+		let my_inbox_data=await fbs.ref('inbox/'+my_data.uid).get();
 		my_inbox_data=my_inbox_data.val();
 		
 		try{
@@ -4890,8 +4890,6 @@ async function check_blocked(){
 
 async function init_game_env(l) {
 
-	//if (l===1) LANG = 1;
-		
 	await load_resources();
 		
 	//убираем загрузочные данные
@@ -5049,7 +5047,7 @@ async function init_game_env(l) {
 	if (my_data.rating > rooms_ranges[2] && my_data.rating <= rooms_ranges[3])
 		room_name= 'states3';	
 
-	//room_name= 'states4';	
+	//room_name= 'states3';	
 	
 	//это путь к чату
 	chat_path='states_chat';
@@ -5061,7 +5059,7 @@ async function init_game_env(l) {
 	fbs.ref("inbox/"+my_data.uid).set({sender:"-",message:"-",tm:"-",data:{x1:0,y1:0,x2:0,y2:0,board_state:0}});
 
 	//подписываемся на новые сообщения
-	fbs.ref("inbox/"+my_data.uid).on('value', (snapshot) => { process_new_message(snapshot.val());});
+	fbs.ref("inbox/"+my_data.uid).on('value', (snapshot) => {process_new_message(snapshot.val());});
 	
 	//обновляем базовые данные в файербейс так могло что-то поменяться
 	fbs.ref("players/"+my_data.uid+"/name").set(my_data.name);
