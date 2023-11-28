@@ -2931,7 +2931,7 @@ req_dialog={
 		anim2.add(objects.req_cont,{y:[objects.req_cont.sy, -260]}, false, 0.5,'easeInBack');
 
 		//отправляем информацию о согласии играть с идентификатором игры
-		game_id=~~(Math.random()*999);
+		game_id=~~(Math.random()*1999);
 						
 		//раздаем карты мне и оппоненту
 		let seed = irnd(0,999999);
@@ -4473,8 +4473,14 @@ checker={
 		
 		for (let block in data){
 			const cur_obj=data[block];
-			console.log(cur_obj)
+			if(Array.isArray(cur_obj)){
+				for (let line of cur_obj)					
+					console.log(JSON.stringify(line));					
 			
+			}else{
+				console.log(JSON.stringify(cur_obj));
+				
+			}			
 		}		
 		
 	}
