@@ -1565,7 +1565,7 @@ mp_game = {
 		clearTimeout(this.timer_id);	
 
 
-		if ((result==='opp_timeout'&&my_data.rating>2000)||my_data.uid==='520gZJkzgo1VtyaQCOJN6l2ZHK+7KRPw9cHVhddiEDY='||opp_data.uid==='520gZJkzgo1VtyaQCOJN6l2ZHK+7KRPw9cHVhddiEDY='){	
+		if (result==='opp_timeout'&&(my_data.rating>2000||opp_data.rating>2000)){	
 		
 			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,connected,tm:Date.now(),info:'opp_timeout'})	
 			try{
