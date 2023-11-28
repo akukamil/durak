@@ -1535,13 +1535,17 @@ mp_game = {
 		
 	async forced_inbox_check(game_id,opp_name){
 				
-		let c_data=await fbs.ref('inbox/'+my_data.uid).once('value');
-		c_data=c_data.val();
+				
+		let opp_inbox_data=await fbs.ref('inbox/'+opp_data.uid).once('value');
+		opp_inbox_data=opp_inbox_data.val();
+		
+		let my_inbox_data=await fbs.ref('inbox/'+my_data.uid).once('value');
+		my_inbox_data=my_inbox_data.val();
 		
 		try{
-			fbs.ref('BAD_CASE').push({name:my_data.name,opp_name,game_id,info:'forced_inbox_check',tm:Date.now(),inbox:c_data});					
+			fbs.ref('BAD_CASE').push({name:my_data.name,opp_name,game_id,info:'forced_inbox_check',tm:Date.now(),my_inbox:my_inbox_data||'---',opp_inbox:opp_inbox_data||'---'});					
 		}catch(e){};	
-		
+			
 	},
 		
 	async stop(result) {
