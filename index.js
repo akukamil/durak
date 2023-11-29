@@ -1295,7 +1295,7 @@ mp_game = {
 	timer_id : 0,
 	timer_prv_time:0,	
 	made_moves: 0,
-	my_role : "",
+	my_role : '',
 	stickers_button_pos:[0,0,0],
 	chat_button_pos:[0,0,0],
 	giveup_button_pos:[0,0,0],
@@ -1454,7 +1454,11 @@ mp_game = {
 		let msg_data = await feedback.show();
 		
 		if (msg_data[0] === 'sent') {			
-			fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:'CHAT',tm:Date.now(),data:msg_data[1]});	
+			fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'CHAT',tm:Date.now(),data:msg_data[1]});	
+			
+			if (my_data.rating>2000||opp_data.rating>2000){
+				fbs.ref('CHAT_ARCH').push({game_id:game_id,sender:my_data.uid,data:msg_data[1],tm:Date.now()});	
+			}
 
 		} else {			
 			message.add('Сообщение не отправлено');
@@ -1508,15 +1512,12 @@ mp_game = {
 	
 	chat(data) {
 		
-		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'chat',data})	
 		message.add(data, 10000,'online_message');
 		
 	},
 	
 	reset_timer(t,time) {
-		
-		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'reset_timer'})	
-		
+				
 		//обовляем время разъединения
 		this.disconnect_time = 0;
 		turn = t;
