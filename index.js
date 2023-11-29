@@ -1440,6 +1440,12 @@ mp_game = {
 		if (this.move_time_left === 5) {
 			objects.timer_text.tint=0xff0000;
 			sound.play('clock');
+			
+			if ((turn === OPP_TURN)&&(my_data.rating>2000||opp_data.rating>2000)){	
+					
+				this.forced_inbox_check(game_id,opp_data.name);			
+			}		
+			
 		}
 
 		//обновляем текст на экране
@@ -1536,15 +1542,18 @@ mp_game = {
 		
 	async forced_inbox_check(game_id,opp_name){
 				
-				
+		let t1=Date.now();
 		let opp_inbox_data=await fbs.ref('inbox/'+opp_data.uid).get();
 		opp_inbox_data=opp_inbox_data.val();
+		let t1_period=Date.now()-t1;
 		
+		t1=Date.now();
 		let my_inbox_data=await fbs.ref('inbox/'+my_data.uid).get();
 		my_inbox_data=my_inbox_data.val();
+		let t2_period=Date.now()-t1;
 		
 		try{
-			fbs.ref('BAD_CASE').push({name:my_data.name,opp_name,game_id,info:'forced_inbox_check',tm:Date.now(),my_inbox:my_inbox_data||'---',opp_inbox:opp_inbox_data||'---'});					
+			fbs.ref('BAD_CASE').push({name:my_data.name,opp_name,game_id,t1_period,t2_period,info:'forced_inbox_check',tm:Date.now(),my_inbox:my_inbox_data||'---',opp_inbox:opp_inbox_data||'---'});					
 		}catch(e){};	
 			
 	},
@@ -1578,8 +1587,7 @@ mp_game = {
 			}catch(e){
 				fbs.ref('BAD_CASE').push('error_when_pushing_to_bad_case');
 			};
-	
-			this.forced_inbox_check(game_id,opp_data.name);			
+
 		}		
 		
 		let result_row = res_array.find( p => p[0] === result);
@@ -4487,6 +4495,42 @@ checker={
 				
 			}			
 		}		
+		
+	},
+	
+	async read_chat(){
+		
+		let data=await fbs.ref('CHAT_ARCH').once('value');
+		data=data.val();
+		data=Object.keys(data).map((key) => [data[key].game_id,data[key].sender,data[key].data,data[key].tm]);;
+		data.sort(function(a,b){return a[3]-b[3]})
+		console.log(data);	
+	},
+	
+	async clear_inboxes(){
+		
+		
+		let data=await fbs.ref('inbox').once('value');
+		data=data.val();
+
+		for (let d in data){
+			
+			const tm=data[d].tm;
+			if (tm&&tm!=='-'){
+				
+				const age=Date.now()-tm;
+				const days=age/1000/60/60/24;
+				if (days>10){
+					await await fbs.ref('inbox/'+d).remove();					
+					console.log('removed: '+d)
+				}
+
+				console.log(days);
+				
+			}		
+			
+		}	
+		
 		
 	}
 	
