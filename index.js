@@ -1586,7 +1586,9 @@ mp_game = {
 		if (result==='opp_timeout'&&(my_data.rating>2000||opp_data.rating>2000)){	
 		
 			my_last_move.opp_timeout=Date.now();
-	
+			my_last_move.game_id=game_id;
+			
+			
 			try{
 				fbs.ref('BAD_CASE2').push(my_last_move);					
 			}catch(e){
