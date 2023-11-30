@@ -1557,7 +1557,7 @@ mp_game = {
 		let t2_period=Date.now()-t1;
 		
 		try{
-			fbs.ref('BAD_CASE').push({name:my_data.name,opp_name,game_id,t1_period,t2_period,info:'forced_inbox_check',tm:Date.now(),my_inbox:my_inbox_data||'---',opp_inbox:opp_inbox_data||'---'});					
+			fbs.ref('BAD_CASE').push({name:my_data.name,opp_name,game_id,t1_period,t2_period,info:'forced_inb_check2',tm:Date.now(),my_inbox:my_inbox_data||'---',opp_inbox:opp_inbox_data||'---'});					
 		}catch(e){};	
 			
 	},
