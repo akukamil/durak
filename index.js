@@ -1296,6 +1296,7 @@ mp_game = {
 	timer_prv_time:0,	
 	made_moves: 0,
 	my_role : '',
+	write_fb_timer:0,
 	stickers_button_pos:[0,0,0],
 	chat_button_pos:[0,0,0],
 	giveup_button_pos:[0,0,0],
@@ -1389,8 +1390,11 @@ mp_game = {
 		
 		this.made_moves++;
 		
-		//отправляем ход онайлн сопернику
-		fbs.ref("inbox/"+opp_data.uid).set(data);
+		//отправляем ход онайлн сопернику (с таймаутом)
+		this.write_fb_timer=setTimeout(function(){this.stop('my_no_connection')}, 5000);  
+		fbs.ref("inbox/"+opp_data.uid).set(data).then(()=>{			
+			clearTimeout(this.write_fb_timer);			
+		});			
 		
 	},
 		
