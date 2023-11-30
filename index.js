@@ -1589,6 +1589,7 @@ mp_game = {
 			my_last_move.game_id=game_id;
 			my_last_move.opp_name=opp_data.name;
 			my_last_move.opp_uid=opp_data.uid;
+			my_last_move.my_name=my_data.name;
 			
 			try{
 				fbs.ref('BAD_CASE2').push(my_last_move);					
