@@ -3,6 +3,8 @@ var app ={stage:{},renderer:{}},gdata={}, game_res, objects={}, LANG = 0, state=
 hidden_state_start = 0,fbs,room_name = 'states2', pending_player='', opponent = {}, my_data={opp_id : ''},client_id,
 opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0;
 
+let last_move_data={};
+
 my_log={
 	log_arr:[],
 	add(data){		
@@ -1319,9 +1321,6 @@ mp_game = {
 	
 	async activate (role, seed) {
 		
-		my_log.log_arr=[];
-		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'activate'})	
-		
 		this.my_role = role;
 		
 		opponent = this;
@@ -1329,8 +1328,7 @@ mp_game = {
 		objects.desktop.texture = gres.desktop.texture;
 		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.6,'linear');
 		
-		console.log('seed ',seed);
-		
+	
 		//если открыт лидерборд то закрываем его
 		if (objects.lb_1_cont.visible===true)
 			lb.close();
@@ -1381,8 +1379,8 @@ mp_game = {
 		
 	send_move (data) {
 			
-		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'send_move',data})	
-		
+		my_last_move=data;
+			
 		if (data.message !== 'TOSS')
 			this.reset_timer(OPP_TURN);
 		
@@ -1392,7 +1390,9 @@ mp_game = {
 		
 		//отправляем ход онайлн сопернику (с таймаутом)
 		this.write_fb_timer=setTimeout(function(){this.stop('my_no_connection')}, 5000);  
-		fbs.ref("inbox/"+opp_data.uid).set(data).then(()=>{			
+		const write_start=Date.now();
+		fbs.ref("inbox/"+opp_data.uid).set(data).then(()=>{	
+			my_last_move.write_time=Date.now()-write_start;
 			clearTimeout(this.write_fb_timer);			
 		});			
 		
@@ -1557,7 +1557,7 @@ mp_game = {
 		let t2_period=Date.now()-t1;
 		
 		try{
-			fbs.ref('BAD_CASE').push({name:my_data.name,opp_name,game_id,t1_period,t2_period,info:'forced_inb_check2',tm:Date.now(),my_inbox:my_inbox_data||'---',opp_inbox:opp_inbox_data||'---'});					
+			fbs.ref('BAD_CASE2').push({name:my_data.name,opp_name,game_id,t1_period,t2_period,info:'forced_inb_check2',tm:Date.now(),my_inbox:my_inbox_data||'---',opp_inbox:opp_inbox_data||'---'});					
 		}catch(e){};	
 			
 	},
@@ -1585,11 +1585,12 @@ mp_game = {
 
 		if (result==='opp_timeout'&&(my_data.rating>2000||opp_data.rating>2000)){	
 		
-			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'opp_timeout'})	
+			my_last_move.opp_timeout=Date.now();
+	
 			try{
-				fbs.ref('BAD_CASE').push(my_log.log_arr);					
+				fbs.ref('BAD_CASE2').push(my_last_move);					
 			}catch(e){
-				fbs.ref('BAD_CASE').push('error_when_pushing_to_bad_case');
+				fbs.ref('BAD_CASE2').push('error_when_pushing_to_bad_case');
 			};
 
 		}		
@@ -1637,7 +1638,7 @@ mp_game = {
 			fbs.ref("finishes/"+game_id).set({'player1':objects.my_card_name.text,'player2':objects.opp_card_name.text, 'res':result_number,'fin_type':result_str,'duration':duration, 'ts':firebase.database.ServerValue.TIMESTAMP});
 		
 			//контрольные концовки
-			if (my_data.rating>2130 || opp_data.rating>2130)
+			if (my_data.rating>2000 || opp_data.rating>2000)
 			{
 				fbs.ref("finishes2").push({uid:my_data.uid,player1:objects.my_card_name.text,player2:objects.opp_card_name.text, res:result_number,fin_type:result_str,duration:duration, rating: [old_rating,my_data.rating],client_id:client_id, ts:firebase.database.ServerValue.TIMESTAMP});	
 			}		
@@ -1652,9 +1653,6 @@ mp_game = {
 	},
 		
 	async giveup() {
-		
-		
-		my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'giveup'})	
 		
 		if (this.made_moves < 3) {
 			message.add(['Нельзя сдаваться в начале игры','Do not give up so early'][LANG])
@@ -1705,8 +1703,7 @@ sp_game = {
 		
 		//инициируем стол
 		let seed2 = irnd(0,999999)
-		//seed2 = 441379
-		console.log(seed2)
+
 		table.init(role, seed2);
 		
 		//показыаем карточки
@@ -1751,11 +1748,9 @@ sp_game = {
 				let test_deck = [...table.opp_deck.cards];
 				test_deck.splice(i, 1);	
 				let val = this.get_deck_value(test_deck);					
-				console.log(val);
 				if (val > cur_deck_val) {
 					
 					await anim2.add(anim2.empty_spr,{x:[0, 1]}, false, 0.25,'linear');	
-					console.log('подсунул карту')
 					table.opp_deck.pop(card);
 					card.unshirt();
 					await anim2.add(card,{x:[card.x, 400],y:[card.y, 400]}, true, 0.15,'linear');
@@ -1927,13 +1922,11 @@ sp_game = {
 		let mini_deck = [];
 		table.opp_deck.cards.forEach(card => mini_deck.push({value : card.value, suit : card.suit}));
 		let cur_deck_val = this.get_deck_value(mini_deck);
-		console.log('Текущее значение', cur_deck_val)
 		
 		//сколько будет поинтов если забрать все карты
 		let taken_deck = [...mini_deck];
 		table.center_deck.cards.forEach(card => taken_deck.push({value : card.value, suit : card.suit}));
 		let taken_val = this.get_deck_value(taken_deck);		
-		console.log('если забрать', taken_val)
 		
 		//теперь проверяем какие варианты если отбивать
 		let best_defence_val = - 999999;		
@@ -1950,7 +1943,6 @@ sp_game = {
 				best_defence_card_id = table.opp_deck.cards[i].id;
 			}		
 
-			console.log(deck_val, can_beat)
 		}
 		
 		
@@ -2029,7 +2021,6 @@ table = {
 				
 		//определяем козырную карту
 		this.trump = this.big_deck.get_first_card();
-		console.log('Козырь: ', this.trump.suit, this.trump.value)
 						
 		objects.trump_card.set(this.trump.suit,this.trump.value);
 				
@@ -2135,8 +2126,6 @@ table = {
 					
 			//отправляем ход сопернику кем бы он ни был
 			opponent.send_move({sender:my_data.uid,message:"TOSS",tm:Date.now(),data:card.id});
-			console.log('TOSS ',card.value, card.suit)
-
 		
 			//выходим
 			return;
@@ -2166,8 +2155,6 @@ table = {
 				}
 			}			
 			
-			console.log('my_attack ',card.value, card.suit)
-
 			//отправляем ход сопернику кем бы он ни был
 			opponent.send_move({sender:my_data.uid, message:'MOVE', tm:Date.now(), data:card.id});
 		
@@ -2186,16 +2173,12 @@ table = {
 					
 			await this.send_card_to_center(card);			
 			this.state = 'opp_attack';			
-			
-			
+						
 			this.set_action_button('HIDE');
-			console.log('my_defence ',card.value, card.suit)
-
 			
 			//проверяем окончание игры
 			if (this.big_deck.size === 0 && this.my_deck.size === 0)
 				opponent.stop(this.opp_deck.size > 0 ? 'my_win' : 'draw')					
-
 			
 			//отправляем ход сопернику кем бы он ни был
 			opponent.send_move({sender:my_data.uid, message:'MOVE', tm:Date.now(), data:card.id});
@@ -2256,12 +2239,7 @@ table = {
 	},
 	
 	async process_incoming_move(msg, data) {
-		
-		
-		if (opponent===mp_game)
-			my_log.add({name:my_data.name,opp_name:opp_data.name,game_id,client_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'process_incoming_move',msg, data:data||'---'})	
-
-		
+				
 		if (msg !== 'TOSS')
 			opponent.reset_timer(MY_TURN);
 		
@@ -2314,6 +2292,7 @@ table = {
 		if (this.state === 'opp_attack') {
 			
 			let card = this.opp_deck.pop_by_id(data);
+			
 			await this.send_card_to_center(card);			
 						
 			//проверяем окончание игры
@@ -2808,8 +2787,6 @@ process_new_message=function(msg) {
 	if (msg===null || msg===undefined)
 		return;
 	
-	my_log.add({name:my_data.name,opp_name:opp_data.name||'---',client_id,game_id,opp_uid:opp_data.uid||'---',tm:Date.now(),info:'process_new_message',msg})	
-
 	//принимаем только положительный ответ от соответствующего соперника и начинаем игру
 	if (msg.message==="ACCEPT"  && pending_player===msg.sender && state !== "p") {
 		//в данном случае я мастер и хожу вторым
@@ -3194,8 +3171,8 @@ main_menu= {
 		//some_process.main_menu = function(){};
 		objects.mb_cont.visible=false;
 		some_process.main_menu_process = function(){};
-		anim2.add(objects.mb_cont,{x:[objects.mb_cont.x,800]}, true, 1,'easeInOutCubic');
-		anim2.add(objects.game_title,{y:[objects.game_title.y,-300]}, true, 1,'linear');
+		anim2.add(objects.mb_cont,{x:[objects.mb_cont.x,800]}, false, 1,'easeInOutCubic');
+		anim2.add(objects.game_title,{y:[objects.game_title.y,-300]}, false, 1,'linear');
 		//await anim2.add(objects.desktop,{alpha:[1,0]}, false, 0.6,'linear');	
 	},
 
@@ -4064,6 +4041,8 @@ lobby={
 		};
 		
 		sound.play('click');
+		
+		//console.log( objects.mini_cards[card_id].uid1, objects.mini_cards[card_id].uid2);
 		
 		//закрываем диалог стола если он открыт
 		if(objects.invite_cont.visible) this.close_invite_dialog();
@@ -5096,6 +5075,8 @@ async function init_game_env(l) {
 	if (my_data.rating > rooms_ranges[2] && my_data.rating <= rooms_ranges[3])
 		room_name= 'states3';	
 
+
+	//my_data.rating=2001;
 	//room_name= 'states4';	
 	
 	//это путь к чату
