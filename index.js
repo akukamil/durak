@@ -1444,12 +1444,6 @@ mp_game = {
 		if (this.move_time_left === 5) {
 			objects.timer_text.tint=0xff0000;
 			sound.play('clock');
-			
-			if ((turn === OPP_TURN)&&(my_data.rating>2000||opp_data.rating>2000)){	
-					
-				this.forced_inbox_check(game_id,opp_data.name);			
-			}		
-			
 		}
 
 		//обновляем текст на экране
@@ -1590,7 +1584,7 @@ mp_game = {
 			my_last_move.opp_name=opp_data.name;
 			my_last_move.opp_uid=opp_data.uid;
 			my_last_move.my_name=my_data.name;
-			
+			this.forced_inbox_check(game_id,opp_data.name);	
 			try{
 				fbs.ref('BAD_CASE2').push(my_last_move);					
 			}catch(e){
