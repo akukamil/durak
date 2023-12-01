@@ -1388,6 +1388,8 @@ mp_game = {
 		
 		this.made_moves++;
 		
+		my_last_move.write_timeout=-1;
+		
 		//отправляем ход онайлн сопернику (с таймаутом)
 		this.write_fb_timer=setTimeout(function(){my_last_move.write_timeout=Date.now();mp_game.stop('my_no_connection');}, 5000);  
 		const write_start=Date.now();
