@@ -1584,12 +1584,21 @@ mp_game = {
 			my_last_move.my_name=my_data.name;
 			my_last_move.result=result;
 			my_last_move.location=window.location?.href||'---';
+			
+			try {
+				throw new Error();
+			} catch(e) {
+				my_last_move.stack=e?.stack||'---';
+			}			
+			
 			this.forced_inbox_check(game_id,opp_data.name);	
 			try{
 				fbs.ref('BAD_CASE2').push(my_last_move);					
 			}catch(e){
 				fbs.ref('BAD_CASE2').push('error_when_pushing_to_bad_case');
 			};
+			
+
 
 		}		
 		
@@ -1636,8 +1645,7 @@ mp_game = {
 			fbs.ref("finishes/"+game_id).set({'player1':objects.my_card_name.text,'player2':objects.opp_card_name.text, 'res':result_number,'fin_type':result_str,'duration':duration, 'ts':firebase.database.ServerValue.TIMESTAMP});
 		
 			//контрольные концовки
-			if (my_data.rating>2000 || opp_data.rating>2000)
-			{
+			if (my_data.rating>2000 || opp_data.rating>2000){
 				fbs.ref("finishes2").push({uid:my_data.uid,player1:objects.my_card_name.text,player2:objects.opp_card_name.text, res:result_number,fin_type:result_str,duration:duration, rating: [old_rating,my_data.rating],client_id:client_id, ts:firebase.database.ServerValue.TIMESTAMP});	
 			}		
 		
