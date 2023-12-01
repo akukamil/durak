@@ -1591,7 +1591,7 @@ mp_game = {
 				my_last_move.stack=e?.stack||'---';
 			}			
 			
-			this.forced_inbox_check(game_id,opp_data.name);	
+			//this.forced_inbox_check(game_id,opp_data.name);	
 			try{
 				fbs.ref('BAD_CASE2').push(my_last_move);					
 			}catch(e){
