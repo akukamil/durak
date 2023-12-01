@@ -1389,7 +1389,7 @@ mp_game = {
 		this.made_moves++;
 		
 		//отправляем ход онайлн сопернику (с таймаутом)
-		this.write_fb_timer=setTimeout(function(){my_last_move.write_timeout=Date.now();mp_game.stop('my_no_connection');function(){my_last_move.post_check=Date.now()}}, 5000);  
+		this.write_fb_timer=setTimeout(function(){my_last_move.write_timeout=Date.now();mp_game.stop('my_no_connection');mp_game.stop2();}, 5000);  
 		const write_start=Date.now();
 		fbs.ref("inbox/"+opp_data.uid).set(data).then(()=>{	
 			my_last_move.write_time=Date.now()-write_start;
@@ -1552,6 +1552,11 @@ mp_game = {
 			fbs.ref('BAD_CASE2').push({name:my_data.name,opp_name,game_id,t1_period,t2_period,info:'forced_inb_check2',tm:Date.now(),my_inbox:my_inbox_data||'---',opp_inbox:opp_inbox_data||'---'});					
 		}catch(e){};	
 			
+	},
+		
+	async stop2(){
+		
+		my_last_move.stop2=Date.now();
 	},
 		
 	async stop(result) {
