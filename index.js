@@ -1426,9 +1426,7 @@ mp_game = {
 			if (this.opp_conf_play === 1)
 				this.stop('opp_timeout');
 			else
-				this.stop('opp_no_sync');
-			
-			
+				this.stop('opp_no_sync');			
 			return;
 		}
 
@@ -1577,14 +1575,15 @@ mp_game = {
 		clearTimeout(this.timer_id);	
 
 
-		if (result==='opp_timeout'&&(my_data.rating>2000||opp_data.rating>2000)){	
+		if ((result==='opp_timeout'||result==='my_no_connection')&&(my_data.rating>2000||opp_data.rating>2000)){	
 		
 			my_last_move.opp_timeout=Date.now();
 			my_last_move.game_id=game_id;
 			my_last_move.opp_name=opp_data.name;
 			my_last_move.opp_uid=opp_data.uid;
 			my_last_move.my_name=my_data.name;
-			my_last_move.agent=window?.navigator?.userAgent||'---';
+			my_last_move.result=result;
+			my_last_move.location=window.location?.href||'---';
 			this.forced_inbox_check(game_id,opp_data.name);	
 			try{
 				fbs.ref('BAD_CASE2').push(my_last_move);					
@@ -1601,7 +1600,7 @@ mp_game = {
 		
 		let old_rating = my_data.rating;
 		my_data.rating = this.calc_new_rating (my_data.rating, result_number);
-		fbs.ref("players/"+my_data.uid+"/rating").set(my_data.rating);
+		fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
 		
 		//обновляем даные на карточке
 		objects.my_card_rating.text=my_data.rating;
