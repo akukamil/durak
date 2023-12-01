@@ -1389,7 +1389,7 @@ mp_game = {
 		this.made_moves++;
 		
 		//отправляем ход онайлн сопернику (с таймаутом)
-		this.write_fb_timer=setTimeout(function(){my_last_move.write_timeout=1;this.stop('my_no_connection')}, 5000);  
+		this.write_fb_timer=setTimeout(function(){my_last_move.write_timeout=Date.now();mp_game.stop('my_no_connection');function(){my_last_move.post_check=Date.now()}}, 5000);  
 		const write_start=Date.now();
 		fbs.ref("inbox/"+opp_data.uid).set(data).then(()=>{	
 			my_last_move.write_time=Date.now()-write_start;
@@ -1572,8 +1572,7 @@ mp_game = {
 			['my_no_connection',LOSE , ['Потеряна связь!\nИспользуйте надежное интернет соединение.','Lost connection!\nUse a reliable internet connection']]
 		];
 		
-		clearTimeout(this.timer_id);	
-
+		clearTimeout(this.timer_id);
 
 		if ((result==='opp_timeout'||result==='my_no_connection')&&(my_data.rating>2000||opp_data.rating>2000)){	
 		
