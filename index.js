@@ -3,7 +3,7 @@ var app ={stage:{},renderer:{}},gdata={}, game_res, objects={}, LANG = 0, state=
 hidden_state_start = 0,fbs,room_name = 'states2', pending_player='', opponent = {}, my_data={opp_id : ''},client_id,
 opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0;
 
-let last_move_data={};
+let my_last_move={};
 
 my_log={
 	log_arr:[],
