@@ -1460,9 +1460,9 @@ mp_game = {
 		if (msg_data[0] === 'sent') {			
 			fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'CHAT',tm:Date.now(),data:msg_data[1]});	
 			
-			if (my_data.rating>2000||opp_data.rating>2000){
+			/*if (my_data.rating>2000||opp_data.rating>2000){
 				fbs.ref('CHAT_ARCH').push({game_id:game_id,sender:my_data.uid,data:msg_data[1],tm:Date.now()});	
-			}
+			}*/
 
 		} else {			
 			message.add('Сообщение не отправлено');
@@ -1581,7 +1581,7 @@ mp_game = {
 		
 		clearTimeout(this.timer_id);
 
-		if ((result==='opp_timeout'||result==='my_no_connection')&&(my_data.rating>2000||opp_data.rating>2000)){	
+		/*if ((result==='opp_timeout'||result==='my_no_connection')&&(my_data.rating>2000||opp_data.rating>2000)){	
 		
 			my_last_move.opp_timeout=Date.now();
 			my_last_move.game_id=game_id;
@@ -1603,10 +1603,7 @@ mp_game = {
 			}catch(e){
 				fbs.ref('BAD_CASE2').push('error_when_pushing_to_bad_case');
 			};
-			
-
-
-		}		
+		}*/		
 		
 		let result_row = res_array.find( p => p[0] === result);
 		let result_str = result_row[0];		
