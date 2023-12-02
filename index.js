@@ -1663,7 +1663,7 @@ mp_game = {
 		
 	async giveup() {
 		
-		if (this.made_moves < 3) {
+		if (Date.now()-this.start_time<20000) {
 			message.add(['Нельзя сдаваться в начале игры','Do not give up so early'][LANG])
 			return;
 		}
@@ -5076,7 +5076,7 @@ async function init_game_env(l) {
 	
 	
 	//номер комнаты
-	let rooms_ranges = [0,1490,1660,9999]
+	let rooms_ranges = [0,1470,1660,9999]
 	if (my_data.rating > rooms_ranges[0] && my_data.rating <= rooms_ranges[1])
 		room_name= 'states';			
 	if (my_data.rating > rooms_ranges[1] && my_data.rating <= rooms_ranges[2])
