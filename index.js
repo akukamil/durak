@@ -344,7 +344,7 @@ chat = {
 	
 	activate() {		
 
-		objects.chat_enter_button.visible=my_data.rating>1430&&!my_data.blocked;
+		objects.chat_enter_button.visible=(my_data.rating>1430&&!my_data.blocked)||my_data.icon;
 		anim2.add(objects.chat_cont,{alpha:[0, 1]}, true, 0.1,'linear');
 		
 		this.init_payments();
@@ -5204,6 +5204,7 @@ async function init_game_env(l) {
 	my_data.name = (other_data && other_data.name) || my_data.name;
 	my_data.vk_invite = (other_data && other_data.vk_invite) || 0;
 	my_data.vk_share = (other_data && other_data.vk_share) || 0;
+	my_data.icon=(other_data && other_data.icon) || 0;
 		
 	//устанавлием мое имя в карточки
 	make_text(objects.id_name,my_data.name,150);
