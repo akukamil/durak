@@ -347,9 +347,7 @@ chat = {
 		objects.chat_enter_button.visible=my_data.rating>1430&&!my_data.blocked;
 		anim2.add(objects.chat_cont,{alpha:[0, 1]}, true, 0.1,'linear');
 		
-		this.
-		324
-		1();
+		this.init_payments();
 
 	},
 	
