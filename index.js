@@ -374,7 +374,7 @@ chat = {
 		
 		this.payments.purchase({ id: 'snow' }).then(purchase => {
 			message.add('Вы оплатили снег для всех игроков на 1 час');
-			fbs.ref('snow').set([firebase.database.ServerValue.TIMESTAMP,my_data.name]);
+			fbs.ref('snow').set({tm:firebase.database.ServerValue.TIMESTAMP,name:my_data.name});
 			
 		}).catch(err => {
 			message.add('Не получилось оплатить(((');
@@ -3523,7 +3523,7 @@ snow={
 		
 		if(data){
 			this.start();			
-			chat.snow_buyer.text=data[1]+'\nзаказал\nснегопад';
+			chat.snow_buyer.text=data.name+'\nзаказал\nснегопад';
 			objects.buy_snow_button.visible=false;
 		}
 		else{
