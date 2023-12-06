@@ -47,6 +47,12 @@ class player_mini_card_class extends PIXI.Container {
 		this.avatar.x=18;
 		this.avatar.y=18;
 		this.avatar.width=this.avatar.height=64;
+		
+		this.icon=new PIXI.Sprite(gres.star.texture);
+		this.icon.x=180;
+		this.icon.y=70;
+		this.icon.anchor.set(0.5,0.5);
+		this.icon.width=this.icon.height=45;
 				
 		this.name="";
 		this.name_text=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 27,align: 'center'});
@@ -91,7 +97,7 @@ class player_mini_card_class extends PIXI.Container {
 		this.name1="";
 		this.name2="";
 
-		this.addChild(this.bcg,this.avatar, this.avatar1, this.avatar2,this.rating_text,this.table_rating_hl,this.rating_text1,this.rating_text2, this.name_text);
+		this.addChild(this.bcg,this.avatar,this.icon, this.avatar1, this.avatar2,this.rating_text,this.table_rating_hl,this.rating_text1,this.rating_text2, this.name_text);
 	}
 
 }
@@ -3669,8 +3675,7 @@ lobby={
 		for (let uid in p_data)
 			if (p_data[uid].state !== 'p')
 				delete p_data[uid];
-		
-		
+				
 		//дополняем полными ид оппонента
 		for (let uid in p_data) {			
 			let small_opp_id = p_data[uid].opp_id;			
@@ -3683,8 +3688,7 @@ lobby={
 				}							
 			}			
 		}
-				
-		
+						
 		//определяем столы
 		//console.log (`--------------------------------------------------`)
 		for (let uid in p_data) {
@@ -3746,8 +3750,6 @@ lobby={
 			}
 		}
 
-
-
 		
 		//определяем новых игроков которых нужно добавить
 		new_single = {};		
@@ -3756,12 +3758,9 @@ lobby={
 			
 			let found = 0;
 			for(let i=1;i<objects.mini_cards.length;i++) {			
-			
 				if (objects.mini_cards[i].visible === true && objects.mini_cards[i].type === 'single') {					
-					if (p ===  objects.mini_cards[i].uid) {
-						
+					if (p ===  objects.mini_cards[i].uid)						
 						found = 1;							
-					}	
 				}				
 			}		
 			
@@ -3800,7 +3799,7 @@ lobby={
 		
 		//размещаем на свободных ячейках новых игроков
 		for (let uid in new_single)			
-			this.place_new_card({uid:uid, state:players[uid].state, name : players[uid].name,  rating : players[uid].rating});
+			this.place_new_card({uid:uid, state:players[uid].state, name:players[uid].name, rating:players[uid].rating});
 
 		//размещаем новые столы сколько свободно
 		for (let uid in tables) {			
@@ -3837,7 +3836,7 @@ lobby={
 		}
 	},
 	
-	place_table(params={uid1:0,uid2:0,name1: "XXX",name2: "XXX", rating1: 1400, rating2: 1400}) {
+	place_table(params={uid1:0,uid2:0,name1: 'XXX',name2: "XXX", rating1: 1400, rating2: 1400}) {
 				
 		for(let i=1;i<objects.mini_cards.length;i++) {
 
@@ -3859,10 +3858,10 @@ lobby={
 				objects.mini_cards[i].uid2=params.uid2;
 												
 				//убираем элементы свободного стола
-				objects.mini_cards[i].rating_text.visible = false;
-				objects.mini_cards[i].avatar.visible = false;
-				//objects.mini_cards[i].avatar_frame.visible = false;
-				objects.mini_cards[i].name_text.visible = false;
+				objects.mini_cards[i].rating_text.visible=false;
+				objects.mini_cards[i].avatar.visible=false;
+				objects.mini_cards[i].icon.visible=false;
+				objects.mini_cards[i].name_text.visible=false;
 
 				//Включаем элементы стола 
 				objects.mini_cards[i].table_rating_hl.visible=true;
@@ -3894,18 +3893,20 @@ lobby={
 		
 	},
 
-	update_existing_card(params={id:0, state:"o" , rating:1400}) {
+	update_existing_card(params={id:0, state:'o', rating:1400}) {
 
 		//устанавливаем цвет карточки в зависимости от состояния(имя и аватар не поменялись)
+		const uid=objects.mini_cards[params.id].uid;
 		objects.mini_cards[params.id].bcg.texture=this.get_state_texture(params.state);
 		objects.mini_cards[params.id].state=params.state;
 
 		objects.mini_cards[params.id].rating=params.rating;
 		objects.mini_cards[params.id].rating_text.text=params.rating;
 		objects.mini_cards[params.id].visible=true;
+		objects.mini_cards[params.id].icon.visible = (this.players_cache[uid].icon>0);
 	},
 
-	place_new_card(params={uid:0, state: "o", name: "XXX", rating: rating}) {
+	place_new_card(params={uid:0, state: 'o', name:'XXX',rating: rating}) {
 
 		for(let i=1;i<objects.mini_cards.length;i++) {
 
@@ -3916,8 +3917,7 @@ lobby={
 				objects.mini_cards[i].bcg.texture=this.get_state_texture(params.state);
 				objects.mini_cards[i].state=params.state;
 
-				objects.mini_cards[i].type = "single";
-
+				objects.mini_cards[i].type = 'single';
 
 				//присваиваем карточке данные
 				objects.mini_cards[i].uid=params.uid;
@@ -3929,11 +3929,12 @@ lobby={
 				objects.mini_cards[i].avatar2.visible = false;
 				objects.mini_cards[i].table_rating_hl.visible=false;
 				
-				//включаем элементы свободного стола
+				//включаем элементы карточки игрока
 				objects.mini_cards[i].rating_text.visible = true;
 				objects.mini_cards[i].avatar.visible = true;
 				//objects.mini_cards[i].avatar_frame.visible = true;
 				objects.mini_cards[i].name_text.visible = true;
+				objects.mini_cards[i].icon.visible = (this.players_cache[params.uid].icon>0);
 
 				objects.mini_cards[i].name=params.name;
 				make_text(objects.mini_cards[i].name_text,params.name,105);
@@ -3992,6 +3993,11 @@ lobby={
 				this.players_cache[uid].pic_url=t.val()||null;
 			}
 			
+			if (!this.players_cache[uid].icon){
+				let t=await fbs.ref('players/' + uid + '/icon').once('value');
+				this.players_cache[uid].icon=t.val()||0;
+			}
+			
 		}else{
 			
 			this.players_cache[uid]={};
@@ -4000,6 +4006,7 @@ lobby={
 			this.players_cache[uid].name=t.name||'***';
 			this.players_cache[uid].rating=t.rating||'***';
 			this.players_cache[uid].pic_url=t.pic_url||'';
+			this.players_cache[uid].icon=t.icon||0;
 		}		
 	},
 		
@@ -4018,6 +4025,7 @@ lobby={
 		objects.mini_cards[0].rating_text2.visible = false;
 		objects.mini_cards[0].avatar1.visible = false;
 		objects.mini_cards[0].avatar2.visible = false;
+		objects.mini_cards[0].icon.visible = false;
 		objects.mini_cards[0].table_rating_hl.visible = false;
 		objects.mini_cards[0].bcg.texture=gres.mini_player_card_ai.texture;
 
@@ -4870,7 +4878,7 @@ function set_state(params) {
 	if (opp_data.uid!==undefined)
 		small_opp_id=opp_data.uid.substring(0,10);
 
-	fbs.ref(room_name+"/"+my_data.uid).set({state:state, name:my_data.name, rating : my_data.rating, hidden:h_state, opp_id : small_opp_id});
+	fbs.ref(room_name+'/'+my_data.uid).set({state:state,name:my_data.name, rating:my_data.rating, hidden:h_state, opp_id:small_opp_id});
 
 }
 
@@ -5086,6 +5094,7 @@ async function init_game_env(l) {
 
 
 	//my_data.rating=2001;
+	//room_name= 'states4';	
 	//room_name= 'states4';	
 	
 	//это путь к чату
