@@ -52,7 +52,7 @@ class player_mini_card_class extends PIXI.Container {
 		this.icon.x=180;
 		this.icon.y=70;
 		this.icon.anchor.set(0.5,0.5);
-		this.icon.width=this.icon.height=45;
+		this.icon.width=this.icon.height=40;
 				
 		this.name="";
 		this.name_text=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 27,align: 'center'});
@@ -3993,7 +3993,7 @@ lobby={
 				this.players_cache[uid].pic_url=t.val()||null;
 			}
 			
-			if (!this.players_cache[uid].icon){
+			if (this.players_cache[uid].icon===undefined){
 				let t=await fbs.ref('players/' + uid + '/icon').once('value');
 				this.players_cache[uid].icon=t.val()||0;
 			}
