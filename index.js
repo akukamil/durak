@@ -340,12 +340,45 @@ chat = {
 	drag_sy:-999,	
 	recent_msg:[],
 	moderation_mode:0,
+	payments:0,
 	
 	activate() {		
 
 		objects.chat_enter_button.visible=my_data.rating>1430&&!my_data.blocked;
 		anim2.add(objects.chat_cont,{alpha:[0, 1]}, true, 0.1,'linear');
+		
+		this.init_payments();
 
+	},
+	
+	init_payments(){
+		
+		if (game_platform!=='YANDEX')
+			return;
+		
+		if(this.payments) return;
+		
+		ysdk.getPayments({signed:true}).then(_payments => {
+			chat.payments = _payments;
+		}).catch(err => {
+			console.log(err);
+		})			
+		
+	},
+	
+	buy_snow_down(){
+		
+		sound.play('click');
+		
+		if(!this.payments) return;
+		
+		this.payments.purchase({ id: 'snow' }).then(purchase => {
+			message.add('Вы оплатили снег для всех игроков на 1 час');
+			fbs.ref('snow').set([firebase.database.ServerValue.TIMESTAMP,my_data.name]);
+			
+		}).catch(err => {
+			message.add('Не получилось оплатить(((');
+		})		
 	},
 	
 	init(){
@@ -3488,14 +3521,19 @@ snow={
 	
 	snow_event(data){
 		
-		if(data)			
+		if(data){
 			this.start();			
-		else			
-			this.kill_snow();
-		
+			chat.snow_buyer.text=data[1]+'\nзаказал\nснегопад';
+			objects.buy_snow_button.visible=false;
+		}
+		else{
+			this.kill_snow();			
+			chat.snow_buyer.visible=false;
+			objects.buy_snow_button.visible=game_platform==='YANDEX';
+		}		
 	},
 	
-	start(){
+	start(){	
 				
 		objects.snowflakes.forEach(s=>s.visible=false);
 		objects.snow_cont.visible=true;
@@ -5172,7 +5210,7 @@ async function init_game_env(l) {
 	make_text(objects.my_card_name,my_data.name,150);	
 	
 	//новогодняя акция
-	snow.init();
+	//snow.init();
 	
 	
 	//номер комнаты
