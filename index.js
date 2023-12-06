@@ -3478,6 +3478,95 @@ rules = {
 	
 }
 
+snow={
+	
+	prv_time:0,
+	
+	init(){		
+		fbs.ref('snow').on('value', function(data){snow.snow_event(data.val())});		
+	},
+	
+	snow_event(data){
+		
+		if(data)			
+			this.start();			
+		else			
+			this.kill_snow();
+		
+	},
+	
+	start(){
+				
+		objects.snowflakes.forEach(s=>s.visible=false);
+		objects.snow_cont.visible=true;
+		some_process.snow=function(){snow.process()};		
+	},
+	
+	kill_snow(){
+		if (!objects.snow_cont.visible) return;
+		some_process.snow=function(){};
+		anim2.add(objects.snow_cont,{alpha:[1, 0]}, false, 3,'linear');
+		
+	},
+	
+	buy_snow(){
+		
+		
+		
+	},
+	
+	change_dir(snowflake){
+		
+		const ang=180+irnd(-20,20);
+		snowflake.dx=Math.sin(ang*0.01745);
+		snowflake.dy=-Math.cos(ang*0.01745);
+		
+	},
+	
+	process(){
+		
+		const cur_time=Date.now();
+		if (cur_time-this.prv_time>300){
+			
+			const snowflake=objects.snowflakes.find(s=>!s.visible);
+			
+			if (snowflake){
+				
+				snowflake.x=irnd(0,800);
+				snowflake.y=-30;
+				snowflake.visible=true;					
+				
+				snowflake.d_ang=Math.random()*2-1;
+				snowflake.angle=irnd(0,360);
+				const size=Math.random()*2+1
+				snowflake.speed=size*0.4;				
+				snowflake.scale_xy=size*0.25;
+				snowflake.alpha=size/4;				
+				
+				this.change_dir(snowflake);				
+				
+			}
+
+			this.prv_time=cur_time;
+		}
+		
+		
+		
+		for (let i=0;i<objects.snowflakes.length;i++){
+			const snowflake=objects.snowflakes[i];
+			if (!snowflake.visible) continue;
+			
+			snowflake.x+=snowflake.dx*snowflake.speed;
+			snowflake.y+=snowflake.dy*snowflake.speed;
+			snowflake.angle+=snowflake.d_ang;
+			if (snowflake.y>480)
+				snowflake.visible=false;
+		}
+		
+	}
+	
+}
+
 stickers={
 	
 	promise_resolve_send :0,
@@ -5082,6 +5171,9 @@ async function init_game_env(l) {
 	make_text(objects.id_name,my_data.name,150);
 	make_text(objects.my_card_name,my_data.name,150);	
 	
+	//новогодняя акция
+	snow.init();
+	
 	
 	//номер комнаты
 	let rooms_ranges = [0,1470,1660,9999]
@@ -5094,7 +5186,6 @@ async function init_game_env(l) {
 
 
 	//my_data.rating=2001;
-	//room_name= 'states4';	
 	//room_name= 'states4';	
 	
 	//это путь к чату
