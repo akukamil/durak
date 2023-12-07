@@ -3,16 +3,10 @@ var app ={stage:{},renderer:{}},gdata={}, game_res, objects={}, LANG = 0, state=
 hidden_state_start = 0,fbs,room_name = 'states2', pending_player='', opponent = {}, my_data={opp_id : ''},client_id,
 opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0;
 
-let my_last_move={};
-
-my_log={
-	log_arr:[],
-	add(data){		
-		this.log_arr.push(data);
-		if (this.log_arr.length>20)
-			this.log_arr.shift();
-	}	
-};
+fbs_once=async function(path){	
+	let info=await fbs.ref(path).once('value');
+	return info.val();
+}
 
 irnd = function(min,max) {	
     min = Math.ceil(min);
@@ -353,8 +347,7 @@ chat = {
 	
 	init_payments(){
 		
-		if (game_platform!=='YANDEX')
-			return;
+		if (game_platform!=='YANDEX') return;
 		
 		if(this.payments) return;
 		
@@ -373,7 +366,7 @@ chat = {
 		if(!this.payments) return;
 		
 		this.payments.purchase({ id: 'snow' }).then(purchase => {
-			message.add('Вы оплатили снег для всех игроков на 1 час');
+			message.add('Вы заказали снегопад для всех игроков на 1 час');
 			fbs.ref('snow').set({tm:firebase.database.ServerValue.TIMESTAMP,name:my_data.name});
 			
 		}).catch(err => {
@@ -1418,8 +1411,6 @@ mp_game = {
 		
 	send_move (data) {
 			
-		my_last_move=data;
-			
 		if (data.message !== 'TOSS')
 			this.reset_timer(OPP_TURN);
 		
@@ -1427,13 +1418,11 @@ mp_game = {
 		
 		this.made_moves++;
 		
-		my_last_move.write_timeout=-1;
 		
 		//отправляем ход онайлн сопернику (с таймаутом)
-		this.write_fb_timer=setTimeout(function(){my_last_move.write_timeout=Date.now();mp_game.stop('my_no_connection');}, 5000);  
+		this.write_fb_timer=setTimeout(function(){mp_game.stop('my_no_connection');}, 5000);  
 		const write_start=Date.now();
-		fbs.ref("inbox/"+opp_data.uid).set(data).then(()=>{	
-			my_last_move.write_time=Date.now()-write_start;
+		fbs.ref('inbox/'+opp_data.uid).set(data).then(()=>{	
 			clearTimeout(this.write_fb_timer);			
 		});			
 		
@@ -1594,12 +1583,7 @@ mp_game = {
 		}catch(e){};	
 			
 	},
-		
-	async stop2(){
-		
-		my_last_move.stop2=Date.now();
-	},
-		
+				
 	async stop(result) {
 		
 		table.state = 'stop';
@@ -1619,30 +1603,6 @@ mp_game = {
 		];
 		
 		clearTimeout(this.timer_id);
-
-		/*if ((result==='opp_timeout'||result==='my_no_connection')&&(my_data.rating>2000||opp_data.rating>2000)){	
-		
-			my_last_move.opp_timeout=Date.now();
-			my_last_move.game_id=game_id;
-			my_last_move.opp_name=opp_data.name;
-			my_last_move.opp_uid=opp_data.uid;
-			my_last_move.my_name=my_data.name;
-			my_last_move.result=result;
-			my_last_move.location=window.location?.href||'---';
-			
-			try {
-				throw new Error();
-			} catch(e) {
-				my_last_move.stack=e?.stack||'---';
-			}			
-			
-			//this.forced_inbox_check(game_id,opp_data.name);	
-			try{
-				fbs.ref('BAD_CASE2').push(my_last_move);					
-			}catch(e){
-				fbs.ref('BAD_CASE2').push('error_when_pushing_to_bad_case');
-			};
-		}*/		
 		
 		let result_row = res_array.find( p => p[0] === result);
 		let result_str = result_row[0];		
@@ -3514,45 +3474,66 @@ rules = {
 snow={
 	
 	prv_time:0,
+	on:0,
+	snow_start_time:0,
 	
 	init(){		
 		fbs.ref('snow').on('value', function(data){snow.snow_event(data.val())});		
+		this.check_snow_end();
 	},
 	
 	snow_event(data){
 		
 		if(data){
 			this.start();			
-			chat.snow_buyer.text=data.name+'\nзаказал\nснегопад';
-			objects.buy_snow_button.visible=false;
+			this.snow_start_time=data.tm;
+			objects.snow_buyer.text=data.name+'\nзаказал(а) снегопад';
+			objects.snow_buyer.visible=true;
+			objects.buy_snow_button.visible=false;			
 		}
 		else{
 			this.kill_snow();			
-			chat.snow_buyer.visible=false;
+			objects.snow_buyer.visible=false;
 			//objects.buy_snow_button.visible=game_platform==='YANDEX';
 		}		
 	},
 	
-	start(){	
-				
+	async check_snow_end(){
+		
+		//ждем немного
+		await new Promise((resolve, reject) => setTimeout(resolve, 3000));	
+		
+		if (!this.on) return;
+		
+		//устанавливаем текущее время
+		await fbs.ref('tm').set(firebase.database.ServerValue.TIMESTAMP);
+		
+		//ждем немного
+		await new Promise((resolve, reject) => setTimeout(resolve, 3000));
+		
+		//получаем время 
+		let tm=await fbs_once('tm');
+		
+		//если снег идет слишком много то выключаем его
+		if (tm-this.snow_start_time>3600000)
+			fbs.ref('snow').set(0);	
+		
+	},
+	
+	start(){					
+		this.on=1;
 		objects.snowflakes.forEach(s=>s.visible=false);
 		objects.snow_cont.visible=true;
 		some_process.snow=function(){snow.process()};		
 	},
 	
 	kill_snow(){
+		this.on=0;
 		if (!objects.snow_cont.visible) return;
 		some_process.snow=function(){};
-		anim2.add(objects.snow_cont,{alpha:[1, 0]}, false, 3,'linear');
-		
+		anim2.add(objects.snow_cont,{alpha:[1, 0]}, false, 3,'linear');		
 	},
-	
-	buy_snow(){
-		
-		
-		
-	},
-	
+
 	change_dir(snowflake){
 		
 		const ang=180+irnd(-20,20);
@@ -5211,7 +5192,7 @@ async function init_game_env(l) {
 	make_text(objects.my_card_name,my_data.name,150);	
 	
 	//новогодняя акция
-	//snow.init();
+	snow.init();
 	
 	
 	//номер комнаты
