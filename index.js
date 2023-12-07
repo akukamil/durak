@@ -4999,42 +4999,10 @@ function vis_change() {
 		
 }
 
-async function check_daily_reward (last_seen_ts) {
-	
-	
-	//вычисляем номер дня последнего посещения
-	let last_seen_day = new Date(last_seen_ts).getDate();		
-	
-	//считываем текущее время
-	await fbs.ref("server_time").set(firebase.database.ServerValue.TIMESTAMP);
-
-	//определяем текущий день
-	let _cur_ts = await fbs.ref("server_time").once('value');
-	let cur_ts = _cur_ts.val();
-	let cur_day = new Date(cur_ts).getDate();
-	
-	//обновляем время последнего посещения
-	fbs.ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
-	if (cur_day !== last_seen_day)
-	{		
-		my_data.money++;
-		fbs.ref("players/"+my_data.uid + "/money").set(my_data.money);	
-		
-		sound.play('daily_reward');
-
-		objects.dr_title.text=['Ежедневный бонус!\n+1$','Daily reward!\n+1$'][LANG];
-		await anim2.add(objects.dr_cont,{alpha:[0, 1]}, true, 1,'linear');
-		await new Promise((resolve, reject) => setTimeout(resolve, 1000));
-		anim2.add(objects.dr_cont,{alpha:[1, 0]}, false, 1,'linear');
-		
-	}
-
-}
-
 async function check_blocked(){
 	
 	//загружаем остальные данные из файербейса
-	let _block_data = await fbs.ref("blocked/" + my_data.uid).once('value');
+	let _block_data = await fbs.ref('blocked/' + my_data.uid).once('value');
 	let block_data = _block_data.val();
 	
 	if (block_data) my_data.blocked=1;
@@ -5215,32 +5183,32 @@ async function init_game_env(l) {
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
 
 	//обновляем почтовый ящик
-	fbs.ref("inbox/"+my_data.uid).set({sender:"-",message:"-",tm:"-",data:{x1:0,y1:0,x2:0,y2:0,board_state:0}});
+	fbs.ref('inbox/'+my_data.uid).set({sender:"-",message:"-",tm:"-",data:{x1:0,y1:0,x2:0,y2:0,board_state:0}});
 
 	//подписываемся на новые сообщения
-	fbs.ref("inbox/"+my_data.uid).on('value', (snapshot) => {process_new_message(snapshot.val());});
+	fbs.ref('inbox/'+my_data.uid).on('value', (snapshot) => {process_new_message(snapshot.val());});
 	
 	//обновляем базовые данные в файербейс так могло что-то поменяться
-	fbs.ref("players/"+my_data.uid+"/name").set(my_data.name);
-	fbs.ref("players/"+my_data.uid+"/pic_url").set(my_data.pic_url);				
-	fbs.ref("players/"+my_data.uid+"/rating").set(my_data.rating);
-	fbs.ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
+	fbs.ref('players/'+my_data.uid+'/name').set(my_data.name);
+	fbs.ref('players/'+my_data.uid+'/pic_url').set(my_data.pic_url);				
+	fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
+	fbs.ref('players/'+my_data.uid+'/tm').set(firebase.database.ServerValue.TIMESTAMP);
 	
 	//устанавливаем мой статус в онлайн
 	set_state({state : 'o'});
 
 	//сообщение для дубликатов
-	fbs.ref("inbox/"+my_data.uid).set({message:"CLIEND_ID",tm:Date.now(),client_id:client_id});
+	fbs.ref('inbox/'+my_data.uid).set({message:"CLIEND_ID",tm:Date.now(),client_id:client_id});
 
 	//отключение от игры и удаление не нужного
-	fbs.ref("inbox/"+my_data.uid).onDisconnect().remove();
-	fbs.ref(room_name+"/"+my_data.uid).onDisconnect().remove();
+	fbs.ref('inbox/'+my_data.uid).onDisconnect().remove();
+	fbs.ref(room_name+'/'+my_data.uid).onDisconnect().remove();
 
 	//это событие когда меняется видимость приложения
-	document.addEventListener("visibilitychange", vis_change);
+	document.addEventListener('visibilitychange', vis_change);
 
 	//событие ролика мыши в карточном меню
-	window.addEventListener("wheel", (event) => {	
+	window.addEventListener('wheel', (event) => {	
 		//lobby.wheel_event(Math.sign(event.deltaY));
 		chat.wheel_event(Math.sign(event.deltaY));
 	});	
