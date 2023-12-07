@@ -3506,16 +3506,16 @@ snow={
 		if (!this.on) return;
 		
 		//устанавливаем текущее время
-		await fbs.ref('tm').set(firebase.database.ServerValue.TIMESTAMP);
+		await fbs.ref('server_time').set(firebase.database.ServerValue.TIMESTAMP);
 		
 		//ждем немного
 		await new Promise((resolve, reject) => setTimeout(resolve, 3000));
 		
 		//получаем время 
-		let tm=await fbs_once('tm');
+		let server_time=await fbs_once('server_time');
 		
 		//если снег идет слишком много то выключаем его
-		if (tm-this.snow_start_time>3600000)
+		if (server_time-this.snow_start_time>3600000)
 			fbs.ref('snow').set(0);	
 		
 	},
