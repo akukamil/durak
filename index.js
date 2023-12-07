@@ -3494,7 +3494,7 @@ snow={
 		else{
 			this.kill_snow();			
 			objects.snow_buyer.visible=false;
-			//objects.buy_snow_button.visible=game_platform==='YANDEX';
+			objects.buy_snow_button.visible=game_platform==='YANDEX';
 		}		
 	},
 	
