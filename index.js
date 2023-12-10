@@ -334,6 +334,7 @@ chat = {
 	drag_sy:-999,	
 	recent_msg:[],
 	moderation_mode:0,
+	block_next_click:0,
 	payments:0,
 	
 	activate() {		
@@ -468,6 +469,13 @@ chat = {
 		
 		if (this.moderation_mode){
 			console.log(player_data.index,player_data.uid,player_data.name.text,player_data.msg.text);
+			return
+		}
+		
+		if (this.block_next_click){
+			fbs.ref('blocked/'+player_data.uid).set(Date.now())
+			fbs.ref('inbox/'+player_data.uid).set({message:'CLIEND_ID',tm:Date.now(),client_id:999999});
+			console.log('Игрок заблокирован и убит: ',player_data.uid);			
 			return
 		}
 		
@@ -2783,8 +2791,10 @@ keep_alive= function() {
 	set_state({});
 }
 
-var kill_game = function() {
+var kill_game = async function() {	
 	
+	await fbs.ref('inbox/'+my_data.uid).remove();
+	await fbs.ref(room_name+'/'+my_data.uid).remove();
 	firebase.app().delete();
 	document.body.innerHTML = 'CLIENT TURN OFF';
 }
@@ -4581,69 +4591,6 @@ lobby={
 
 	}
 
-}
-
-checker={
-	
-	
-	async start(){
-		
-		let data=await fbs.ref('BAD_CASE').once('value');
-		data=data.val();
-			
-		
-		for (let block in data){
-			const cur_obj=data[block];
-			if(Array.isArray(cur_obj)){
-				for (let line of cur_obj)					
-					console.log(JSON.stringify(line));					
-			
-			}else{
-				console.log(JSON.stringify(cur_obj));
-				
-			}			
-		}		
-		
-	},
-	
-	async read_chat(){
-		
-		let data=await fbs.ref('CHAT_ARCH').once('value');
-		data=data.val();
-		data=Object.keys(data).map((key) => [data[key].game_id,data[key].sender,data[key].data,data[key].tm]);;
-		data.sort(function(a,b){return a[3]-b[3]})
-		console.log(data);	
-	},
-	
-	async clear_inboxes(){
-		
-		
-		let data=await fbs.ref('inbox').once('value');
-		data=data.val();
-
-		for (let d in data){
-			
-			const tm=data[d].tm;
-			if (tm&&tm!=='-'){
-				
-				const age=Date.now()-tm;
-				const days=age/1000/60/60/24;
-				if (days>10){
-					await await fbs.ref('inbox/'+d).remove();					
-					console.log('removed: '+d)
-				}
-
-				console.log(days);
-				
-			}		
-			
-		}	
-		
-		
-	}
-	
-	
-	
 }
 
 var auth = function() {
