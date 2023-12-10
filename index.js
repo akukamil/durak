@@ -469,15 +469,18 @@ chat = {
 		
 		if (this.moderation_mode){
 			console.log(player_data.index,player_data.uid,player_data.name.text,player_data.msg.text);
+			
+			if (this.block_next_click){
+				fbs.ref('blocked/'+player_data.uid).set(Date.now())
+				fbs.ref('inbox/'+player_data.uid).set({message:'CLIEND_ID',tm:Date.now(),client_id:999999});
+				console.log('Игрок заблокирован и убит: ',player_data.uid);
+				this.block_next_click=0;
+			}			
+		
 			return
 		}
 		
-		if (this.block_next_click){
-			fbs.ref('blocked/'+player_data.uid).set(Date.now())
-			fbs.ref('inbox/'+player_data.uid).set({message:'CLIEND_ID',tm:Date.now(),client_id:999999});
-			console.log('Игрок заблокирован и убит: ',player_data.uid);			
-			return
-		}
+
 		
 		if (objects.feedback_cont.visible){			
 			feedback.response_message(player_data.uid,player_data.name.text);
