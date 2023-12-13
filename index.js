@@ -339,7 +339,7 @@ chat = {
 	
 	activate() {		
 
-		objects.chat_enter_button.visible=(my_data.rating>1430&&!my_data.blocked)||my_data.icon;
+		objects.chat_enter_button.visible=(my_data.games>150&&!my_data.blocked)||my_data.icon;
 		anim2.add(objects.chat_cont,{alpha:[0, 1]}, true, 0.1,'linear');
 		
 		this.init_payments();
@@ -470,6 +470,9 @@ chat = {
 		if (this.moderation_mode){
 			console.log(player_data.index,player_data.uid,player_data.name.text,player_data.msg.text);
 			
+			fbs_once('players/'+player_data.uid+'/games').then((data)=>{
+				console.log('сыграно игр: ',data)
+			})
 			if (this.block_next_click){
 				fbs.ref('blocked/'+player_data.uid).set(Date.now())
 				fbs.ref('inbox/'+player_data.uid).set({message:'CLIEND_ID',tm:Date.now(),client_id:999999});
