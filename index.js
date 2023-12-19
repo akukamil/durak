@@ -1434,7 +1434,7 @@ mp_game = {
 		
 		
 		//отправляем ход онайлн сопернику (с таймаутом)
-		this.write_fb_timer=setTimeout(function(){mp_game.stop('my_no_connection');}, 5000);  
+		this.write_fb_timer=setTimeout(function(){mp_game.stop('my_no_connection');}, 8000);  
 		const write_start=Date.now();
 		fbs.ref('inbox/'+opp_data.uid).set(data).then(()=>{	
 			clearTimeout(this.write_fb_timer);			
