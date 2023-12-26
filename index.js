@@ -4243,6 +4243,14 @@ lobby={
 		invite_available=invite_available || lobby._opp_data.uid==="BOT";
 		invite_available=invite_available && lobby._opp_data.rating >= 50 && my_data.rating >= 50;
 		
+		//на моей карточке показываем стастику
+		if(lobby._opp_data.uid===my_data.uid){
+			objects.invite_my_stat.text=[`Рейтинг: ${my_data.rating}\nИгры: ${my_data.games}`,`Rating: ${my_data.rating}\nGames: ${my_data.games}`][LANG]
+			objects.invite_my_stat.visible=true;
+		}else{
+			objects.invite_my_stat.visible=false;
+		}
+		
 		//кнопка удаления комментариев
 		objects.fb_delete_button.visible=my_data.uid===lobby._opp_data.uid;
 		
