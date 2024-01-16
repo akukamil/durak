@@ -1783,8 +1783,7 @@ sp_game={
 
 		table.init(role, seed2);
 		
-		//показыаем карточки
-		objects.my_avatar.texture=players_cache.players[my_data.uid].texture;
+		//показыаем карточки		
 		objects.opp_card_name.text='Бот';
 		objects.opp_card_rating.text='1400';
 		objects.opp_avatar.texture=gres.pc_icon.texture;	
@@ -4982,6 +4981,7 @@ async function init_game_env(l) {
 	await players_cache.update_avatar(my_data.uid);
 
 	//устанавливаем фотки в попап
+	objects.my_avatar.texture=players_cache.players[my_data.uid].texture;
 	objects.id_avatar.texture=players_cache.players[my_data.uid].texture;
 	objects.id_name.set2(my_data.name,150);		
 		
