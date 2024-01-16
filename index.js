@@ -345,14 +345,47 @@ chat={
 	recent_msg:[],
 	moderation_mode:0,
 	block_next_click:0,
+	payments:0,
 	
 	activate() {	
 
 		anim2.add(objects.chat_cont,{alpha:[0, 1]}, true, 0.1,'linear');
 		objects.desktop.texture=gres.desktop.texture;
 		objects.chat_enter_button.visible=!my_data.blocked && my_data.games>150;
+		
+		this.init_payments();
 
 	},
+	
+	init_payments(){
+		
+		if (game_platform!=='YANDEX') return;
+		
+		if(this.payments) return;
+		
+		ysdk.getPayments({signed:true}).then(_payments => {
+			chat.payments = _payments;
+		}).catch(err => {
+			console.log(err);
+		})			
+		
+	},
+	
+	buy_snow_down(){
+		
+		sound.play('click');
+		
+		if(!this.payments) return;
+		
+		this.payments.purchase({ id: 'snow' }).then(purchase => {
+			message.add('Вы заказали снегопад для всех игроков на 1 час');
+			fbs.ref('snow').set({tm:firebase.database.ServerValue.TIMESTAMP,name:my_data.name});
+			
+		}).catch(err => {
+			message.add('Не получилось оплатить(((');
+		})		
+	},
+	
 	
 	init(){
 		
