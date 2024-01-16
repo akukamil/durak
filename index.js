@@ -3184,8 +3184,6 @@ pref={
 	},
 	
 	check_time(last_time){
-
-		return 1;
 		
 		//провряем можно ли менять
 		const tm=Date.now();
