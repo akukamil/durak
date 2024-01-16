@@ -3205,7 +3205,7 @@ pref={
 	async change_name(){
 		
 		//провряем можно ли менять ник
-		//if(!this.check_time(my_data.nick_tm)) return;
+		if(!this.check_time(my_data.nick_tm)) return;
 				
 					
 		const name=await keyboard.read(15);
@@ -3231,7 +3231,7 @@ pref={
 	
 	async reset_avatar(){
 		
-		if(!this.check_time(my_data.avatar_tm)) return;
+		//if(!this.check_time(my_data.avatar_tm)) return;
 		
 		this.avatar_changed=1;
 		this.cur_pic_url=my_data.orig_pic_url;
