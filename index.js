@@ -3205,8 +3205,7 @@ pref={
 	async change_name(){
 		
 		//провряем можно ли менять ник
-		if(!this.check_time(my_data.nick_tm)) return;
-				
+		if(!this.check_time(my_data.nick_tm)) return;				
 					
 		const name=await keyboard.read(15);
 		if (name.length>1){
@@ -4684,6 +4683,43 @@ auth1={
 
 	},		
 	
+	get_random_char() {		
+		
+		const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+		return chars[irnd(0,chars.length-1)];
+		
+	},
+	
+	get_random_uid_for_local (prefix) {
+		
+		let uid = prefix;
+		for ( let c = 0 ; c < 12 ; c++ )
+			uid += this.get_random_char();
+		
+		//сохраняем этот uid в локальном хранилище
+		try {
+			localStorage.setItem('durak_uid', uid);
+		} catch (e) {alert(e)}
+					
+		return uid;
+		
+	},
+	
+	search_in_local_storage () {
+		
+		//ищем в локальном хранилище
+		let local_uid = null;
+		
+		try {
+			local_uid = localStorage.getItem('durak_uid');
+		} catch (e) {alert(e)}
+				
+		if (local_uid !== null) return local_uid;
+		
+		return undefined;	
+		
+	},
+		
 	async init() {	
 			
 		if (game_platform === 'YANDEX') {
@@ -4737,7 +4773,18 @@ auth1={
 			my_data.name = my_data.uid = 'debug' + prompt('Отладка. Введите ID', 100);
 			my_data.orig_pic_url = 'mavatar'+my_data.uid;		
 			return;
+		}		
+		
+		if (game_platform === 'UNKNOWN') {		
+
+			//если не нашли платформу
+			alert('Неизвестная платформа. Кто Вы?')
+			my_data.uid = this.search_in_local_storage() || this.get_random_uid_for_local('LS_');
+			my_data.name = this.get_random_name(my_data.uid);
+			my_data.orig_pic_url = 'mavatar'+my_data.uid;		
 		}
+		
+		
 		
 	}
 	
