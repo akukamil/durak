@@ -3205,8 +3205,9 @@ pref={
 		const name=await keyboard.read(15);
 		if (name.length>1){
 			my_data.name=name;
-
 			objects.my_card_name.set2(my_data.name,110);
+			const my_card=objects.mini_cards.find(card=>card.uid===my_data.uid);
+			my_card.name=my_data.name;
 			set_state({});			
 			objects.pref_info.text=['Имя изменено','Name has been changed'][LANG];
 			anim2.add(objects.pref_info,{alpha:[0,1]}, false, 3,'easeBridge',false);		
