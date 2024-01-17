@@ -5031,7 +5031,9 @@ async function init_game_env(l) {
 	my_data.icon=other_data?.icon || 0;
 	my_data.pic_url=other_data?.pic_url || my_data.orig_pic_url;
 	my_data.shirt_id=other_data?.shirt_id || 0;
-		
+	my_data.nick_tm = other_data?.nick_tm || 0;
+	my_data.avatar_tm = other_data?.avatar_tm || 0;
+	
 	//загружаем мои данные в кэш
 	await players_cache.update(my_data.uid,{pic_url:my_data.pic_url});
 	await players_cache.update_avatar(my_data.uid);
