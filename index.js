@@ -189,7 +189,7 @@ class playing_cards_class extends PIXI.Container {
 	
 	set_shirt () {
 		this.text_value.visible = false;
-		this.suit_img.texture = gres.cards_shirt.texture;		
+		this.suit_img.texture = gres['shirt'+(my_data.shirt_id||0)].texture;
 		
 	}
 	
@@ -385,8 +385,7 @@ chat={
 			message.add('Не получилось оплатить(((');
 		})		
 	},
-	
-	
+		
 	init(){
 		
 		this.last_record_end = 0;
@@ -954,9 +953,7 @@ class deck_class {
 		if (this.size > 1) {			
 			deck_width = interval * (this.size);
 			deck_start = 400 - deck_width / 2 + tar_card_width / 2;			
-		}
-			
-			
+		}			
 			
 		this.cards.forEach((c,i)=> {
 			if (this.type === 'my' && c.suit === table.trump.suit)
@@ -964,10 +961,7 @@ class deck_class {
 			c.y = tar_y;			
 			let tar_x = deck_start + i * interval;	
 			anim2.add(c,{x:[c.x, tar_x]}, true, 0.25,'easeInOutCubic');		
-		})	
-		
-		
-		
+		})		
 		
 	}
 	
@@ -1434,8 +1428,7 @@ mp_game={
 	
 		objects.desktop.texture = gres.desktop.texture;
 		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.6,'linear');
-		
-	
+			
 		//если открыт лидерборд то закрываем его
 		if (objects.lb_1_cont.visible===true)
 			lb.close();
@@ -1768,12 +1761,10 @@ sp_game={
 	center_size : 0,
 
 	async activate(role, seed) {
-
 		
 		this.on = 1;		
 
-		opponent = this;
-		
+		opponent = this;		
 		
 		objects.desktop.texture = gres.desktop.texture;
 		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.6,'linear');
@@ -2082,12 +2073,10 @@ table={
 	top_zindex : 0,
 	last_cards : [],
 		
-	init (role, seed) {
-		
+	init (role, seed) {		
 		
 		//убираем все карты
-		objects.pcards.forEach(card => card.visible = false)
-		
+		objects.pcards.forEach(card => card.visible = false)		
 					
 		//создаем большую колоду и добавляем случайное число		
 		this.my_deck = new deck_class('my');
@@ -2122,6 +2111,9 @@ table={
 			this.state = 'opp_attack'			
 		}
 	
+			
+		//обновляем рубашку последней карты
+		objects.big_deck_cover.set_shirt();	
 			
 		//большая колода
 		objects.trump_card.alpha = 1;
@@ -3162,6 +3154,7 @@ pref={
 	
 	cur_pic_url:'',
 	avatar_changed:0,
+	cur_shirt_id:0,
 	
 	activate(){
 		
@@ -3180,6 +3173,8 @@ pref={
 		objects.pref_cont.visible=true;
 		objects.pref_avatar.texture=players_cache.players[my_data.uid].texture;
 		
+		this.cur_shirt_id=my_data.shirt_id;
+		this.switch_shirt(0);
 	},
 	
 	check_time(last_time){
@@ -3254,9 +3249,21 @@ pref={
 			return;			
 		}
 		sound.switch();
-		sound.play('click');
-		const tar_x=sound.on?352:314;
+		sound.play('click'); 324
+		const tar_x=sound.on?324:286;//38
 		anim2.add(objects.pref_sound_slider,{x:[objects.pref_sound_slider.x,tar_x]}, true, 0.1,'linear');	
+		
+	},
+	
+	switch_shirt(dir){
+		
+		this.cur_shirt_id+=dir;
+		if(dir) sound.play('swift');
+
+		objects.pref_shirt_back.visible=this.cur_shirt_id>0;
+		objects.pref_shirt_forth.visible=this.cur_shirt_id<5;		
+		
+		objects.pref_shirt.texture=gres['shirt'+this.cur_shirt_id].texture;
 		
 	},
 	
@@ -3289,6 +3296,11 @@ pref={
 			
 		}		
 		
+		if (this.cur_shirt_id!==my_data.shirt_id){
+			my_data.shirt_id=this.cur_shirt_id;
+			fbs.ref('players/'+my_data.uid+'/shirt_id').set(my_data.shirt_id);			
+		}
+	
 	}
 	
 }
@@ -4783,12 +4795,8 @@ auth1={
 			my_data.name = this.get_random_name(my_data.uid);
 			my_data.orig_pic_url = 'mavatar'+my_data.uid;		
 		}
-		
-		
-		
+
 	}
-	
-	
 	
 }
 
@@ -5022,6 +5030,7 @@ async function init_game_env(l) {
 	my_data.vk_share = other_data?.vk_share || 0;
 	my_data.icon=other_data?.icon || 0;
 	my_data.pic_url=other_data?.pic_url || my_data.orig_pic_url;
+	my_data.shirt_id=other_data?.shirt_id || 0;
 		
 	//загружаем мои данные в кэш
 	await players_cache.update(my_data.uid,{pic_url:my_data.pic_url});
@@ -5031,9 +5040,7 @@ async function init_game_env(l) {
 	objects.my_avatar.texture=players_cache.players[my_data.uid].texture;
 	objects.id_avatar.texture=players_cache.players[my_data.uid].texture;
 	objects.id_name.set2(my_data.name,150);		
-		
-		
-		
+					
 		
 	//устанавлием мое имя в карточки
 	objects.id_name.set2(my_data.name,150);
