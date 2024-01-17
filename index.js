@@ -4198,7 +4198,7 @@ lobby={
 	},
 	
 	close_table_dialog() {
-		sound.play('close_it');
+		sound.play('click');
 		anim2.add(objects.td_cont,{x:[objects.td_cont.x, 800]}, false, 0.1,'linear');
 	},
 
@@ -4484,12 +4484,10 @@ lobby={
 
 	close_invite_dialog() {
 
-		sound.play('close_it');
+		sound.play('click');
 
-		if (objects.invite_cont.visible===false)
-			return;
-		
-		
+		if (!objects.invite_cont.visible)
+			return;		
 
 		//отправляем сообщение что мы уже не заинтересованы в игре
 		if (pending_player!=='') {
