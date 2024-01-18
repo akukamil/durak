@@ -3200,7 +3200,13 @@ pref={
 	async change_name(){
 		
 		//провряем можно ли менять ник
-		if(!this.check_time(my_data.nick_tm)) return;				
+		if(!this.check_time(my_data.nick_tm)) return;
+		
+		if (my_data.games<150){
+			objects.pref_info.text='Нужно сыграть более 150 игр!';
+			anim2.add(objects.pref_info,{alpha:[0,1]}, false, 3,'easeBridge',false);	
+			return;
+		}
 					
 		const name=await keyboard.read(15);
 		if (name.length>1){
