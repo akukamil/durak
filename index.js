@@ -1501,7 +1501,7 @@ mp_game={
 		
 		//проверка таймера
 		const cur_time=Date.now();
-		if (cur_time-this.timer_prv_time>5000||cur_time<this.prv_tick_time){
+		if (cur_time-this.timer_prv_time>5000||cur_time<this.timer_prv_time){
 			this.stop('timer_error');
 			return;
 		}
