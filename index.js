@@ -4310,7 +4310,9 @@ lobby={
 		//копируем предварительные данные
 		lobby._opp_data = {uid,name:players_cache.players[uid].name,rating:players_cache.players[uid].rating};
 											
-											
+		//кнопка удаления комментариев
+		objects.fb_delete_button.visible=false;
+		
 		//фидбэки												
 		this.show_feedbacks(lobby._opp_data.uid);	
 		
