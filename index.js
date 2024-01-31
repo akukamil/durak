@@ -4842,16 +4842,6 @@ function vis_change() {
 		
 }
 
-async function check_blocked(){
-	
-	//загружаем остальные данные из файербейса
-	let _block_data = await fbs.ref('blocked/' + my_data.uid).once('value');
-	let block_data = _block_data.val();
-	
-	if (block_data) my_data.blocked=1;
-	
-}
-
 async function define_platform_and_language() {
 	
 	let s = window.location.href;
@@ -5102,7 +5092,7 @@ async function init_game_env(l) {
 	window.addEventListener('keydown',function(event){keyboard.keydown(event.key)});
 
 	//проверяем блокировку
-	check_blocked();
+	my_data.blocked=await fbs_once('blocked/'+my_data.uid);
 	
 	//keep-alive сервис
 	setInterval(function()	{keep_alive()}, 40000);
