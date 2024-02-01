@@ -331,13 +331,15 @@ chat={
 	moderation_mode:0,
 	block_next_click:0,
 	kill_next_click:0,
+	delete_message_mode:0,
+	games_to_chat:200,
 	payments:0,
 	
 	activate() {	
 
 		anim2.add(objects.chat_cont,{alpha:[0, 1]}, true, 0.1,'linear');
 		objects.desktop.texture=gres.desktop.texture;
-		objects.chat_enter_button.visible=!my_data.blocked && my_data.games>150;
+		objects.chat_enter_button.visible=!my_data.blocked && my_data.games>this.games_to_chat;
 		
 		this.init_payments();
 
@@ -464,34 +466,38 @@ chat={
 	},
 						
 	avatar_down(player_data){
-		
+
 		if (this.moderation_mode){
 			console.log(player_data.index,player_data.uid,player_data.name.text,player_data.msg.text);
 			fbs_once('players/'+player_data.uid+'/games').then((data)=>{
 				console.log('сыграно игр: ',data)
 			})
-			return;
 		}
 		
 		if (this.block_next_click){			
 			fbs.ref('blocked/'+player_data.uid).set(Date.now())
 			console.log('Игрок заблокирован: ',player_data.uid);
 			this.block_next_click=0;
-			return;
 		}
 		
 		if (this.kill_next_click){			
 			fbs.ref('inbox/'+player_data.uid).set({message:'CLIEND_ID',tm:Date.now(),client_id:999999});
 			console.log('Игрок убит: ',player_data.uid);
 			this.kill_next_click=0;
-			return;
 		}
+		
+		if(this.delete_message_mode){			
+			fbs.ref(`${chat_path}/${player_data.index}`).remove();
+			console.log(`сообщение ${player_data.index} удалено`)
+		}
+		
+		
+		if(this.moderation_mode||this.block_next_click||this.kill_next_click||this.delete_message_mode) return;
 		
 		if (objects.chat_keyboard_cont.visible)		
 			keyboard.response_message(player_data.uid,player_data.name.text);
 		else
 			lobby.show_invite_dialog_from_chat(player_data.uid,player_data.name.text);
-		
 		
 	},
 			
@@ -4105,27 +4111,7 @@ lobby={
 		}
 
 	},
-
-	async get_texture(pic_url) {
-		
-		if (!pic_url) PIXI.Texture.WHITE;
-		
-		//меняем адрес который невозможно загрузить
-		if (pic_url==="https://vk.com/images/camera_100.png")
-			pic_url = "https://i.ibb.co/fpZ8tg2/vk.jpg";	
-				
-		if (PIXI.utils.TextureCache[pic_url]===undefined || PIXI.utils.TextureCache[pic_url].width===1) {
-					
-			let loader=new PIXI.Loader();
-			loader.add('pic', pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 5000});			
-			await new Promise((resolve, reject)=> loader.load(resolve))	
-			return loader.resources.pic.texture||PIXI.Texture.WHITE;
-
-		}		
-		
-		return PIXI.utils.TextureCache[pic_url];		
-	},
-		
+	
 	async load_avatar2 (params={}) {		
 		
 		//обновляем или загружаем аватарку
@@ -4438,19 +4424,6 @@ lobby={
 			this.switch_header();
 		}
 
-	},
-	
-	peek_down(){
-		
-		if (anim2.any_on()) {
-			sound.play('locked');
-			return
-		};
-		sound.play('click');
-		this.close();	
-		
-		//активируем просмотр игры
-		game_watching.activate(objects.td_cont.card);
 	},
 	
 	async switch_header(){
