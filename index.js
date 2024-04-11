@@ -389,6 +389,11 @@ chat={
 			rec.tm=0;
 		}			
 		
+		
+		objects.chat_rules.text=`Правила чата!\n\n1. Будьте вежливы! Избегайте угроз, грубых выражений, оскорблений, конфликтов.\n\n2. Писать в чат могут игроки сыгравшие более ${this.games_to_chat} онлайн партий.\n\n3. Нарушители правил попадают в черный список.`;
+		if(my_data.blocked) objects.chat_rules.text+='\n\n4. Вы находитесь в черном списке';
+		
+		
 		//загружаем чат
 		fbs.ref(chat_path).orderByChild('tm').limitToLast(20).once('value', snapshot => {chat.chat_load(snapshot.val());});		
 		
