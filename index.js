@@ -4830,7 +4830,7 @@ async function define_platform_and_language() {
 	
 	let s = window.location.href;
 	
-	if (s.includes('yandex')) {		
+	if (s.includes('yandex.')) {		
 		game_platform = 'YANDEX';
 		return;
 	}
@@ -4843,11 +4843,6 @@ async function define_platform_and_language() {
 	if (s.includes('google_play')) {			
 		game_platform = 'GOOGLE_PLAY';	
 		return;
-	}	
-
-	if (s.includes('google_play')) {			
-		game_platform = 'GOOGLE_PLAY';	
-		return;	
 	}	
 	
 	if (s.includes('192.168.')||s.includes('127.0.')) {			
