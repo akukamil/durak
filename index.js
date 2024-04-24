@@ -344,7 +344,7 @@ chat={
 
 	},
 	
-	init_payments(){
+	async init_payments(){
 		
 		if (game_platform!=='YANDEX') return;		
 		if(this.payments) return;
