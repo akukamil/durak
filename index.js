@@ -3330,9 +3330,6 @@ main_menu= {
 		anim2.add(objects.game_title,{y:[-300,objects.game_title.sy]}, true, 1,'easeInOutCubic');
 		objects.desktop.texture = gres.desktop.texture;
 		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.6,'linear');
-		
-		//инициализация покупок
-		chat.init_payments();
 	},
 	
 	process () {
@@ -3585,7 +3582,7 @@ snow={
 	start(){					
 		this.on=1;
 		objects.snowflakes.forEach(s=>s.visible=false);
-		objects.snow_cont.visible=true;
+		anim2.add(objects.snow_cont,{alpha:[0, 1]}, true, 0.25,'linear',false);
 		some_process.snow=function(){snow.process()};		
 	},
 	
@@ -5031,7 +5028,8 @@ async function init_game_env(l) {
 	objects.id_name.set2(my_data.name,150);
 	objects.my_card_name.set2(my_data.name,150);
 	
-	//новогодняя акция
+	//новогодняя акция снег
+	await chat.init_payments();
 	snow.init();	
 	
 	//номер комнаты
