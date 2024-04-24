@@ -341,22 +341,29 @@ chat={
 		objects.desktop.texture=gres.desktop.texture;
 		objects.chat_enter_button.visible=!my_data.blocked && my_data.games>this.games_to_chat;
 		
-		this.init_payments();
 
 	},
 	
 	init_payments(){
 		
-		if (game_platform!=='YANDEX') return;
-		
+		if (game_platform!=='YANDEX') return;		
 		if(this.payments) return;
 		
-		ysdk.getPayments({signed:true}).then(_payments => {
-			chat.payments = _payments;
-		}).catch(err => {
+		//инициализация покупок и проверка незавершенных
+		try{
+			this.payments=await ysdk.getPayments({signed:true});
+			const old_purchases=await this.payments.getPurchases();
+			if (old_purchases.length){
+				fbs.ref('snow').set({tm:firebase.database.ServerValue.TIMESTAMP,name:my_data.name});
+				message.add('Вы заказали снегопад для всех игроков на 1 час');				
+			}
+			old_purchases.forEach(p=>{
+				chat.payments.consumePurchase(p.purchaseToken);
+			})
+			
+		}catch(err){
 			console.log(err);
-		})			
-		
+		}		
 	},
 	
 	buy_snow_down(){
@@ -368,7 +375,6 @@ chat={
 		this.payments.purchase({ id: 'snow' }).then(purchase => {
 			message.add('Вы заказали снегопад для всех игроков на 1 час');
 			fbs.ref('snow').set({tm:firebase.database.ServerValue.TIMESTAMP,name:my_data.name});
-			
 		}).catch(err => {
 			message.add('Не получилось оплатить(((');
 		})		
@@ -3324,6 +3330,9 @@ main_menu= {
 		anim2.add(objects.game_title,{y:[-300,objects.game_title.sy]}, true, 1,'easeInOutCubic');
 		objects.desktop.texture = gres.desktop.texture;
 		anim2.add(objects.desktop,{alpha:[0,1]}, true, 0.6,'linear');
+		
+		//инициализация покупок
+		chat.init_payments();
 	},
 	
 	process () {
