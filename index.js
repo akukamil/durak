@@ -373,6 +373,7 @@ chat={
 		if(!this.payments) return;
 		
 		this.payments.purchase({ id: 'snow' }).then(purchase => {
+			chat.payments.consumePurchase(purchase.purchaseToken);
 			message.add('Вы заказали снегопад для всех игроков на 1 час');
 			fbs.ref('snow').set({tm:firebase.database.ServerValue.TIMESTAMP,name:my_data.name});
 		}).catch(err => {
