@@ -339,8 +339,15 @@ chat={
 
 		anim2.add(objects.chat_cont,{alpha:[0, 1]}, true, 0.1,'linear');
 		objects.desktop.texture=gres.desktop.texture;
-		objects.chat_enter_button.visible=!my_data.blocked && my_data.games>this.games_to_chat;
+		objects.chat_enter_button.visible=my_data.games>this.games_to_chat;
 		
+		if(my_data.blocked)		
+			objects.chat_enter_button.texture=gres.chat_blocked_img.texture;
+		else
+			objects.chat_enter_button.texture=gres.chat_enter_img.texture;
+		
+		objects.chat_rules.text=`Правила чата!\n\n1. Будьте вежливы! Избегайте угроз, грубых выражений, оскорблений, конфликтов.\n\n2. Писать в чат могут игроки сыгравшие более ${this.games_to_chat} онлайн партий.\n\n3. Нарушители правил попадают в черный список.`;
+		if(my_data.blocked) objects.chat_rules.text='Вы не можете писать в чат, так как вы находитесь в черном списке';
 
 	},
 	
@@ -396,14 +403,8 @@ chat={
 			rec.tm=0;
 		}			
 		
-		
-		objects.chat_rules.text=`Правила чата!\n\n1. Будьте вежливы! Избегайте угроз, грубых выражений, оскорблений, конфликтов.\n\n2. Писать в чат могут игроки сыгравшие более ${this.games_to_chat} онлайн партий.\n\n3. Нарушители правил попадают в черный список.`;
-		if(my_data.blocked) objects.chat_rules.text+='\n\n4. Вы находитесь в черном списке';
-		
-		
 		//загружаем чат
 		fbs.ref(chat_path).orderByChild('tm').limitToLast(20).once('value', snapshot => {chat.chat_load(snapshot.val());});		
-		
 	},			
 
 	get_oldest_index () {
@@ -624,8 +625,28 @@ chat={
 			return
 		};
 		
-		if (my_data.blocked){			
-			message.add('Закрыто');
+		//оплата разблокировки чата
+		if (my_data.blocked){	
+		
+			if(game_platform==='YANDEX'){
+				
+				this.payments.purchase({ id: 'unblock' }).then(purchase => {
+					this.unblock_chat();
+				}).catch(err => {
+					message.add(['Ошибка при покупке!','Error!'][LANG]);
+				})				
+			}
+			
+			if (game_platform==='VK') {
+				
+				vkBridge.send('VKWebAppShowOrderBox', { type: 'item', item: 'unblock'}).then(data =>{
+					this.unblock_chat();
+				}).catch((err) => {
+					message.add(['Ошибка при покупке!','Error!'][LANG]);
+				});			
+			
+			};			
+				
 			return;
 		}
 		
@@ -653,6 +674,16 @@ chat={
 		}	
 		
 	},
+		
+	unblock_chat(){
+		objects.chat_rules.text='Правила чата!\n\n1. Будьте вежливы: Общайтесь с другими игроками с уважением. Избегайте угроз, грубых выражений, оскорблений, конфликтов.\n\n2. Отправлять сообщения в чат могут игроки сыгравшие более 200 онлайн партий.\n\n3. За нарушение правил игрок может попасть в черный список.'
+		objects.chat_enter_button.texture=gres.chat_enter_img.texture;	
+		fbs.ref('blocked/'+my_data.uid).remove();
+		my_data.blocked=0;
+		message.add('Вы разблокировали чат');
+		sound.play('mini_dialog');	
+	},
+	
 		
 	close() {
 		
@@ -5125,7 +5156,7 @@ async function load_resources() {
 
 
 	let git_src="https://akukamil.github.io/durak/"
-	git_src=""
+	//git_src=""
 
 	game_res=new PIXI.Loader();	
 	
