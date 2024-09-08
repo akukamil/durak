@@ -375,6 +375,7 @@ chat={
 	
 	buy_snow_down(){
 		
+		return;
 		sound.play('click');
 		
 		if(!this.payments) return;
