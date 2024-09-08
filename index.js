@@ -3578,8 +3578,8 @@ snow={
 		if(data){
 			this.start();			
 			this.snow_start_time=data.tm;
-			objects.snow_buyer.text=data.name+'\nзаказал(а) снегопад';
-			objects.snow_buyer.visible=true;
+			//objects.snow_buyer.text=data.name+'\nзаказал(а) снегопад';
+			//objects.snow_buyer.visible=true;
 			objects.buy_snow_button.visible=false;			
 		}
 		else{
