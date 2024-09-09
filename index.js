@@ -359,15 +359,7 @@ chat={
 		//инициализация покупок и проверка незавершенных
 		try{
 			this.payments=await ysdk.getPayments({signed:true});
-			const old_purchases=await this.payments.getPurchases();
-			if (old_purchases.length){
-				fbs.ref('snow').set({tm:firebase.database.ServerValue.TIMESTAMP,name:my_data.name});
-				message.add('Вы заказали снегопад для всех игроков на 1 час');				
-			}
-			old_purchases.forEach(p=>{
-				chat.payments.consumePurchase(p.purchaseToken);
-			})
-			
+				
 		}catch(err){
 			console.log(err);
 		}		
