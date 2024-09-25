@@ -471,6 +471,18 @@ chat={
 		
 	},
 						
+	block_player(uid){
+		
+		fbs.ref('blocked/'+uid).set(Date.now());
+		
+		//увеличиваем количество блокировок
+		fbs_once('players/'+uid+'/block_num').then(data=>{
+			data=data||0
+			fbs.ref('players/'+uid+'/block_num').set(data+1);
+		})
+		
+	},
+						
 	avatar_down(player_data){
 
 		if (this.moderation_mode){
@@ -481,16 +493,11 @@ chat={
 		}
 		
 		if (this.block_next_click){			
-			fbs.ref('blocked/'+player_data.uid).set(Date.now());
-			
-			//увеличиваем количество блокировок
-			fbs_once('players/'+player_data.uid+'/block_num').then(data=>{
-				data=data||0
-				fbs.ref('players/'+player_data.uid+'/block_num').set(data+1);
-			})
-			
+		
+			this.block_player(player_data.uid);
 			console.log('Игрок заблокирован: ',player_data.uid);
 			this.block_next_click=0;
+			
 		}
 		
 		if (this.kill_next_click){			
