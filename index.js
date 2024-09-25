@@ -477,7 +477,7 @@ chat={
 		
 		//увеличиваем количество блокировок
 		fbs_once('players/'+uid+'/block_num').then(data=>{
-			data=data||0
+			data=data||0			
 			fbs.ref('players/'+uid+'/block_num').set(data+1);
 		})
 		
@@ -635,7 +635,7 @@ chat={
 		//оплата разблокировки чата
 		if (my_data.blocked){	
 		
-			let block_num=await fbs_once('players/'+player_data.uid+'/block_num');
+			let block_num=await fbs_once('players/'+my_data.uid+'/block_num');
 			block_num=block_num||0;
 			block_num=Math.min(5,block_num);
 					
