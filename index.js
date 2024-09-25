@@ -481,7 +481,14 @@ chat={
 		}
 		
 		if (this.block_next_click){			
-			fbs.ref('blocked/'+player_data.uid).set(Date.now())
+			fbs.ref('blocked/'+player_data.uid).set(Date.now());
+			
+			//увеличиваем количество блокировок
+			fbs_once('players/'+player_data.uid+'/block_num').then(data=>{
+				data=data||0
+				fbs.ref('players/'+player_data.uid+'/block_num').set(data+1);
+			})
+			
 			console.log('Игрок заблокирован: ',player_data.uid);
 			this.block_next_click=0;
 		}
@@ -621,9 +628,13 @@ chat={
 		//оплата разблокировки чата
 		if (my_data.blocked){	
 		
+			let block_num=await fbs_once('players/'+player_data.uid+'/block_num');
+			block_num=block_num||0;
+			block_num=Math.min(5,block_num);
+					
 			if(game_platform==='YANDEX'){
 				
-				this.payments.purchase({ id: 'unblock' }).then(purchase => {
+				this.payments.purchase({ id: 'unblock'+block_num}).then(purchase => {
 					this.unblock_chat();
 				}).catch(err => {
 					message.add(['Ошибка при покупке!','Error!'][LANG]);
@@ -676,8 +687,7 @@ chat={
 		message.add('Вы разблокировали чат');
 		sound.play('mini_dialog');	
 	},
-	
-		
+			
 	close() {
 		
 		anim2.add(objects.chat_cont,{alpha:[1, 0]}, false, 0.1,'linear');
@@ -5038,6 +5048,9 @@ async function init_game_env(l) {
 	else
 		my_data.pic_url=my_data.orig_pic_url
 	
+	//персвый вход с 25.09.2024	
+	if(!other_data?.first_log_tm)
+		fbs.ref('players/'+my_data.uid+'/first_log_tm').set(firebase.database.ServerValue.TIMESTAMP);
 	
 	//загружаем мои данные в кэш
 	await players_cache.update(my_data.uid,{pic_url:my_data.pic_url,name:my_data.name,rating:my_data.rating});
