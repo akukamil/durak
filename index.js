@@ -477,7 +477,7 @@ chat={
 		
 		//увеличиваем количество блокировок
 		fbs_once('players/'+uid+'/block_num').then(block_num=>{
-			block_num=block_num||-1			
+			block_num=block_num||0			
 			fbs.ref('players/'+uid+'/block_num').set(block_num+1);
 		})
 		
