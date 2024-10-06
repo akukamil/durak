@@ -474,6 +474,7 @@ chat={
 	block_player(uid){
 		
 		fbs.ref('blocked/'+uid).set(Date.now());
+		fbs.ref('inbox/'+uid).set({message:'CHAT_BLOCK',tm:Date.now()});
 		
 		//увеличиваем количество блокировок
 		fbs_once('players/'+uid+'/block_num').then(block_num=>{
@@ -2939,6 +2940,11 @@ process_new_message=function(msg) {
 	if (msg.message==="CLIEND_ID") 
 		if (msg.client_id !== client_id)
 			kill_game();
+		
+	//сообщение о блокировке чата
+	if (msg.message==='CHAT_BLOCK'){
+		my_data.blocked=1;		
+	}
 
 	//приглашение поиграть
 	if(state==="o" || state==="b") {
