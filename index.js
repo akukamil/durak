@@ -1394,7 +1394,7 @@ big_message={
 		else
 			objects.big_message_text2.text='**********';
 
-		objects.feedback_button.visible = feedback_on;
+		objects.feedback_button.visible = (my_data.blocked===0)&&feedback_on;
 		objects.big_message_text.text=t1;
 		anim2.add(objects.big_message_cont,{y:[-180,objects.big_message_cont.sy]}, true, 0.6,'easeOutBack');		
 				
@@ -1603,6 +1603,11 @@ mp_game={
 	},
 	
 	async send_message() {			
+		
+		if (my_data.blocked){			
+			message.add('Вы в черном списке.');
+			return;
+		}
 		
 		//пишем отзыв и отправляем его		
 		const msg = await keyboard.read();		
@@ -5135,7 +5140,7 @@ async function init_game_env(l) {
 	window.addEventListener('keydown',function(event){keyboard.keydown(event.key)});
 
 	//проверяем блокировку
-	my_data.blocked=await fbs_once('blocked/'+my_data.uid);
+	my_data.blocked=await fbs_once('blocked/'+my_data.uid)||0;
 	
 	//keep-alive сервис
 	setInterval(function()	{keep_alive()}, 40000);
