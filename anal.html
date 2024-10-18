@@ -152,6 +152,11 @@ firebase.initializeApp({
 	appId: "1:985954923087:web:ac332499e962122d28303a"
 });
 
+fbs_once=async function(path){
+	const info=await fbs.ref(path).once('value');
+	return info.val();	
+}
+
 
 //СОСТОЯНИЕ КОМНАТ
 async function update_room_quick_stat() {
