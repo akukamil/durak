@@ -477,10 +477,7 @@ chat={
 		fbs.ref('inbox/'+uid).set({message:'CHAT_BLOCK',tm:Date.now()});
 		
 		//увеличиваем количество блокировок
-		fbs_once('players/'+uid+'/block_num').then(block_num=>{
-			block_num=block_num||0			
-			fbs.ref('players/'+uid+'/block_num').set(block_num+1);
-		})
+		fbs.ref('players/'+uid+'/block_num').transaction(val=> {return (val || 0) + 1});
 		
 	},
 						
