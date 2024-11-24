@@ -635,7 +635,7 @@ chat={
 		
 			let block_num=await fbs_once('players/'+my_data.uid+'/block_num');
 			block_num=block_num||1;
-			block_num=Math.min(5,block_num);
+			block_num=Math.min(6,block_num);
 					
 			if(game_platform==='YANDEX'){
 				
