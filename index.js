@@ -5078,9 +5078,10 @@ auth1={
 				_player = await window.ysdk.getPlayer();
 			} catch (e) { alert(e)};
 			
-			my_data.name 	= _player.getName();
-			my_data.uid 	= _player.getUniqueID().replace(/\//g, "Z");
+			my_data.name = _player.getName();
+			my_data.uid = _player.getUniqueID().replace(/\//g, "Z");
 			my_data.orig_pic_url = _player.getPhoto('medium');
+			my_data.yndx_auth_mode=_player.getMode();
 
 			if (my_data.orig_pic_url === 'https://games-sdk.yandex.ru/games/api/sdk/v1/player/avatar/0/islands-retina-medium')
 				my_data.orig_pic_url = 'mavatar'+my_data.uid;	
@@ -5356,6 +5357,7 @@ async function init_game_env(l) {
 	fbs.ref('players/'+my_data.uid+'/name').set(my_data.name);
 	fbs.ref('players/'+my_data.uid+'/pic_url').set(my_data.pic_url);				
 	fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
+	if (game_platform==='YANDEX') fbs.ref('players/'+my_data.uid+'/yndx_auth_mode').set(my_data.yndx_auth_mode||'auth');
 	fbs.ref('players/'+my_data.uid+'/tm').set(firebase.database.ServerValue.TIMESTAMP);
 	
 	//устанавливаем мой статус в онлайн
@@ -5610,64 +5612,6 @@ main_loader={
 		
 		
 	}	
-}
-
-async function load_resources() {
-
-	//это нужно удалить потом
-	/*document.body.innerHTML = "Привет!\nДобавляем в игру некоторые улучшения))\nЗайдите через 40 минут.";
-	document.body.style.fontSize="24px";
-	document.body.style.color = "red";
-	return;*/
-
-
-	let git_src="https://akukamil.github.io/durak/"
-	//git_src=""
-
-	game_res=new PIXI.Loader();	
-	
-	game_res.add("m2_font", git_src+'fonts/Bahnschrift/font.fnt');
-	game_res.add("m3_font", git_src+'fonts/MS_Comic_Sans/font.fnt');
-	
-	
-	game_res.add('receive_sticker',git_src+'sounds/receive_sticker.mp3');
-	game_res.add('message',git_src+'sounds/message.mp3');
-	game_res.add('lose',git_src+'sounds/lose.mp3');
-	game_res.add('win',git_src+'sounds/win.mp3');
-	game_res.add('click',git_src+'sounds/click.mp3');
-	game_res.add('close',git_src+'sounds/close.mp3');
-	game_res.add('locked',git_src+'sounds/locked.mp3');
-	game_res.add('clock',git_src+'sounds/clock.mp3');
-	game_res.add('card',git_src+'sounds/card2.mp3');
-	game_res.add('card_take',git_src+'sounds/card.mp3');
-	game_res.add('confirm_dialog',git_src+'sounds/confirm_dialog.mp3');
-	game_res.add('move',git_src+'sounds/move.mp3');
-	game_res.add('done',git_src+'sounds/done.mp3');
-	game_res.add('razdacha',git_src+'sounds/razdacha.mp3');
-	game_res.add('swift',git_src+'sounds/swift.mp3');
-	game_res.add('inc_card',git_src+'sounds/inc_card.mp3');
-	game_res.add('take',git_src+'sounds/take.mp3');
-	game_res.add('keypress',git_src+'sounds/keypress.mp3');
-	game_res.add('online_message',git_src+'sounds/online_message.mp3');
-	game_res.add('inst_msg',git_src+'sounds/inst_msg.mp3');
-	
-    //добавляем из листа загрузки
-    for (var i = 0; i < load_list.length; i++)
-        if (load_list[i].class === "sprite" || load_list[i].class === "image" )
-            game_res.add(load_list[i].name, git_src+"res/RUS/" + load_list[i].name + "." +  load_list[i].image_format);
-
-
-	//добавляем текстуры стикеров
-	for (var i=0;i<16;i++)
-		game_res.add("sticker_texture_"+i, git_src+"stickers/"+i+".png");
-
-	game_res.onProgress.add(progress);
-	function progress(loader, resource) {
-		document.getElementById("m_bar").style.width =  Math.round(loader.progress)+"%";
-	}
-	
-	await new Promise((resolve, reject)=> game_res.load(resolve))
-
 }
 
 function main_loop() {
