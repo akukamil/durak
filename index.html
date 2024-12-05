@@ -3,63 +3,14 @@
 <head>
 </head>
  <meta name="http-equiv" content="Content-type: text/html; charset=windows-1251">
-<style>
-		html,
-		body {
-		margin: 0;
-		padding: 0;
-		height: 100%;
-	}
-	
-	body {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background-color: rgba(41,41,41,1);
-		flex-direction: column
-	}
-	
-  
-  #m_progress {
-	  background: rgb(20, 20, 20);
-	  justify-content: flex-start;
-	  border-radius: 100px;
-	  align-items: center;
-	  position: relative;
-	  padding: 0 5px;
-	  display: flex;
-	  height: 30px;
-	  width: 70%;
-	}
 
-	#m_bar {
-	  box-shadow: 0 1px 0px rgba(255, 255, 255, 0.5);
-	  border-radius: 100px;
-	  background: rgb(170, 170, 170);
-	  height: 70%;
-	  width: 0%;
-	}
-	
-</style>
-
-
-<script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-database-compat.js"></script>
 
 <script src="pixi_scale.min.js" ></script>
 <script src="pixi-sound.js"></script>
 <script src="index.js" charset="utf-8"></script>
-<script src="load_list.txt" ></script>
 
-<div id="m_progress">
-  <div id="m_bar"></div>
-</div>
-
-
-
- 
-<body onload="init_game_env(1)">
-
-</body>
+<body onload="init_game_env()">
 
 </html>
