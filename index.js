@@ -5272,6 +5272,7 @@ async function init_game_env(l) {
 
 	//запускаем главный цикл
 	main_loop();
+	git_src="https://akukamil.github.io/durak/"
 	await main_loader.load1();	
 	await main_loader.load2();	
 	
@@ -5335,7 +5336,6 @@ async function init_game_env(l) {
 			room_name='states'+i;
 	}		
 	
-
 
 	//my_data.rating=2001;
 	//room_name= 'states2';	
