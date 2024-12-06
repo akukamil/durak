@@ -5273,7 +5273,6 @@ async function init_game_env(l) {
 
 	//запускаем главный цикл
 	main_loop();
-	git_src="https://akukamil.github.io/durak/"
 	await main_loader.load1();	
 	await main_loader.load2();	
 	
@@ -5444,11 +5443,11 @@ main_loader={
 				loader.add(pre_load_list[i].name, git_src+'res/'+'common/'+ pre_load_list[i].name + "." +  pre_load_list[i].image_format);
 
 		//добавляем шрифт
-		loader.add('mfont2',git_src+'/fonts/Bahnschrift/font.fnt');
+		loader.add('mfont2',git_src+'fonts/Bahnschrift/font.fnt');
 		loader.add('bcg',git_src+'bcg.jpg');
 		
 		//добавляем основной загрузочный манифест
-		loader.add('main_load_list',git_src+'/load_list.txt');
+		loader.add('main_load_list',git_src+'load_list.txt');
 
 		//переносим все в ассеты
 		await new Promise(res=>loader.load(res))
