@@ -533,10 +533,10 @@ chat={
 	block_player(uid){
 		
 		fbs.ref('blocked/'+uid).set(Date.now());
-		fbs.ref(`players/${uid}/inbox`).set({message:'CHAT_BLOCK',tm:Date.now()});
+		fbs.ref('inbox/'+uid).set({message:'CHAT_BLOCK',tm:Date.now()});
 		
 		//увеличиваем количество блокировок
-		fbs.ref(`players/${uid}/block_num`).transaction(val=> {return (val || 0) + 1});
+		fbs.ref('players/'+uid+'/block_num').transaction(val=> {return (val || 0) + 1});
 		
 	},
 		
