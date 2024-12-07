@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app ={stage:{},renderer:{}},gdata={},assets={}, objects={}, state='',chat_path, game_tick=0, game_id=0, connected = 1, h_state=0, game_platform="",
+var app ={stage:{},renderer:{}},assets={}, objects={}, state='',chat_path, game_tick=0, game_id=0, connected = 1, h_state=0, game_platform="",
 hidden_state_start = 0,fbs,room_name = 'states2', pending_player='', opponent = {}, my_data={opp_id : ''},client_id,
 opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0;
 
@@ -595,7 +595,7 @@ chat={
 		}
 		
 		if (this.block_next_click){			
-			fbs.ref('blocked/'+player_data.uid).set(Date.now())
+			this.block_player(player_data.uid);
 			console.log('Игрок заблокирован: ',player_data.uid);
 			this.block_next_click=0;
 		}
@@ -737,9 +737,14 @@ chat={
 		//оплата разблокировки чата
 		if (my_data.blocked){	
 		
+			let block_num=await fbs_once('players/'+my_data.uid+'/block_num');
+			block_num=block_num||1;
+			block_num=Math.min(5,block_num);
+			block_num=Math.min(6,block_num);
+		
 			if(game_platform==='YANDEX'){
 				
-				this.payments.purchase({ id: 'unblock' }).then(purchase => {
+				this.payments.purchase({ id: 'unblock'+block_num}).then(purchase => {
 					this.unblock_chat();
 				}).catch(err => {
 					message.add('Ошибка при покупке!');
