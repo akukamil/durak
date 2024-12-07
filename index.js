@@ -3155,7 +3155,9 @@ keyboard={
 	
 	MAX_SYMBOLS : 60,
 	
-	read(){
+	read(max_symb){
+		
+		this.MAX_SYMBOLS=max_symb||60;
 		
 		if (!this.layout)this.switch_layout();	
 		
