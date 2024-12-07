@@ -752,7 +752,7 @@ chat={
 			
 			if (game_platform==='VK') {
 				
-				vkBridge.send('VKWebAppShowOrderBox', { type: 'item', item: 'unblock'}).then(data =>{
+				vkBridge.send('VKWebAppShowOrderBox', { type: 'item', item: 'unblock'+block_num}).then(data =>{
 					this.unblock_chat();
 				}).catch((err) => {
 					message.add('Ошибка при покупке!');
