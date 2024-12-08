@@ -5101,7 +5101,7 @@ auth1={
 			
 			game_platform = 'VK';
 			
-			await this.load_script('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')}||await this.load_script('vkbridge.js');
+			await this.load_script('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')||await this.load_script('vkbridge.js');
 					
 			let _player;
 			
