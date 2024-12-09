@@ -563,8 +563,10 @@ chat={
 		//console.log('receive message',data)
 		if(data===undefined) return;
 		
-		//если это сообщение уже есть в чате
-		//if (objects.chat_records.find(obj => { return obj.hash === data.hash;}) !== undefined) return;
+		
+		//если это дубликат моего сообщения из-за таймстемпа
+		if (data.uid===my_data.uid)
+			if (objects.chat_records.find(obj => { return obj.msg.text===data.msg&&obj.index===data.index})) return;
 		
 		
 		//выбираем номер сообщения
@@ -782,7 +784,7 @@ chat={
 		const msg = await keyboard.read(70);		
 		if (msg) {			
 			const index=irnd(1,999);
-			fbs.ref(chat_path+'/'+index).set({uid:my_data.uid,name:my_data.name,msg, tm:firebase.database.ServerValue.TIMESTAMP,index});
+			fbs.ref(chat_path+'/'+index).set({uid:my_data.uid,name:my_data.name,msg,tm:firebase.database.ServerValue.TIMESTAMP,index});
 		}	
 		
 	},
@@ -5101,8 +5103,8 @@ auth1={
 			
 			game_platform = 'VK';
 			
-			await this.load_script('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')||await this.load_script('vkbridge.js');
-					
+			await this.load_script('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')||await this.load_script('https://akukamil.github.io/durak/vkbridge.js');
+	
 			let _player;
 			
 			try {
