@@ -5287,6 +5287,11 @@ async function init_game_env(l) {
 	//получаем данные авторизации игрока
 	await auth1.init();	
 
+	//убираем ё
+	my_data.name=my_data.name.replace(/ё/g, 'е');
+	my_data.name=my_data.name.replace(/Ё/g, 'Е');
+
+
 	//анимация лупы
 	some_process.loup_anim=function() {
 		objects.id_loup.x=20*Math.sin(game_tick*8)+90;
