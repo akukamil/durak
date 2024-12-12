@@ -3958,6 +3958,7 @@ lobby={
 	fb_cache:{},
 	first_run:0,
 	bot_on:1,
+	global_players:{},
 		
 	activate(room,bot_on) {
 		
@@ -4016,8 +4017,27 @@ lobby={
 			}
 			room_name=room;	
 		}
+				
+		fbs.ref(room_name).on('child_changed', snapshot => {	
+			const val=snapshot.val()
+			//console.log('child_changed',snapshot.key,val,JSON.stringify(val).length)
+			this.global_players[snapshot.key]=val;
+			lobby.players_list_updated(this.global_players);
+		});
+		fbs.ref(room_name).on('child_added', snapshot => {			
+			const val=snapshot.val()
+			//console.log('child_added',snapshot.key,val,JSON.stringify(val).length)
+			this.global_players[snapshot.key]=val;
+			lobby.players_list_updated(this.global_players);
+		});
+		fbs.ref(room_name).on('child_removed', snapshot => {			
+			const val=snapshot.val()
+			//console.log('child_removed',snapshot.key,val,JSON.stringify(val).length)
+			delete this.global_players[snapshot.key];
+			lobby.players_list_updated(this.global_players);
+		});
 		
-		fbs.ref(room_name).on('value', snapshot => {lobby.players_list_updated(snapshot.val());});
+
 		fbs.ref(room_name+'/'+my_data.uid).onDisconnect().remove();		
 		
 		set_state({state : 'o'});
@@ -5089,7 +5109,7 @@ auth1={
 			my_data.name = _player.getName();
 			my_data.uid = _player.getUniqueID().replace(/\//g, "Z");
 			my_data.orig_pic_url = _player.getPhoto('medium');
-			my_data.yndx_auth_mode=_player.getMode();
+			my_data.auth_mode=_player.getMode()||'auth';
 
 			if (my_data.orig_pic_url === 'https://games-sdk.yandex.ru/games/api/sdk/v1/player/avatar/0/islands-retina-medium')
 				my_data.orig_pic_url = 'mavatar'+my_data.uid;	
@@ -5111,11 +5131,11 @@ auth1={
 				await vkBridge.send('VKWebAppInit');
 				_player = await vkBridge.send('VKWebAppGetUserInfo');				
 			} catch (e) {alert(e)};
-
 			
-			my_data.name 	= _player.first_name + ' ' + _player.last_name;
-			my_data.uid 	= 'vk'+_player.id;
+			my_data.name = _player.first_name + ' ' + _player.last_name;
+			my_data.uid = 'vk'+_player.id;
 			my_data.orig_pic_url = _player.photo_100;
+			my_data.auth_mode='auth';	
 			
 			return;
 			
@@ -5124,7 +5144,8 @@ auth1={
 		if (game_platform === 'DEBUG') {		
 
 			my_data.name = my_data.uid = 'debug' + prompt('Отладка. Введите ID', 100);
-			my_data.orig_pic_url = 'mavatar'+my_data.uid;		
+			my_data.orig_pic_url = 'mavatar'+my_data.uid;
+			my_data.auth_mode='debug';				
 			return;
 		}		
 		
@@ -5134,7 +5155,8 @@ auth1={
 			alert('Неизвестная платформа. Кто Вы?')
 			my_data.uid = this.search_in_local_storage() || this.get_random_uid_for_local('LS_');
 			my_data.name = this.get_random_name(my_data.uid);
-			my_data.orig_pic_url = 'mavatar'+my_data.uid;		
+			my_data.orig_pic_url = 'mavatar'+my_data.uid;
+			my_data.auth_mode='no';	
 		}
 
 	}
@@ -5369,7 +5391,7 @@ async function init_game_env(l) {
 	fbs.ref('players/'+my_data.uid+'/name').set(my_data.name);
 	fbs.ref('players/'+my_data.uid+'/pic_url').set(my_data.pic_url);				
 	fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
-	if (game_platform==='YANDEX') fbs.ref('players/'+my_data.uid+'/yndx_auth_mode').set(my_data.yndx_auth_mode||'auth');
+	fbs.ref('players/'+my_data.uid+'/auth_mode').set(my_data.auth_mode);
 	fbs.ref('players/'+my_data.uid+'/tm').set(firebase.database.ServerValue.TIMESTAMP);
 	
 	//устанавливаем мой статус в онлайн
