@@ -5245,6 +5245,10 @@ async function check_admin_info(){
 	if (my_data.rating>2000){
 		const last_game_tm=await fbs_once(`players/${my_data.uid}/last_game_tm`);
 		const cur_tm=await fbs_once(`players/${my_data.uid}/tm`);
+		
+		if (!last_game_tm)
+			fbs.ref('players/'+my_data.uid+'/last_game_tm').set(firebase.database.ServerValue.TIMESTAMP);	
+		
 		if (last_game_tm&&cur_tm){
 			const days_passed=(cur_tm-last_game_tm)/3600000/24;
 			if (days_passed>3){
