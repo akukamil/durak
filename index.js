@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app ={stage:{},renderer:{}},assets={}, objects={}, state='',chat_path, game_tick=0, game_id=0, connected = 1, h_state=0, game_platform="",
+var app ={stage:{},renderer:{}},assets={}, objects={}, state='',chat_path='states_chat', game_tick=0, game_id=0, connected = 1, h_state=0, game_platform="",
 hidden_state_start = 0,fbs,room_name = 'states2', pending_player='', opponent = {}, my_data={opp_id : ''},client_id,
 opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0;
 
@@ -1558,11 +1558,14 @@ mp_game={
 	chat_button_pos:[0,0,0],
 	giveup_button_pos:[0,0,0],
 	
-	calc_new_rating(old_rating, game_result) {
-		
+	calc_new_rating(old_rating, game_result) {		
 		
 		if (game_result === NOSYNC)
 			return old_rating;
+		
+		//если уже играли много с этим игроком то не позволяем увеличивать рейтинг
+		//if (my_data.rating>2000&&!my_data.auth)
+		//	return old_rating;				
 		
 		var Ea = 1 / (1 + Math.pow(10, ((opp_data.rating-my_data.rating)/400)));
 		if (game_result === WIN)
@@ -1808,7 +1811,7 @@ mp_game={
 		
 		table.state = 'stop';
 		
-		let res_array = [
+		const res_array = [
 			['my_win',WIN , ['Вы выиграли!\n','You win!\nOpponent out of time']],		
 			['opp_win',LOSE, ['Вы проиграли!\n','You lose!\nYou out of time']],
 			['draw' ,DRAW, ['Ничья','Draw!']],
@@ -1824,12 +1827,12 @@ mp_game={
 		
 		clearTimeout(this.timer_id);
 		
-		let result_row = res_array.find( p => p[0] === result);
-		let result_str = result_row[0];		
-		let result_number = result_row[1];
-		let result_info = result_row[2][0];
+		const result_row = res_array.find( p => p[0] === result);
+		const result_str = result_row[0];		
+		const result_number = result_row[1];
+		const result_info = result_row[2][0];
 		
-		let old_rating = my_data.rating;
+		const old_rating = my_data.rating;
 		my_data.rating = this.calc_new_rating (my_data.rating, result_number);
 		fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
 		
@@ -1837,12 +1840,10 @@ mp_game={
 		objects.my_card_rating.text=my_data.rating;
 		
 		//если диалоги еще открыты
-		if (objects.stickers_cont.visible===true)
-			stickers.hide_panel();	
+		if (objects.stickers_cont.visible===true) stickers.hide_panel();	
 		
 		//если диалоги еще открыты
-		if (objects.confirm_cont.visible===true)
-			confirm_dialog.close();
+		if (objects.confirm_cont.visible===true) confirm_dialog.close();
 				
 		//убираем элементы
 		objects.timer_cont.visible = false;
@@ -1860,16 +1861,19 @@ mp_game={
 			
 			//увеличиваем количество игр
 			my_data.games++;
-			fbs.ref("players/"+[my_data.uid]+'/games').set(my_data.games);		
+			fbs.ref('players/'+my_data.uid+'/games').set(my_data.games);		
 
 			//записываем результат в базу данных
-			let duration = ~~((Date.now() - this.start_time)*0.001);
-			fbs.ref("finishes/"+game_id).set({'player1':objects.my_card_name.text,'player2':objects.opp_card_name.text, 'res':result_number,'fin_type':result_str,'duration':duration, 'ts':firebase.database.ServerValue.TIMESTAMP});
+			const duration = ~~((Date.now() - this.start_time)*0.001);
+			fbs.ref('finishes/'+game_id).set({'player1':objects.my_card_name.text,'player2':objects.opp_card_name.text, 'res':result_number,'fin_type':result_str,duration, 'ts':firebase.database.ServerValue.TIMESTAMP});
+		
+			//записываем дату последней игры
+			fbs.ref('players/'+my_data.uid+'/last_game_tm').set(firebase.database.ServerValue.TIMESTAMP);			
 		
 			//контрольные концовки
-			if (my_data.rating>2000 || opp_data.rating>2000){
-				fbs.ref("finishes2").push({uid:my_data.uid,player1:objects.my_card_name.text,player2:objects.opp_card_name.text, res:result_number,fin_type:result_str,duration:duration, rating: [old_rating,my_data.rating],client_id:client_id, ts:firebase.database.ServerValue.TIMESTAMP});	
-			}		
+			if (my_data.rating>2000 || opp_data.rating>2000)
+				fbs.ref('finishes2/'+irnd(1,999999)).set({uid:my_data.uid,player1:objects.my_card_name.text,player2:objects.opp_card_name.text, res:result_number,fin_type:result_str,duration, rating: [old_rating,my_data.rating],client_id, ts:firebase.database.ServerValue.TIMESTAMP});	
+			
 		
 		}
 			
@@ -5109,7 +5113,7 @@ auth1={
 			my_data.name = _player.getName();
 			my_data.uid = _player.getUniqueID().replace(/\//g, "Z");
 			my_data.orig_pic_url = _player.getPhoto('medium');
-			my_data.auth_mode=_player.getMode()||'auth';
+			my_data.auth_mode=_player.getMode()==='lite'?0:1;
 
 			if (my_data.orig_pic_url === 'https://games-sdk.yandex.ru/games/api/sdk/v1/player/avatar/0/islands-retina-medium')
 				my_data.orig_pic_url = 'mavatar'+my_data.uid;	
@@ -5135,7 +5139,7 @@ auth1={
 			my_data.name = _player.first_name + ' ' + _player.last_name;
 			my_data.uid = 'vk'+_player.id;
 			my_data.orig_pic_url = _player.photo_100;
-			my_data.auth_mode='auth';	
+			my_data.auth_mode=1;	
 			
 			return;
 			
@@ -5145,7 +5149,7 @@ auth1={
 
 			my_data.name = my_data.uid = 'debug' + prompt('Отладка. Введите ID', 100);
 			my_data.orig_pic_url = 'mavatar'+my_data.uid;
-			my_data.auth_mode='debug';				
+			my_data.auth_mode=0;				
 			return;
 		}		
 		
@@ -5156,7 +5160,7 @@ auth1={
 			my_data.uid = this.search_in_local_storage() || this.get_random_uid_for_local('LS_');
 			my_data.name = this.get_random_name(my_data.uid);
 			my_data.orig_pic_url = 'mavatar'+my_data.uid;
-			my_data.auth_mode='no';	
+			my_data.auth_mode=0;	
 		}
 
 	}
@@ -5235,6 +5239,22 @@ async function define_platform_and_language() {
 }
 
 async function check_admin_info(){
+	
+	
+	//проверяем долгое отсутствие игру у рейтинговых игроков
+	if (my_data.rating>2000){
+		const last_game_tm=await fbs_once(`players/${my_data.uid}/last_game_tm`);
+		const cur_tm=await fbs_once(`players/${my_data.uid}/tm`);
+		if (last_game_tm&&cur_tm){
+			const days_passed=(cur_tm-last_game_tm)/3600000/24;
+			if (days_passed>3){
+				my_data.rating=2000;
+				fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
+				message.add('Ваш рейтинг округлен до 2000. Причина - отсутвие игр.',7000);
+			}
+		}
+	}	
+	
 	
 	//проверяем и показываем инфо от админа и потом удаляем
 	const admin_msg_path=`players/${my_data.uid}/admin_info`;
@@ -5324,11 +5344,11 @@ async function init_game_env(l) {
 	resize();
 	window.addEventListener("resize", resize);
 
-	//идентификатор клиента
-	client_id = irnd(10,999999);
 
 	//запускаем главный цикл
 	main_loop();
+	
+	//загружаем ресурсы
 	await main_loader.load1();	
 	await main_loader.load2();	
 	
@@ -5339,16 +5359,14 @@ async function init_game_env(l) {
 	my_data.name=my_data.name.replace(/ё/g, 'е');
 	my_data.name=my_data.name.replace(/Ё/g, 'Е');
 
-
-	//анимация лупы
+	//запускаем лупную анимацию
 	some_process.loup_anim=function() {
 		objects.id_loup.x=20*Math.sin(game_tick*8)+90;
 		objects.id_loup.y=20*Math.cos(game_tick*8)+150;
 	}
 
 	//загружаем остальные данные
-	let _other_data = await fbs.ref('players/'+my_data.uid).once('value');
-	let other_data = _other_data.val();
+	const other_data = await fbs_once('players/'+my_data.uid)
 	
 	//это защита от неправильных данных
 	my_data.rating = other_data?.rating || 1400;
@@ -5360,6 +5378,7 @@ async function init_game_env(l) {
 	my_data.shirt_id=other_data?.shirt_id || 0;
 	my_data.nick_tm = other_data?.nick_tm || 0;
 	my_data.avatar_tm = other_data?.avatar_tm || 0;
+	my_data.opp_hist=other_data?.opp_hist||[];
 	
 	//правильно определяем аватарку
 	if (other_data?.pic_url && other_data.pic_url.includes('mavatar'))
@@ -5397,34 +5416,31 @@ async function init_game_env(l) {
 			room_name='states'+i;
 	}		
 	
-
 	//my_data.rating=2001;
 	//room_name= 'states2';	
-	
-	//это путь к чату
-	chat_path='states_chat';
 	
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
 
 	//обновляем почтовый ящик
-	fbs.ref('inbox/'+my_data.uid).set({sender:"-",message:"-",tm:"-"});
+	fbs.ref('inbox/'+my_data.uid).set({sender:'-',message:'-',tm:'-'});
 
-	//подписываемся на новые сообщения
-	fbs.ref('inbox/'+my_data.uid).on('value', (snapshot) => {process_new_message(snapshot.val())});
+	//подписываемся на почтовый ящик
+	fbs.ref('inbox/'+my_data.uid).on('value', d => {process_new_message(d.val())});
 	
 	//обновляем базовые данные в файербейс так могло что-то поменяться
 	fbs.ref('players/'+my_data.uid+'/name').set(my_data.name);
 	fbs.ref('players/'+my_data.uid+'/pic_url').set(my_data.pic_url);				
 	fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
 	fbs.ref('players/'+my_data.uid+'/auth_mode').set(my_data.auth_mode);
-	fbs.ref('players/'+my_data.uid+'/tm').set(firebase.database.ServerValue.TIMESTAMP);
+	await fbs.ref('players/'+my_data.uid+'/tm').set(firebase.database.ServerValue.TIMESTAMP);
 	
 	//устанавливаем мой статус в онлайн
-	set_state({state : 'o'});
+	set_state({state:'o'});
 
-	//сообщение для дубликатов
-	fbs.ref('inbox/'+my_data.uid).set({message:'CLIEND_ID',tm:Date.now(),client_id:client_id});
+	//ИД моего клиента и сообщение для дубликатов (если не совпадет то выключаем)
+	client_id = irnd(10,999999);
+	fbs.ref('inbox/'+my_data.uid).set({message:'CLIEND_ID',tm:Date.now(),client_id});
 
 	//отключение от игры и удаление не нужного
 	fbs.ref('inbox/'+my_data.uid).onDisconnect().remove();
@@ -5446,16 +5462,10 @@ async function init_game_env(l) {
 	//keep-alive сервис
 	setInterval(function()	{keep_alive()}, 40000);
 
-	//ждем одну секунду
-	await new Promise((resolve, reject) => {setTimeout(resolve, 1000);});
 
-	some_process.loup_anim = function(){};
-
-	anim2.add(objects.id_cont,{y:[objects.id_cont.sy, -200]}, false, 0.5,'easeInBack');
-	
 	//контроль за присутсвием
 	var connected_control = fbs.ref(".info/connected");
-	connected_control.on("value", (snap) => {
+	connected_control.on("value", snap => {
 	  if (snap.val() === true) {
 		connected = 1;
 	  } else {
@@ -5465,8 +5475,14 @@ async function init_game_env(l) {
 
 	//одноразовое сообщение от админа
 	await check_admin_info();
+	
+	//ждем одну секунду
+	await new Promise((resolve, reject) => {setTimeout(resolve, 1000);});
 
-
+	//убираем ИД контейнер
+	some_process.loup_anim = function(){};
+	anim2.add(objects.id_cont,{y:[objects.id_cont.sy, -200]}, false, 0.5,'easeInBack');
+	
 	//показыаем основное меню
 	main_menu.activate();
 
