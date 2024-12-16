@@ -5311,7 +5311,14 @@ async function init_game_env(l) {
 	//создаем приложение пикси и добавляем тень
 	document.body.innerHTML='<style>html,body {margin: 0;padding: 0;height: 100%;}body {display: flex;align-items:center;justify-content: center;background-color: rgba(41,41,41,1)}</style>';
 	app.stage = new PIXI.Container();
-	app.renderer = new PIXI.Renderer({width:M_WIDTH, height:M_HEIGHT,antialias:true});
+	if(window.debug_mode){
+		
+		console.log('debug_mode')
+	}else{
+		
+		app.renderer = new PIXI.Renderer({width:M_WIDTH, height:M_HEIGHT,antialias:true});		
+	}
+
 	document.body.appendChild(app.renderer.view).style["boxShadow"] = "0 0 15px #000000";
 	document.body.style.backgroundColor = 'rgb(141,211,200)';
 	
@@ -5424,7 +5431,7 @@ async function init_game_env(l) {
 			room_name='states'+i;
 	}		
 	
-	//my_data.rating=2001;
+	//my_data.rating=2004;
 	//room_name= 'states4';	
 	
 	//устанавливаем рейтинг в попап
