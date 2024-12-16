@@ -5425,7 +5425,7 @@ async function init_game_env(l) {
 	}		
 	
 	//my_data.rating=2001;
-	room_name= 'states4';	
+	//room_name= 'states4';	
 	
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
