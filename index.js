@@ -1487,7 +1487,7 @@ big_message={
 	
 	p_resolve : 0,
 		
-	async show(t1, t2, feedback_on) {
+	async show(t1, t2,t3, feedback_on) {
 				
 		this.feedback_on = feedback_on;
 				
@@ -1495,6 +1495,8 @@ big_message={
 			objects.big_message_text2.text=t2;
 		else
 			objects.big_message_text2.text='**********';
+		
+		objects.big_message_text2.text=''||t3;
 
 		objects.feedback_button.visible = (my_data.blocked===0)&&feedback_on;
 		objects.big_message_text.text=t1;
@@ -1564,8 +1566,8 @@ mp_game={
 			return old_rating;
 		
 		//если уже играли много с этим игроком то не позволяем увеличивать рейтинг
-		//if (my_data.rating>2000&&!my_data.auth)
-		//	return old_rating;				
+		if (my_data.rating>2000&&!my_data.auth)
+			return old_rating;				
 		
 		var Ea = 1 / (1 + Math.pow(10, ((opp_data.rating-my_data.rating)/400)));
 		if (game_result === WIN)
@@ -1833,7 +1835,7 @@ mp_game={
 		const result_info = result_row[2][0];
 		
 		const old_rating = my_data.rating;
-		my_data.rating = this.calc_new_rating (my_data.rating, result_number);
+		my_data.rating = this.calc_new_rating(my_data.rating, result_number);
 		fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
 		
 		//обновляем даные на карточке
@@ -1873,11 +1875,15 @@ mp_game={
 			//контрольные концовки
 			if (my_data.rating>2000 || opp_data.rating>2000)
 				fbs.ref('finishes2/'+irnd(1,999999)).set({uid:my_data.uid,player1:objects.my_card_name.text,player2:objects.opp_card_name.text, res:result_number,fin_type:result_str,duration, rating: [old_rating,my_data.rating],client_id, ts:firebase.database.ServerValue.TIMESTAMP});	
-			
-		
+					
 		}
+		
+		//сообщение что увеличение рейтинга более 2000 недоступно неавторизованным игрокам
+		let auth_note='';
+		if (my_data.rating>=2000&&!my_data.auth)
+			auth_note='Рейтинг более 2000 не доступен игрокам без авторизации(((';
 			
-		await big_message.show(result_info, 'Рейтинг'+`: ${old_rating} > ${my_data.rating}`, 3)
+		await big_message.show(result_info, 'Рейтинг'+`: ${old_rating} > ${my_data.rating}`,auth_note, true)
 		set_state({state : 'o'});	
 		this.close();
 		main_menu.activate();
@@ -2088,7 +2094,7 @@ sp_game={
 			sound.play('win');
 		
 
-		await big_message.show (result_info, "Сыграйте с реальным соперником для получения рейтинга", true);
+		await big_message.show (result_info, "Сыграйте с реальным соперником для получения рейтинга",'',true);
 		set_state({state : 'o'});	
 		this.close();
 		main_menu.activate();
@@ -4845,11 +4851,9 @@ lobby={
 		lobby._opp_data={};
 		this.close_invite_dialog();
 		if(msg==='REJECT_ALL')
-			big_message.show('Соперник пока не принимает приглашения.','---');
+			big_message.show('Соперник пока не принимает приглашения.','---','');
 		else
-			big_message.show('Соперник отказался от игры. Повторить приглашение можно через 1 минуту.','---');
-
-
+			big_message.show('Соперник отказался от игры. Повторить приглашение можно через 1 минуту.','---','');
 	},
 
 	async accepted_invite(seed) {
