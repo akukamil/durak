@@ -1566,7 +1566,7 @@ mp_game={
 			return old_rating;
 		
 		//если уже играли много с этим игроком то не позволяем увеличивать рейтинг
-		if (my_data.rating>2000&&!my_data.auth)
+		if (my_data.rating>2000&&!my_data.auth_mode)
 			return old_rating;				
 		
 		var Ea = 1 / (1 + Math.pow(10, ((opp_data.rating-my_data.rating)/400)));
@@ -1880,7 +1880,7 @@ mp_game={
 		
 		//сообщение что увеличение рейтинга более 2000 недоступно неавторизованным игрокам
 		let auth_note='';
-		if (my_data.rating>=2000&&!my_data.auth)
+		if (my_data.rating>=2000&&!my_data.auth_mode)
 			auth_note='Рейтинг более 2000 не доступен игрокам без авторизации(((';
 			
 		await big_message.show(result_info, 'Рейтинг'+`: ${old_rating} > ${my_data.rating}`,auth_note, true)
