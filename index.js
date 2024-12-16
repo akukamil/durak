@@ -1487,7 +1487,7 @@ big_message={
 	
 	p_resolve : 0,
 		
-	async show(t1, t2,t3, feedback_on) {
+	async show(t1, t2, t3, feedback_on) {
 				
 		this.feedback_on = feedback_on;
 				
@@ -1496,7 +1496,7 @@ big_message={
 		else
 			objects.big_message_text2.text='**********';
 		
-		objects.big_message_text2.text=''||t3;
+		objects.big_message_text3.text=''||t3;
 
 		objects.feedback_button.visible = (my_data.blocked===0)&&feedback_on;
 		objects.big_message_text.text=t1;
@@ -5425,7 +5425,7 @@ async function init_game_env(l) {
 	}		
 	
 	//my_data.rating=2001;
-	//room_name= 'states2';	
+	room_name= 'states4';	
 	
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
