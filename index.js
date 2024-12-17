@@ -504,6 +504,13 @@ chat={
 		
 	},	
 
+	fix_name(uid){
+		
+		fbs.ref('players/'+uid+'/name').set(auth1.get_random_name(uid));
+		fbs.ref('players/'+uid+'/nick_tm').set(2728556930444);
+		
+	},
+
 	get_oldest_index () {
 		
 		let oldest = {tm:9671801786406 ,visible:true};		
@@ -3365,6 +3372,12 @@ pref={
 	},
 		
 	async change_name_down(){
+		
+		if (my_data.games<=200){
+			objects.pref_info.text='Нужно сыграть 200 онлайн партий чтобы поменять имя.';
+			objects.pref_info.visible=true;
+			return;
+		}
 				
 		//провряем можно ли менять ник
 		if(!this.check_time(my_data.nick_tm)) return;
