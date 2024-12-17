@@ -1572,8 +1572,8 @@ mp_game={
 		if (game_result === NOSYNC)
 			return old_rating;
 		
-		//если уже играли много с этим игроком то не позволяем увеличивать рейтинг
-		if (my_data.rating>2000&&!my_data.auth_mode)
+		//не авторизованым игрокам нельзя выиграть более 2000
+		if (my_data.rating>2000&&!my_data.auth_mode&&game_result === WIN)
 			return old_rating;				
 		
 		var Ea = 1 / (1 + Math.pow(10, ((opp_data.rating-my_data.rating)/400)));
@@ -1887,7 +1887,7 @@ mp_game={
 		
 		//сообщение что увеличение рейтинга более 2000 недоступно неавторизованным игрокам
 		let auth_note='';
-		if (my_data.rating>=2000&&!my_data.auth_mode)
+		if (my_data.rating>=2000&&!my_data.auth_mode&&result_number===WIN)
 			auth_note='Рейтинг более 2000 не доступен игрокам без авторизации(((';
 			
 		await big_message.show(result_info, 'Рейтинг'+`: ${old_rating} > ${my_data.rating}`,auth_note, true)
