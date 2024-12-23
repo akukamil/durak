@@ -4978,7 +4978,47 @@ lobby={
 		await this.close();
 		main_menu.activate();
 
+	},
+	
+	info_btn_down(){
+		
+		if (anim2.any_on()) {
+			sound.play('locked');
+			return
+		};
+		sound.play('click');
+		
+		if(!objects.info_cont.init){
+			
+			objects.info_records[0].set({uid:'bot',name:'Админ',msg:'Новое правило - рейтинг игроков, неактивных в течение 3 дней, будет снижен до 2000.',tm:1734959027520})
+			objects.info_records[0].scale_xy=1.2;
+			objects.info_records[0].y=145;
+			
+			objects.info_records[1].set({uid:'bot',name:'Админ',msg:'Новое правило - не авторизованным игрокам не достпуен рейтинг более 2000.',tm:1734959227520})
+			objects.info_records[1].scale_xy=1.2;
+			objects.info_records[1].y=235;
+			
+			objects.info_cont.init=1;
+		}
+		
+		anim2.add(objects.info_cont,{alpha:[0,1]}, true, 0.25,'linear');
+
+	},
+	
+	info_close_down(){
+		
+		if (anim2.any_on()) {
+			sound.play('locked');
+			return
+		};
+		sound.play('close');
+		
+		anim2.add(objects.info_cont,{alpha:[1,0]}, false, 0.25,'linear');
+		
 	}
+
+
+
 
 }
 
@@ -5362,13 +5402,10 @@ async function init_game_env(l) {
 	PIXI.Graphics.prototype.set_texture=function(texture){		
 	
 		if(!texture) return;
-		// Get the texture's original dimensions
-		const textureWidth = texture.baseTexture.width;
-		const textureHeight = texture.baseTexture.height;
 
 		// Calculate the scale to fit the texture to the circle's size
-		const scaleX = this.w / textureWidth;
-		const scaleY = this.h / textureHeight;
+		const scaleX = this.w / texture.width;
+		const scaleY = this.h / texture.height;
 
 		// Create a new matrix for the texture
 		const matrix = new PIXI.Matrix();
