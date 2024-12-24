@@ -1681,6 +1681,7 @@ mp_game={
 		const cur_time=Date.now();
 		if (cur_time-this.timer_prv_time>5000||cur_time<this.timer_prv_time){
 			this.stop('timer_error');
+			fbs.ref('TIMER_ERRORS').push({uid:my_data.uid,cur_time,prv_time:this.timer_prv_time,h:window.location.href})
 			return;
 		}
 		this.timer_prv_time=cur_time;
