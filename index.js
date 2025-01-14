@@ -438,6 +438,154 @@ class feedback_record_class extends PIXI.Container {
 	
 }
 
+my_ws={
+	
+	socket:0,
+	
+	child_added:{},
+	child_changed:{},
+	child_removed:{},
+		
+	get_resolvers:{},
+	get_req_id:0,
+	reconnect_time:0,
+	connect_resolver:0,
+	sleep:0,
+	keep_alive_timer:0,
+		
+	init(){		
+		if(this.socket.readyState===1) return;
+		return new Promise(resolve=>{
+			this.connect_resolver=resolve;
+			this.reconnect();
+		})
+	},
+	
+	send_to_sleep(){		
+		if (this.socket.readyState===1){
+			this.sleep=1;	
+			this.socket.close(1000, "sleep");
+		}
+	},
+	
+	kill(){
+		
+		this.sleep=1;
+		this.socket.close(1000, "kill");
+		
+	},
+	
+	reconnect(){
+		
+		this.sleep=0;
+
+		if (this.socket) {
+			this.socket.onopen = null;
+			this.socket.onmessage = null;
+			this.socket.onclose = null;
+			this.socket.onerror = null;	
+			this.socket.close();
+		}
+
+		this.socket = new WebSocket('wss://timewebmtgames.ru:8443/durak/'+my_data.uid);
+				
+		this.socket.onopen = () => {
+			console.log('Connected to server!');
+			this.connect_resolver();
+			this.reconnect_time=0;
+			
+			//обновляем подписки
+			for (const path in this.child_added)				
+				this.socket.send(JSON.stringify({cmd:'child_added',path}))					
+			
+			clearInterval(this.keep_alive_timer)
+			this.keep_alive_timer=setInterval(()=>{
+				this.socket.send('1');
+			},29000);
+		};			
+		
+		this.socket.onmessage = event => {
+			
+			const msg=JSON.parse(event.data);
+			//console.log("Получено от сервера:", msg);
+			
+			if (msg.event==='child_added')	
+				this.child_added[msg.node]?.(msg);
+			
+			if (msg.event==='get')
+				if (this.get_resolvers[msg.req_id])
+					this.get_resolvers[msg.req_id](msg.data);
+
+		};
+		
+		this.socket.onclose = event => {			
+			clearInterval(this.keep_alive_timer)
+			if(event.reason==='not_alive') return;
+			if(this.sleep) return;
+
+			this.reconnect_time=Math.min(60000,this.reconnect_time+5000);
+			console.log(`reconnecting in ${this.reconnect_time*0.001} seconds:`, event);
+			setTimeout(()=>{this.reconnect()},this.reconnect_time);				
+		};
+
+		this.socket.onerror = error => {
+			//console.error("WebSocket error:", error);
+		};
+		
+	},
+	
+	get(path,limit_last){		
+		return new Promise(resolve=>{
+			
+			const req_id=irnd(1,999999);
+						
+			const timeoutId = setTimeout(() => {
+				delete this.get_resolvers[req_id];
+				resolve(0);
+			}, 5000);			
+			
+			this.get_resolvers[req_id]=(data)=>{				
+				clearTimeout(timeoutId);
+				resolve(data);					
+			}
+			
+			/*
+			this.get_resolvers[req_id] = {
+				resolve: (data) => {
+					clearTimeout(timeoutId);
+					resolve(data);
+				}
+			};*/
+			
+			this.socket.send(JSON.stringify({cmd:'get',path,req_id,limit_last}))				
+		
+		})	
+	},
+	
+	ss_child_added(path,callback){
+		
+		this.socket.send(JSON.stringify({cmd:'child_added',path}))	
+		this.child_added[path]=callback;
+		
+	},
+
+	ss_child_changed(path,callback){
+		
+		this.socket.send(JSON.stringify({cmd:'child_changed',node:path}))	
+		this.child_changed[path]=callback;
+		
+	},
+	
+	ss_child_removed(path,callback){
+		
+		this.socket.send(JSON.stringify({cmd:'child_removed',node:path}))	
+		this.child_removed[path]=callback;
+		
+	}	
+		
+}
+
+
 chat={
 	
 	last_record_end : 0,
@@ -472,7 +620,7 @@ chat={
 
 	},
 	
-	init(){
+	async init(){
 		
 		this.last_record_end = 0;
 		objects.chat_msg_cont.y = objects.chat_msg_cont.sy;		
@@ -481,18 +629,28 @@ chat={
 		objects.bcg.pointerdown=this.pointer_down.bind(this);
 		objects.bcg.pointerup=this.pointer_up.bind(this);
 		objects.bcg.pointerupoutside=this.pointer_up.bind(this);
+		
 		for(let rec of objects.chat_records) {
 			rec.visible = false;			
 			rec.msg_id = -1;	
 			rec.tm=0;
 		}		
 		
-		//загружаем чат		
-		fbs.ref(chat_path).orderByChild('tm').limitToLast(20).once('value', snapshot => {chat.chat_load(snapshot.val());});		
-		
 		this.init_yandex_payments();
-	},		
 
+		await my_ws.init();	
+		
+		//загружаем чат		
+		const chat_data=await my_ws.get('durak/chat',25);
+		
+		await this.chat_load(chat_data);
+		
+		//подписываемся на новые сообщения
+		my_ws.ss_child_added('durak/chat',chat.chat_updated.bind(chat))
+		
+		console.log('Чат загружен!')
+	},	
+	
 	init_yandex_payments(){
 				
 		if (game_platform!=='YANDEX') return;			
@@ -562,14 +720,12 @@ chat={
 		for (let c of data)
 			await this.chat_updated(c,true);	
 		
-		//подписываемся на новые сообщения
-		fbs.ref(chat_path).on('child_changed', snapshot => {chat.chat_updated(snapshot.val());});
 	},	
 				
 	async chat_updated(data, first_load) {		
 	
 		//console.log('receive message',data)
-		if(data===undefined) return;
+		if(data===undefined||!data.msg||!data.name||!data.uid) return;
 				
 		//ждем пока процессинг пройдет
 		for (let i=0;i<10;i++){			
@@ -739,15 +895,6 @@ chat={
 			objects.chat_msg_cont.y=-chat_top;
 		
 	},
-	
-	make_hash() {
-	  let hash = '';
-	  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	  for (let i = 0; i < 6; i++) {
-		hash += characters.charAt(Math.floor(Math.random() * characters.length));
-	  }
-	  return hash;
-	},
 		
 	async write_button_down(){
 		
@@ -805,7 +952,7 @@ chat={
 		const msg = await keyboard.read(70);		
 		if (msg) {			
 			const index=irnd(1,999);
-			fbs.ref(chat_path+'/'+index).set({uid:my_data.uid,name:my_data.name,msg,tm:firebase.database.ServerValue.TIMESTAMP,index});
+			my_ws.socket.send(JSON.stringify({cmd:'push',path:'durak/chat',val:{uid:my_data.uid,name:my_data.name,msg,tm:'TMS'}}))
 		}	
 		
 	},
@@ -3996,6 +4143,7 @@ lobby={
 	fb_cache:{},
 	first_run:0,
 	bot_on:1,
+	on:0,
 	global_players:{},
 		
 	activate(room,bot_on) {
@@ -4019,9 +4167,6 @@ lobby={
 				}
 			}		
 
-			//запускаем чат
-			chat.init();			
-
 			this.activated=true;
 		}
 		
@@ -4030,6 +4175,7 @@ lobby={
 		anim2.add(objects.lobby_footer_cont,{y:[450, objects.lobby_footer_cont.sy]}, true, 0.1,'linear');
 		anim2.add(objects.lobby_header_cont,{y:[-50, objects.lobby_header_cont.sy]}, true, 0.1,'linear');
 		objects.cards_cont.x=0;
+		this.on=1;
 		
 		//отключаем все карточки
 		for(let i=0;i<objects.mini_cards.length;i++)
@@ -4744,6 +4890,8 @@ lobby={
 		anim2.add(objects.lobby_footer_cont,{y:[ objects.lobby_footer_cont.y,450]}, false, 0.2,'linear');
 		anim2.add(objects.lobby_header_cont,{y:[objects.lobby_header_cont.y,-50]}, false, 0.2,'linear');
 		
+		this.on=0;
+		
 		//больше ни ждем ответ ни от кого
 		pending_player="";
 		
@@ -5018,9 +5166,6 @@ lobby={
 		
 	}
 
-
-
-
 }
 
 players_cache={
@@ -5273,13 +5418,44 @@ function set_state(params) {
 
 }
 
-function vis_change() {
-
-	if (document.hidden === true)		
-		hidden_state_start = Date.now();			
+tabvis={
 	
-	set_state({hidden : document.hidden});
+	inactive_timer:0,
+	sleep:0,
+	
+	change(){
 		
+		if (document.hidden){
+			
+			//start wait for
+			this.inactive_timer=setTimeout(()=>{this.send_to_sleep()},120000);
+			
+		}else{
+			
+			if(this.sleep){		
+				console.log('Проснулись');
+				my_ws.reconnect();
+				this.sleep=0;
+			}
+			
+			clearTimeout(this.inactive_timer);			
+		}		
+		
+		set_state({hidden : document.hidden});
+		
+	},
+	
+	send_to_sleep(){		
+		
+		console.log('погрузились в сон')
+		this.sleep=1;
+		if (lobby.on){
+			lobby.close()
+			main_menu.activate();				
+		}		
+		my_ws.send_to_sleep();		
+	}
+	
 }
 
 async function define_platform_and_language() {
@@ -5527,7 +5703,8 @@ async function init_game_env(l) {
 	fbs.ref(room_name+'/'+my_data.uid).onDisconnect().remove();
 
 	//это событие когда меняется видимость приложения
-	document.addEventListener('visibilitychange', vis_change);
+	document.addEventListener("visibilitychange", function(){tabvis.change()});
+
 
 	//событие ролика мыши в карточном меню
 	window.addEventListener('wheel', (event) => {	
@@ -5556,8 +5733,12 @@ async function init_game_env(l) {
 	//одноразовое сообщение от админа
 	await check_admin_info();
 	
-	//ждем одну секунду
-	await new Promise((resolve, reject) => {setTimeout(resolve, 1000);});
+	//ждем загрузки чата
+	await Promise.race([
+		chat.init(),
+		new Promise(resolve=> setTimeout(() => {console.log('chat is not loaded!');resolve()}, 5000))
+	]);
+	
 
 	//убираем ИД контейнер
 	some_process.loup_anim = function(){};
