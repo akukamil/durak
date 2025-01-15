@@ -479,6 +479,7 @@ my_ws={
 		
 		this.sleep=0;
 
+
 		if (this.socket) {
 			this.socket.onopen = null;
 			this.socket.onmessage = null;
@@ -584,7 +585,6 @@ my_ws={
 	}	
 		
 }
-
 
 chat={
 	
@@ -5664,7 +5664,7 @@ async function init_game_env(l) {
 	snow.init();	
 	
 	//определение номера комнаты
-	const rooms_bins = [0,1420,1610,9999]
+	const rooms_bins = [0,1420,1510,9999]
 	for (let i=1;i<rooms_bins.length;i++){
 		const f=rooms_bins[i-1];
 		const t=rooms_bins[i];		
