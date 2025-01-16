@@ -453,7 +453,8 @@ my_ws={
 	sleep:0,
 	keep_alive_timer:0,
 		
-	init(){		
+	init(){	
+		fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'init'});
 		if(this.socket.readyState===1) return;
 		return new Promise(resolve=>{
 			this.connect_resolver=resolve;
@@ -461,11 +462,10 @@ my_ws={
 		})
 	},
 	
-	send_to_sleep(){		
-		if (this.socket.readyState===1){
-			this.sleep=1;	
-			this.socket.close(1000, "sleep");
-		}
+	send_to_sleep(){	
+		fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'send_to_sleep'});
+		this.sleep=1;	
+		this.socket.close(1000, "sleep");
 	},
 	
 	kill(){
@@ -479,7 +479,7 @@ my_ws={
 		
 		this.sleep=0;
 
-
+		fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'reconnect'});
 		if (this.socket) {
 			this.socket.onopen = null;
 			this.socket.onmessage = null;
@@ -519,7 +519,9 @@ my_ws={
 
 		};
 		
-		this.socket.onclose = event => {			
+		this.socket.onclose = event => {		
+			fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),suid:this.socket.suid,event:'onclose',reason:event.reason||'noreason',code:event.code||'nocode'});
+		
 			clearInterval(this.keep_alive_timer)
 			if(event.reason==='not_alive') return;
 			if(this.sleep) return;
@@ -530,6 +532,8 @@ my_ws={
 		};
 
 		this.socket.onerror = error => {
+			fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now,event:'onerror',suid:this.socket.suid});
+
 			//console.error("WebSocket error:", error);
 		};
 		
