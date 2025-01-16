@@ -5689,6 +5689,7 @@ async function init_game_env(l) {
 	fbs.ref('players/'+my_data.uid+'/pic_url').set(my_data.pic_url);				
 	fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
 	fbs.ref('players/'+my_data.uid+'/auth_mode').set(my_data.auth_mode);
+	fbs.ref('players/'+my_data.uid+'/session_start').set(firebase.database.ServerValue.TIMESTAMP);
 	await fbs.ref('players/'+my_data.uid+'/tm').set(firebase.database.ServerValue.TIMESTAMP);
 	
 	//устанавливаем мой статус в онлайн
