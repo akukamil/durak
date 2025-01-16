@@ -3545,7 +3545,7 @@ pref={
 		if(!this.check_time(my_data.nick_tm)) return;
 										
 		const name=await keyboard.read(15);
-		if (name.length>1){			
+		if (name.replace(/\s/g, '').length>3){			
 			this.name_changed=name;
 			objects.pref_name.set2(name,260);
 			objects.pref_info.text='Нажмите ОК чтобы сохранить';
