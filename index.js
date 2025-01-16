@@ -520,7 +520,7 @@ my_ws={
 		};
 		
 		this.socket.onclose = event => {		
-			fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),suid:this.socket.suid,event:'onclose',reason:event.reason||'noreason',code:event.code||'nocode'});
+			fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'onclose',reason:event.reason||'noreason',code:event.code||'nocode'});
 		
 			clearInterval(this.keep_alive_timer)
 			if(event.reason==='not_alive') return;
@@ -532,7 +532,7 @@ my_ws={
 		};
 
 		this.socket.onerror = error => {
-			fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now,event:'onerror',suid:this.socket.suid});
+			fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now,event:'onerror'});
 
 			//console.error("WebSocket error:", error);
 		};
