@@ -524,7 +524,7 @@ my_ws={
 			fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'onclose',reason:event.reason||'noreason',code:event.code||'nocode'});
 		
 			clearInterval(this.keep_alive_timer)
-			if(event.reason==='not_alive') return;
+			if(event.reason==='not_alive'||event.reason==='no_uid') return;
 			if(this.sleep) return;
 
 			this.reconnect_time=Math.min(60000,this.reconnect_time+5000)+(event.code===1006?60000:0);
