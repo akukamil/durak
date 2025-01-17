@@ -495,7 +495,7 @@ my_ws={
 			console.log('Connected to server!');
 			this.connect_resolver();
 			this.reconnect_time=0;
-			
+			fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'onopen'});
 			//обновляем подписки
 			for (const path in this.child_added)				
 				this.socket.send(JSON.stringify({cmd:'child_added',path}))					
