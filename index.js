@@ -5040,7 +5040,7 @@ lobby={
 
 	async send_invite() {
 
-		if (!objects.invite_cont.ready||!objects.invite_cont.visible){
+		if (!objects.invite_cont.ready||!objects.invite_cont.visible||objects.invite_button.texture===assets.invite_wait_img){
 			sound.play('locked');
 			return
 		};
@@ -5501,6 +5501,211 @@ tabvis={
 	
 }
 
+main_loader={
+	
+	preload_assets:0,
+	
+	spritesheet_to_tex(t,xframes,yframes,total_w,total_h,xoffset,yoffset){
+		
+
+		const frame_width=xframes?total_w/xframes:0;
+		const frame_height=yframes?total_h/yframes:0;
+		
+		const textures=[];
+		for (let y=0;y<yframes;y++){
+			for (let x=0;x<xframes;x++){
+				
+				const rect = new PIXI.Rectangle(xoffset+x*frame_width, yoffset+y*frame_height, frame_width, frame_height);
+				const quadTexture = new PIXI.Texture(t.baseTexture, rect);
+				textures.push(quadTexture);
+			}
+		}
+		return textures;		
+	},
+	
+	async load1(){			
+		
+		const pre_load_list=eval(await(await fetch('res/common/load_list.txt')).text());
+		
+		const loader=new PIXI.Loader();		
+		
+		//добавляем текстуры из листа загрузки
+		const preload_bundle=[];
+		for (let i = 0; i < pre_load_list.length; i++)
+			if (pre_load_list[i].class==='sprite'||pre_load_list[i].class==='image')
+				loader.add(pre_load_list[i].name, git_src+'res/'+'common/'+ pre_load_list[i].name + "." +  pre_load_list[i].image_format);
+
+		//добавляем шрифт
+		loader.add('mfont2',git_src+'fonts/Bahnschrift/font.fnt');
+		loader.add('bcg',git_src+'bcg.jpg');
+		
+		//добавляем основной загрузочный манифест
+		loader.add('main_load_list',git_src+'load_list.txt');
+
+		//переносим все в ассеты
+		await new Promise(res=>loader.load(res))
+		for (const res_name in loader.resources){
+			const res=loader.resources[res_name];			
+			assets[res_name]=res.texture||res.sound||res.data;			
+		}
+		
+		
+		//создаем спрайты и массивы спрайтов и запускаем первую часть кода
+		for (let i = 0; i < pre_load_list.length; i++) {
+			const obj_class = pre_load_list[i].class;
+			const obj_name = pre_load_list[i].name;
+			console.log('Processing: ' + obj_name)
+
+			if (obj_class==='sprite'){
+				objects[obj_name] = new PIXI.Sprite(assets[obj_name]);
+				eval(pre_load_list[i].code0);				
+			}
+			
+			if (obj_class==='block') eval(pre_load_list[i].code0);
+			if (obj_class==='cont') eval(pre_load_list[i].code0);
+
+		}
+
+		//обрабатываем вторую часть кода в объектах
+		for (let i = 0; i < pre_load_list.length; i++) {
+			const obj_class = pre_load_list[i].class;
+			const obj_name = pre_load_list[i].name;
+			
+			if (obj_class==='sprite') eval(pre_load_list[i].code1);			
+			if (obj_class==='block') eval(pre_load_list[i].code1);
+			if (obj_class==='cont') eval(pre_load_list[i].code1);
+		}
+		
+	},
+	
+	async load2(){
+				
+		const loader=new PIXI.Loader();	
+		
+		//добавляем текстуры стикеров
+		for (var i=0;i<16;i++)
+			loader.add('sticker_texture_'+i, git_src+'stickers/'+i+'.png');
+		
+			
+		//добавляем из основного листа загрузки
+		const load_list=eval(assets.main_load_list);
+		for (let i = 0; i < load_list.length; i++)
+			if (load_list[i].class==='sprite' || load_list[i].class==='image')
+				loader.add(load_list[i].name, git_src+'res/RUS/' + load_list[i].name + "." +  load_list[i].image_format);
+
+		loader.add("m3_font", git_src+'fonts/MS_Comic_Sans/font.fnt');
+		
+		loader.add('receive_sticker',git_src+'sounds/receive_sticker.mp3');
+		loader.add('message',git_src+'sounds/message.mp3');
+		loader.add('lose',git_src+'sounds/lose.mp3');
+		loader.add('win',git_src+'sounds/win.mp3');
+		loader.add('click',git_src+'sounds/click.mp3');
+		loader.add('close',git_src+'sounds/close.mp3');
+		loader.add('locked',git_src+'sounds/locked.mp3');
+		loader.add('clock',git_src+'sounds/clock.mp3');
+		loader.add('card',git_src+'sounds/card2.mp3');
+		loader.add('card_take',git_src+'sounds/card.mp3');
+		loader.add('confirm_dialog',git_src+'sounds/confirm_dialog.mp3');
+		loader.add('move',git_src+'sounds/move.mp3');
+		loader.add('done',git_src+'sounds/done.mp3');
+		loader.add('razdacha',git_src+'sounds/razdacha.mp3');
+		loader.add('swift',git_src+'sounds/swift.mp3');
+		loader.add('inc_card',git_src+'sounds/inc_card.mp3');
+		loader.add('take',git_src+'sounds/take.mp3');
+		loader.add('keypress',git_src+'sounds/keypress.mp3');
+		loader.add('online_message',git_src+'sounds/online_message.mp3');
+		loader.add('inst_msg',git_src+'sounds/inst_msg.mp3');
+
+		//добавляем библиотеку аватаров
+		loader.add('multiavatar', git_src+'multiavatar.min.txt');	
+		
+		//добавляем смешные загрузки
+		loader.add('fun_logs', 'https://akukamil.github.io/common/fun_logs.txt');	
+		
+		//прогресс
+		loader.onProgress.add((l,res)=>{
+			objects.loader_progress_mask.width =  objects.loader_progress_mask.base_width*l.progress*0.01;
+			objects.t_loader_progress.text=Math.round(l.progress)+'%';
+		});		
+						
+		await new Promise(res=>loader.load(res))					
+			
+		//переносим все в ассеты
+		await new Promise(res=>loader.load(res))
+		for (const res_name in loader.resources){
+			const res=loader.resources[res_name];			
+			assets[res_name]=res.texture||res.sound||res.data;			
+		}		
+
+		//добавялем библиотеку аватаров
+		const script = document.createElement('script');
+		script.textContent = assets.multiavatar;
+		document.head.appendChild(script);
+				
+		anim2.add(objects.load_bar_cont,{alpha:[1,0]}, false, 0.5,'linear');
+				
+		//создаем спрайты и массивы спрайтов и запускаем первую часть кода
+		const main_load_list=eval(assets.main_load_list);
+		for (var i = 0; i < main_load_list.length; i++) {
+			const obj_class = main_load_list[i].class;
+			const obj_name = main_load_list[i].name;
+			console.log('Processing: ' + obj_name)
+
+			switch (obj_class) {
+			case "sprite":
+				objects[obj_name] = new PIXI.Sprite(assets[obj_name]);
+				eval(main_load_list[i].code0);
+				break;
+
+			case "block":
+				eval(main_load_list[i].code0);
+				break;
+
+			case "cont":
+				eval(main_load_list[i].code0);
+				break;
+
+			case "array":
+				var a_size=main_load_list[i].size;
+				objects[obj_name]=[];
+				for (var n=0;n<a_size;n++)
+					eval(main_load_list[i].code0);
+				break;
+			}
+		}
+
+		//обрабатываем вторую часть кода в объектах
+		for (var i = 0; i < main_load_list.length; i++) {
+			const obj_class = main_load_list[i].class;
+			const obj_name = main_load_list[i].name;
+			console.log('Processing: ' + obj_name)
+			
+			
+			switch (obj_class) {
+			case "sprite":
+				eval(main_load_list[i].code1);
+				break;
+
+			case "block":
+				eval(main_load_list[i].code1);
+				break;
+
+			case "cont":	
+				eval(main_load_list[i].code1);
+				break;
+
+			case "array":
+				var a_size=main_load_list[i].size;
+					for (var n=0;n<a_size;n++)
+						eval(main_load_list[i].code1);	;
+				break;
+			}
+		}
+		
+		
+	}	
+}
+
 async function define_platform_and_language() {
 	
 	let s = window.location.href;
@@ -5664,6 +5869,17 @@ async function init_game_env(l) {
 		objects.id_loup.y=20*Math.cos(game_tick*8)+150;
 	}
 
+	//смешные логи
+	const runScyfiLogs=async () => {
+		const scyfi_logs=JSON.parse(assets.fun_logs);	
+		for (let i=0;i<10;i++){				
+			const log_index=irnd(0,scyfi_logs.length-1);
+			objects.scyfi_log.text=scyfi_logs[log_index];
+			await new Promise(resolve=>setTimeout(resolve, irnd(300,700)));		
+		}
+	};
+	runScyfiLogs();
+
 	//загружаем остальные данные
 	const other_data = await fbs_once('players/'+my_data.uid)
 	
@@ -5792,211 +6008,6 @@ async function init_game_env(l) {
 	main_menu.activate();
 
 	
-}
-
-main_loader={
-	
-	preload_assets:0,
-	
-	spritesheet_to_tex(t,xframes,yframes,total_w,total_h,xoffset,yoffset){
-		
-
-		const frame_width=xframes?total_w/xframes:0;
-		const frame_height=yframes?total_h/yframes:0;
-		
-		const textures=[];
-		for (let y=0;y<yframes;y++){
-			for (let x=0;x<xframes;x++){
-				
-				const rect = new PIXI.Rectangle(xoffset+x*frame_width, yoffset+y*frame_height, frame_width, frame_height);
-				const quadTexture = new PIXI.Texture(t.baseTexture, rect);
-				textures.push(quadTexture);
-			}
-		}
-		return textures;		
-	},
-	
-	async load1(){			
-		
-		const pre_load_list=eval(await(await fetch('res/common/load_list.txt')).text());
-		
-		const loader=new PIXI.Loader();		
-		
-		//добавляем текстуры из листа загрузки
-		const preload_bundle=[];
-		for (let i = 0; i < pre_load_list.length; i++)
-			if (pre_load_list[i].class==='sprite'||pre_load_list[i].class==='image')
-				loader.add(pre_load_list[i].name, git_src+'res/'+'common/'+ pre_load_list[i].name + "." +  pre_load_list[i].image_format);
-
-		//добавляем шрифт
-		loader.add('mfont2',git_src+'fonts/Bahnschrift/font.fnt');
-		loader.add('bcg',git_src+'bcg.jpg');
-		
-		//добавляем основной загрузочный манифест
-		loader.add('main_load_list',git_src+'load_list.txt');
-
-		//переносим все в ассеты
-		await new Promise(res=>loader.load(res))
-		for (const res_name in loader.resources){
-			const res=loader.resources[res_name];			
-			assets[res_name]=res.texture||res.sound||res.data;			
-		}
-		
-		
-		//создаем спрайты и массивы спрайтов и запускаем первую часть кода
-		for (let i = 0; i < pre_load_list.length; i++) {
-			const obj_class = pre_load_list[i].class;
-			const obj_name = pre_load_list[i].name;
-			console.log('Processing: ' + obj_name)
-
-			if (obj_class==='sprite'){
-				objects[obj_name] = new PIXI.Sprite(assets[obj_name]);
-				eval(pre_load_list[i].code0);				
-			}
-			
-			if (obj_class==='block') eval(pre_load_list[i].code0);
-			if (obj_class==='cont') eval(pre_load_list[i].code0);
-
-		}
-
-		//обрабатываем вторую часть кода в объектах
-		for (let i = 0; i < pre_load_list.length; i++) {
-			const obj_class = pre_load_list[i].class;
-			const obj_name = pre_load_list[i].name;
-			
-			if (obj_class==='sprite') eval(pre_load_list[i].code1);			
-			if (obj_class==='block') eval(pre_load_list[i].code1);
-			if (obj_class==='cont') eval(pre_load_list[i].code1);
-		}
-		
-	},
-	
-	async load2(){
-				
-		const loader=new PIXI.Loader();	
-		
-		//добавляем текстуры стикеров
-		for (var i=0;i<16;i++)
-			loader.add('sticker_texture_'+i, git_src+'stickers/'+i+'.png');
-		
-			
-		//добавляем из основного листа загрузки
-		const load_list=eval(assets.main_load_list);
-		for (let i = 0; i < load_list.length; i++)
-			if (load_list[i].class==='sprite' || load_list[i].class==='image')
-				loader.add(load_list[i].name, git_src+'res/RUS/' + load_list[i].name + "." +  load_list[i].image_format);
-
-
-		loader.add("m3_font", git_src+'fonts/MS_Comic_Sans/font.fnt');
-		
-		
-		loader.add('receive_sticker',git_src+'sounds/receive_sticker.mp3');
-		loader.add('message',git_src+'sounds/message.mp3');
-		loader.add('lose',git_src+'sounds/lose.mp3');
-		loader.add('win',git_src+'sounds/win.mp3');
-		loader.add('click',git_src+'sounds/click.mp3');
-		loader.add('close',git_src+'sounds/close.mp3');
-		loader.add('locked',git_src+'sounds/locked.mp3');
-		loader.add('clock',git_src+'sounds/clock.mp3');
-		loader.add('card',git_src+'sounds/card2.mp3');
-		loader.add('card_take',git_src+'sounds/card.mp3');
-		loader.add('confirm_dialog',git_src+'sounds/confirm_dialog.mp3');
-		loader.add('move',git_src+'sounds/move.mp3');
-		loader.add('done',git_src+'sounds/done.mp3');
-		loader.add('razdacha',git_src+'sounds/razdacha.mp3');
-		loader.add('swift',git_src+'sounds/swift.mp3');
-		loader.add('inc_card',git_src+'sounds/inc_card.mp3');
-		loader.add('take',git_src+'sounds/take.mp3');
-		loader.add('keypress',git_src+'sounds/keypress.mp3');
-		loader.add('online_message',git_src+'sounds/online_message.mp3');
-		loader.add('inst_msg',git_src+'sounds/inst_msg.mp3');
-
-		//добавляем библиотеку аватаров
-		loader.add('multiavatar', git_src+'multiavatar.min.txt');	
-									
-		//прогресс
-		loader.onProgress.add((l,res)=>{
-			objects.loader_progress_mask.width =  objects.loader_progress_mask.base_width*l.progress*0.01;
-			objects.t_loader_progress.text=Math.round(l.progress)+'%';
-		});		
-						
-		await new Promise(res=>loader.load(res))					
-			
-		//переносим все в ассеты
-		await new Promise(res=>loader.load(res))
-		for (const res_name in loader.resources){
-			const res=loader.resources[res_name];			
-			assets[res_name]=res.texture||res.sound||res.data;			
-		}		
-
-		//добавялем библиотеку аватаров
-		const script = document.createElement('script');
-		script.textContent = assets.multiavatar;
-		document.head.appendChild(script);
-				
-		anim2.add(objects.load_bar_cont,{alpha:[1,0]}, false, 0.5,'linear');
-		
-		
-		//создаем спрайты и массивы спрайтов и запускаем первую часть кода
-		const main_load_list=eval(assets.main_load_list);
-		for (var i = 0; i < main_load_list.length; i++) {
-			const obj_class = main_load_list[i].class;
-			const obj_name = main_load_list[i].name;
-			console.log('Processing: ' + obj_name)
-
-			switch (obj_class) {
-			case "sprite":
-				objects[obj_name] = new PIXI.Sprite(assets[obj_name]);
-				eval(main_load_list[i].code0);
-				break;
-
-			case "block":
-				eval(main_load_list[i].code0);
-				break;
-
-			case "cont":
-				eval(main_load_list[i].code0);
-				break;
-
-			case "array":
-				var a_size=main_load_list[i].size;
-				objects[obj_name]=[];
-				for (var n=0;n<a_size;n++)
-					eval(main_load_list[i].code0);
-				break;
-			}
-		}
-
-		//обрабатываем вторую часть кода в объектах
-		for (var i = 0; i < main_load_list.length; i++) {
-			const obj_class = main_load_list[i].class;
-			const obj_name = main_load_list[i].name;
-			console.log('Processing: ' + obj_name)
-			
-			
-			switch (obj_class) {
-			case "sprite":
-				eval(main_load_list[i].code1);
-				break;
-
-			case "block":
-				eval(main_load_list[i].code1);
-				break;
-
-			case "cont":	
-				eval(main_load_list[i].code1);
-				break;
-
-			case "array":
-				var a_size=main_load_list[i].size;
-					for (var n=0;n<a_size;n++)
-						eval(main_load_list[i].code1);	;
-				break;
-			}
-		}
-		
-		
-	}	
 }
 
 function main_loop() {
