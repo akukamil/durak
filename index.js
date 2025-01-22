@@ -1,7 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450;
-var app ={stage:{},renderer:{}},assets={}, objects={}, state='',chat_path='states_chat', game_tick=0, game_id=0, connected = 1, h_state=0, game_platform="",
-hidden_state_start = 0,fbs,room_name = 'states2', pending_player='', opponent = {}, my_data={opp_id : ''},client_id,
-opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0;
+var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, game_id=0, connected = 1, h_state=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
 
 fbs_once=async function(path){	
 	let info=await fbs.ref(path).once('value');
@@ -438,192 +436,6 @@ class feedback_record_class extends PIXI.Container {
 	
 }
 
-my_ws={
-	
-	socket:0,
-	
-	child_added:{},
-	child_changed:{},
-	child_removed:{},
-		
-	get_resolvers:{},
-	get_req_id:0,
-	reconnect_time:5000,
-	connect_resolver:0,
-	sleep:0,
-	keep_alive_timer:0,	
-	keep_alive_time:45000,
-	open_tm:0,
-		
-	init(){		
-		fbs.ref('WSDEBUG/'+my_data.uid).remove();
-		fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'init'});
-	
-		if(this.socket.readyState===1) return;
-		return new Promise(resolve=>{
-			this.connect_resolver=resolve;
-			this.reconnect();
-		})
-	},
-	
-	send_to_sleep(){	
-		
-		fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'send_to_sleep'});
-		
-		clearTimeout(this.keep_alive_timer);
-		this.sleep=1;	
-		this.socket.close(1000, 'sleep');
-	},
-	
-	kill(){
-		
-		clearTimeout(this.keep_alive_timer);
-		this.sleep=1;
-		this.socket.close(1000, 'kill');
-		
-	},
-	
-	reconnect(){
-				
-		fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'reconnect'});
-
-		if (this.socket) {
-			this.socket.onopen = null;
-			this.socket.onmessage = null;
-			this.socket.onclose = null;
-			this.socket.onerror = null;	
-			this.socket.close();
-		}
-				
-		this.open_tm=0;
-		this.sleep=0;		
-		this.socket = new WebSocket('wss://timewebmtgames.ru:8443/durak/'+my_data.uid);
-				
-		this.socket.onopen = () => {
-			console.log('Connected to server!');
-			this.connect_resolver();
-			this.reconnect_time=0;
-			this.open_tm=Date.now();
-			
-			//обновляем подписки
-			for (const path in this.child_added)				
-				this.socket.send(JSON.stringify({cmd:'child_added',path}))					
-			
-			this.reset_keep_alive('onopen');
-		};			
-		
-		this.socket.onmessage = event => {
-			
-			this.reset_keep_alive('onmessage');
-			const msg=JSON.parse(event.data);
-			//console.log("Получено от сервера:", msg);
-			
-			if (msg.event==='child_added')	
-				this.child_added[msg.node]?.(msg);
-			
-			if (msg.event==='get')
-				if (this.get_resolvers[msg.req_id])
-					this.get_resolvers[msg.req_id](msg.data);
-
-		};
-		
-		this.socket.onclose = event => {	
-
-			clearTimeout(this.keep_alive_timer)		
-
-			fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'close',code:event.code,reason:event.reason,type:event.type||'no_type'});
-		
-			//не восстанавливаем соединения если закрыто по команде
-			if (['not_alive','no_uid','kill','sleep'].includes(event.reason)) return;
-					
-			if (this.open_tm){
-				const working_time=Date.now()-this.open_tm;
-				this.reconnect_time=10000;
-				if (working_time<this.keep_alive_time)					
-					this.keep_alive_time=Math.max(10000,this.keep_alive_time-5000);					
-			}else{
-				this.reconnect_time=Math.min(60000,Math.floor(this.reconnect_time*1.5));
-			}			
-			
-			console.log(`reconnecting in ${this.reconnect_time*0.001} seconds:`, event);
-			setTimeout(()=>{this.reconnect()},this.reconnect_time);				
-		};
-
-		this.socket.onerror = error => {
-			//fbs.ref('WSERRORS/'+my_data.uid).push({tm:Date.now(),event:'error'});
-		};
-		
-	},
-	
-	reset_keep_alive(reason){
-		console.log('reset_keep_alive',reason)
-		clearInterval(this.keep_alive_timer)
-		this.keep_alive_timer=setTimeout(()=>{
-			
-			try{
-				fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'keep_alive'});
-				this.socket.send('1');
-			}catch(e){
-				fbs.ref('WSDEBUG/'+my_data.uid).push({tm:Date.now(),event:'keep_alive_error'});
-			}
-			
-			this.reset_keep_alive('timer');
-			
-		},this.keep_alive_time);
-		
-	},
-	
-	get(path,limit_last){		
-		return new Promise(resolve=>{
-			
-			const req_id=irnd(1,999999);
-						
-			const timeoutId = setTimeout(() => {
-				delete this.get_resolvers[req_id];
-				resolve(0);
-			}, 5000);			
-			
-			this.get_resolvers[req_id]=(data)=>{				
-				clearTimeout(timeoutId);
-				resolve(data);					
-			}
-			
-			/*
-			this.get_resolvers[req_id] = {
-				resolve: (data) => {
-					clearTimeout(timeoutId);
-					resolve(data);
-				}
-			};*/
-			
-			this.socket.send(JSON.stringify({cmd:'get',path,req_id,limit_last}))				
-		
-		})	
-	},
-	
-	ss_child_added(path,callback){
-		
-		this.socket.send(JSON.stringify({cmd:'child_added',path}))	
-		this.child_added[path]=callback;
-		
-	},
-
-	ss_child_changed(path,callback){
-		
-		this.socket.send(JSON.stringify({cmd:'child_changed',node:path}))	
-		this.child_changed[path]=callback;
-		
-	},
-	
-	ss_child_removed(path,callback){
-		
-		this.socket.send(JSON.stringify({cmd:'child_removed',node:path}))	
-		this.child_removed[path]=callback;
-		
-	}	
-		
-}
-
 chat={
 	
 	last_record_end : 0,
@@ -673,18 +485,18 @@ chat={
 			rec.msg_id = -1;	
 			rec.tm=0;
 		}		
-		
+
 		this.init_yandex_payments();
 
 		await my_ws.init();	
-		
+
 		//загружаем чат		
-		const chat_data=await my_ws.get('durak/chat',25);
+		const chat_data=await my_ws.get(`${game_name}/chat`,25);
 		
 		await this.chat_load(chat_data);
 		
 		//подписываемся на новые сообщения
-		my_ws.ss_child_added('durak/chat',chat.chat_updated.bind(chat))
+		my_ws.ss_child_added(`${game_name}/chat`,chat.chat_updated.bind(chat))
 		
 		console.log('Чат загружен!')
 	},	
@@ -703,7 +515,7 @@ chat={
 
 	fix_name(uid){
 		
-		fbs.ref('players/'+uid+'/name').set(auth1.get_random_name(uid));
+		fbs.ref('players/'+uid+'/name').set(auth.get_random_name(uid));
 		fbs.ref('players/'+uid+'/nick_tm').set(2728556930444);
 		
 	},
@@ -984,7 +796,7 @@ chat={
 		const msg = await keyboard.read(70);		
 		if (msg) {			
 			const index=irnd(1,999);
-			my_ws.socket.send(JSON.stringify({cmd:'push',path:'durak/chat',val:{uid:my_data.uid,name:my_data.name,msg,tm:'TMS'}}))
+			my_ws.socket.send(JSON.stringify({cmd:'push',path:`${game_name}/chat`,val:{uid:my_data.uid,name:my_data.name,msg,tm:'TMS'}}))
 		}	
 		
 	},
@@ -5277,7 +5089,7 @@ players_cache={
 	
 }
 
-auth1={
+auth={
 		
 	load_script(src) {
 	  return new Promise((resolve, reject) => {
@@ -5487,7 +5299,7 @@ tabvis={
 		console.log('погрузились в сон')
 		this.sleep=1;
 		if (lobby.on){
-			lobby.close()
+			lobby.close();
 			main_menu.activate();				
 		}		
 		my_ws.send_to_sleep();		
@@ -5851,7 +5663,7 @@ async function init_game_env(l) {
 	await main_loader.load2();	
 	
 	//получаем данные авторизации игрока
-	await auth1.init();	
+	await auth.init();	
 
 	//убираем ё
 	my_data.name=my_data.name.replace(/ё/g, 'е');
@@ -5986,6 +5798,9 @@ async function init_game_env(l) {
 
 	//одноразовое сообщение от админа
 	await check_admin_info();
+	
+	//загрузка сокета
+	await auth.load_script('https://akukamil.github.io/common/my_ws.js');	
 	
 	//ждем загрузки чата
 	await Promise.race([
