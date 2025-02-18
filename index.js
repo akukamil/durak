@@ -551,7 +551,7 @@ chat={
 		
 	},
 		
-	block_player(uid){
+	async block_player(uid){
 		
 		fbs.ref('blocked/'+uid).set(Date.now());
 		fbs.ref('inbox/'+uid).set({message:'CHAT_BLOCK',tm:Date.now()});
