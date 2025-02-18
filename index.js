@@ -226,7 +226,6 @@ class chat_record_class extends PIXI.Container {
 		super();
 		
 		this.tm=0;
-		this.index=0;
 		this.uid='';		
 		
 
@@ -339,11 +338,17 @@ class chat_record_class extends PIXI.Container {
 		//получаем pic_url из фб
 		this.avatar.set_texture(PIXI.Texture.WHITE);
 				
-		await this.update_avatar(msg_data.uid, this.avatar);
+		if (msg_data.uid==='admin'){
+			this.msg_bcg.tint=0x55ff55;
+			this.avatar.set_texture(assets.pc_icon);
+		}else{
+			this.msg_bcg.tint=0xffffff;
+			await this.update_avatar(msg_data.uid, this.avatar);
+		}	
 
 		this.uid=msg_data.uid;
 		this.tm = msg_data.tm;			
-		this.index = msg_data.index;		
+
 		
 		this.name.set2(msg_data.name,150);
 		this.name.tint=this.nameToColor(msg_data.name);
@@ -550,6 +555,9 @@ chat={
 		
 		fbs.ref('blocked/'+uid).set(Date.now());
 		fbs.ref('inbox/'+uid).set({message:'CHAT_BLOCK',tm:Date.now()});
+		const name=await fbs_once(`players/${uid}/name`);
+		const msg=`Игрок ${name} занесен в черный список.`;
+		my_ws.socket.send(JSON.stringify({cmd:'push',path:`${game_name}/chat`,val:{uid:'admin',name:'Админ',msg,tm:'TMS'}}));
 		
 		//увеличиваем количество блокировок
 		fbs.ref('players/'+uid+'/block_num').transaction(val=> {return (val || 0) + 1});
