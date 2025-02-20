@@ -5737,7 +5737,7 @@ async function init_game_env(l) {
 	snow.init();	
 	
 	//определение номера комнаты
-	const rooms_bins = [0,1420,1510,9999]
+	const rooms_bins = [0,1400,1496,9999]
 	for (let i=1;i<rooms_bins.length;i++){
 		const f=rooms_bins[i-1];
 		const t=rooms_bins[i];		
