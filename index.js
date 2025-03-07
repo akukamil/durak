@@ -5619,14 +5619,14 @@ async function init_game_env(l) {
 
 	//создаем приложение пикси и добавляем тень
 	document.body.innerHTML='<style>html,body {margin: 0;padding: 0;height: 100%;}body {display: flex;align-items:center;justify-content: center;background-color: rgba(41,41,41,1)}</style>';
-	app.stage = new PIXI.Container();
-	if(window.debug_mode){
-		
-		console.log('debug_mode')
-	}else{
-		
-		app.renderer = new PIXI.Renderer({width:M_WIDTH, height:M_HEIGHT,antialias:true});		
-	}
+	
+	//создаем приложение пикси и добавляем тень
+	const dw=M_WIDTH/document.body.clientWidth;
+	const dh=M_HEIGHT/document.body.clientHeight;
+	const resolution=Math.max(1,Math.min(dw,dh));	
+	const opts={width:800, height:450,antialias:true,resolution,autoDensity:true};
+	app = new PIXI.Application(opts);
+
 
 	document.body.appendChild(app.renderer.view).style["boxShadow"] = "0 0 15px #000000";
 	document.body.style.backgroundColor = 'rgb(141,211,200)';
