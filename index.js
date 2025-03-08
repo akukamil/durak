@@ -2,7 +2,7 @@ var M_WIDTH=800, M_HEIGHT=450;
 var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, game_id=0, connected = 1, h_state=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
 
 fbs_once=async function(path){	
-	let info=await fbs.ref(path).once('value');
+	let info=await fbs.ref(path).get();
 	return info.val();
 }
 
@@ -4675,8 +4675,8 @@ lobby={
 		//получаем фидбэки сначала из кэша, если их там нет или они слишком старые то загружаем из фб
 		let fb_obj;		
 		if (!this.fb_cache[uid] || (Date.now()-this.fb_cache[uid].tm)>120000) {
-			let _fb = await fbs.ref("fb/" + uid).once('value');
-			fb_obj =_fb.val();	
+
+			fb_obj =await fbs_once("fb/" + uid);	
 			
 			//сохраняем в кэше отзывов
 			this.fb_cache[uid]={};			
