@@ -1583,7 +1583,7 @@ mp_game={
 	stickers_button_pos:[0,0,0],
 	chat_button_pos:[0,0,0],
 	giveup_button_pos:[0,0,0],
-	no_rating_game:0,
+	NO_RATING_GAME:0,
 	no_rating_msg_timer:0,
 	last_opponents:[],
 	
