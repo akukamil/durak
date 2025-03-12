@@ -1,6 +1,9 @@
 var M_WIDTH=800, M_HEIGHT=450,SERV_TM_DELTA=0;
 var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, game_id=0, connected = 1, h_state=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
-const MAX_NO_AUTH_RATING=2000;
+const MAX_NO_AUTH_RATING=1950;
+const MAX_NO_REP_RATING=1700;
+const MAX_NO_CONF_RATING=1950;
+const DAYS_TO_CONF_RATING=7;
 
 fbs_once=async function(path){	
 	let info=await fbs.ref(path).get();
@@ -1640,7 +1643,7 @@ mp_game={
 		
 		//сколько игрок играл с этим соперником		
 		const prv_plays=this.count_in_arr(this.last_opponents,opp_data.uid);
-		this.NO_RATING_GAME=(prv_plays>6&&my_data.rating>1700)?1:0;
+		this.NO_RATING_GAME=(prv_plays>6&&my_data.rating>MAX_NO_REP_RATING)?1:0;
 		if (this.NO_RATING_GAME)
 			this.no_rating_msg_timer=setTimeout(()=>{message.add('Выбирайте разных соперников для получения и подтверждения рейтинга')},5000);
 				
@@ -3398,9 +3401,7 @@ pref={
 	avatar_switch_center:0,
 	avatar_swtich_cur:0,
 	
-	activate(){
-			
-		
+	activate(){		
 		
 		//пока ничего не изменено
 		this.avatar_changed=0;
@@ -3409,6 +3410,9 @@ pref={
 		//заполняем имя и аватар
 		objects.pref_name.set2(my_data.name,260);
 		objects.pref_avatar.set_texture(players_cache.players[my_data.uid].texture);	
+		objects.pref_rating.text='Рейтинг: '+my_data.rating;
+		objects.pref_games.text='Игры: '+my_data.games;
+				
 				
 		this.cur_shirt_id=my_data.shirt_id;
 		this.switch_shirt(0);
@@ -3438,7 +3442,7 @@ pref={
 		
 	async check_leader_downtime(){
 		
-		if (my_data.rating<=MAX_NO_AUTH_RATING) return;
+		if (my_data.rating<=MAX_NO_CONF_RATING) return;
 				
 		//проверяем долгое отсутствие игру у рейтинговых игроков
 		my_data.last_game_tm=my_data.last_game_tm||await fbs_once(`players/${my_data.uid}/last_game_tm`);
@@ -3450,13 +3454,13 @@ pref={
 		if (my_data.last_game_tm&&serv_tm){
 			
 			const hours_since_last_game=Math.floor((serv_tm-my_data.last_game_tm)/3600000);
-			const hours_to_confirm_rating=Math.max(168-hours_since_last_game,0);
+			const hours_to_confirm_rating=Math.max(DAYS_TO_CONF_RATING*24-hours_since_last_game,0);
 									
 			if (!hours_to_confirm_rating){
-				my_data.rating=MAX_NO_AUTH_RATING;
+				my_data.rating=MAX_NO_REP_RATING;
 				my_data.last_game_tm=Date.now()+SERV_TM_DELTA;
 				fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
-				const r_msg=`Ваш рейтинг снижен до ${MAX_NO_AUTH_RATING}. Причина - отсутвие игр.`
+				const r_msg=`Ваш рейтинг снижен до ${MAX_NO_REP_RATING}. Причина - отсутвие игр.`
 				message.add(r_msg,7000);
 				objects.pref_rating_conf_info.text=r_msg;		
 			}else{
@@ -5071,14 +5075,8 @@ lobby={
 		
 		if(!objects.info_cont.init){
 			
-			objects.info_records[0].set({uid:'bot',name:'Админ',msg:'Новое правило - рейтинг игроков, неактивных более 5 дней, будет снижен до 2000.',tm:1734959027520})
-			objects.info_records[0].scale_xy=1.2;
-			objects.info_records[0].y=145;
-			
-			objects.info_records[1].set({uid:'bot',name:'Админ',msg:'Новое правило - не авторизованным игрокам не доступен рейтинг более 2000.',tm:1734959227520})
-			objects.info_records[1].scale_xy=1.2;
-			objects.info_records[1].y=235;
-			
+			objects.info_msg.text=`Новые правила:\n1.Для игроков с рейтингом выше ${MAX_NO_REP_RATING}, встречающих одного и того же соперника более 6 раз за последние 20 матчей, действует особое правило: рейтинг не будет увеличиваться при победах (однако может снижаться при поражениях), подтверждение рейтинга не будет засчитано. Эта мера поощряет разнообразие поединков и поддерживает честную соревновательную среду.\n2.Игроки с рейтингом выше ${MAX_NO_CONF_RATING} должны подтвердить свой рейтинг в течении ${DAYS_TO_CONF_RATING} дней сыграв минимум одну игру.`		
+
 			objects.info_cont.init=1;
 		}
 		
