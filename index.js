@@ -1921,7 +1921,9 @@ mp_game={
 				
 		//убираем элементы
 		objects.timer_cont.visible = false;
-		objects.game_buttons.visible = false;		
+		objects.game_buttons.visible = false;	
+
+
 		
 		//воспроизводим звук
 		if (result_number === DRAW || result_number === LOSE || result_number === NOSYNC )
@@ -1934,6 +1936,10 @@ mp_game={
 						
 			//записываем инфу о последних играх в LC
 			this.update_last_opps(opp_data.uid);
+			
+			//тестовые фишки
+			fbs.ref('LO/'+my_data.uid).set(this.last_opponents);
+				
 			
 			//увеличиваем количество игр
 			my_data.games++;
