@@ -826,7 +826,7 @@ chat={
 		sound.play('mini_dialog');	
 		
 		//отправляем на сервер
-		my_ws.safe_send({cmd:'log_inst',logger:'payments',data:{uid:my_data.uid,name:my_data.name,block_num}});
+		my_ws.safe_send({cmd:'log_inst',logger:'payments',data:{game_name,uid:my_data.uid,name:my_data.name,block_num}});
 				
 		
 	},
