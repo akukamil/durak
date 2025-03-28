@@ -2644,6 +2644,10 @@ table={
 		
 		let tx,ty;
 		
+		
+		if (card.suit === this.trump.suit)
+			card.trump_hl.visible = true;
+		
 		this.bring_to_front(card);	
 		
 		let last_card_x = this.center_deck.get_last_card_pos_x();
@@ -2671,8 +2675,7 @@ table={
 		}		
 		
 		//пододвигаем центральную колоду
-		if (this.center_deck.size > 3 ) {
-			
+		if (this.center_deck.size > 3 ) {			
 			this.center_deck.cards.forEach(card => {
 				anim2.add(card,{x:[card.x, card.x - 30]}, true, 0.25,'linear');	
 			})
