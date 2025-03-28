@@ -1,9 +1,131 @@
 var M_WIDTH=800, M_HEIGHT=450,SERV_TM_DELTA=0;
-var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, game_id=0, connected = 1, h_state=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
+var app ={stage:{},renderer:{}},assets={},serv_tm, objects={}, state='',game_tick=0, game_id=0, connected = 1, h_state=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
 const MAX_NO_AUTH_RATING=1950;
 const MAX_NO_REP_RATING=1900;
 const MAX_NO_CONF_RATING=1950;
 const DAYS_TO_CONF_RATING=7;
+
+cards_styles={
+	
+	0:{		
+		symbols_asset:'cards_symbols0',
+		shirt_asset:'cards_shirt0',
+		bcg_asset:{h:'cards_bcg0',d:'cards_bcg0',s:'cards_bcg0',c:'cards_bcg0'},
+		tint:{h:0xff0000,d:0xff0000,s:0x000000,c:0x000000},
+		black_suits_tint:0x000000,
+		red_suits_tint:0xff0000,
+		elems_data:[
+			{x:0,y:-22,size:70,alpha:0.7,visible:true,type:'val'},
+			{x:0,y:27,size:70,alpha:0.7,visible:true,type:'suit'},
+			{x:10,y:20,size:10,alpha:0.7,visible:false,type:'val'}
+		]		
+	},
+	1:{		
+		symbols_asset:'cards_symbols0',
+		shirt_asset:'cards_shirt1',
+		bcg_asset:{h:'cards_bcg0',d:'cards_bcg0',s:'cards_bcg0',c:'cards_bcg0'},
+		tint:{h:0xff0000,d:0xff0000,s:0x000000,c:0x000000},
+		elems_data:[
+			{x:0,y:-22,size:70,alpha:0.7,visible:true,type:'val'},
+			{x:0,y:27,size:70,alpha:0.7,visible:true,type:'suit'},
+			{x:10,y:20,size:10,alpha:0.7,visible:false,type:'val'}
+		]		
+	},
+	2:{		
+		symbols_asset:'cards_symbols0',
+		shirt_asset:'cards_shirt2',
+		bcg_asset:{h:'cards_bcg2',d:'cards_bcg2',s:'cards_bcg2',c:'cards_bcg2'},
+		tint:{h:0xff0000,d:0xff0000,s:0x000000,c:0x000000},
+		elems_data:[
+			{x:0,y:-22,size:70,alpha:0.7,visible:true,type:'val'},
+			{x:0,y:27,size:70,alpha:0.7,visible:true,type:'suit'},
+			{x:10,y:20,size:10,alpha:0.7,visible:false,type:'val'}
+		]	
+	},
+	3:{		
+		symbols_asset:'cards_symbols0',
+		shirt_asset:'cards_shirt3',
+		bcg_asset:{h:'cards_bcg2',d:'cards_bcg2',s:'cards_bcg2',c:'cards_bcg2'},
+		tint:{h:0xff0000,d:0xff0000,s:0x000000,c:0x000000},
+		elems_data:[
+			{x:0,y:-22,size:70,alpha:0.7,visible:true,type:'val'},
+			{x:0,y:27,size:70,alpha:0.7,visible:true,type:'suit'},
+			{x:10,y:20,size:10,alpha:0.7,visible:false,type:'val'}
+		]		
+	},
+	4:{		
+		symbols_asset:'cards_symbols0',
+		shirt_asset:'cards_shirt4',
+		bcg_asset:{h:'cards_bcg2',d:'cards_bcg2',s:'cards_bcg2',c:'cards_bcg2'},
+		tint:{h:0xff0000,d:0xff0000,s:0x000000,c:0x000000},
+		elems_data:[
+			{x:0,y:-22,size:70,alpha:0.7,visible:true,type:'val'},
+			{x:0,y:27,size:70,alpha:0.7,visible:true,type:'suit'},
+			{x:10,y:20,size:10,alpha:0.7,visible:false,type:'val'}
+		]		
+	},
+	5:{			
+		//спорт
+		symbols_asset:'cards_symbols0',
+		shirt_asset:'cards_shirt5',
+		bcg_asset:{h:'cards_bcg5_2',d:'cards_bcg5_2',s:'cards_bcg5_1',c:'cards_bcg5_1'},
+		tint:{h:0xF2F2F2,d:0xF2F2F2,s:0x000000,c:0x000000},
+		elems_data:[
+			{x:-21,y:36,size:41,alpha:0.6,visible:true,type:'val'},
+			{x:4,y:-25,size:75,alpha:0.6,visible:true,type:'suit'},
+			{x:10,y:20,size:10,alpha:0.7,visible:false,type:'val'}
+		]	
+		
+	},
+	6:{		
+		//неон
+		symbols_asset:'cards_symbols4',
+		shirt_asset:'cards_shirt6',
+		bcg_asset:{h:'cards_bcg6_2',d:'cards_bcg6_2',s:'cards_bcg6_1',c:'cards_bcg6_1'},
+		tint:{h:0xFFC000,d:0xFFC000,s:0xBDD7EE,c:0xBDD7EE},
+		elems_data:[
+			{x:-13,y:30,size:60,alpha:0.8,visible:true,type:'val'},
+			{x:5,y:-23,size:72,alpha:0.8,visible:true,type:'suit'},
+			{x:22,y:37,size:37.8,alpha:1,visible:false,type:'val'}
+		]
+	},
+	7:{		
+		//4 цвета
+		symbols_asset:'cards_symbols1',
+		shirt_asset:'cards_shirt7',
+		bcg_asset:{h:'cards_bcg7',d:'cards_bcg7',s:'cards_bcg7',c:'cards_bcg7'},
+		tint:{h:0xFFFFFF,d:0xFFFF00,s:0xF2AA84,c:0x61CBF4},
+		elems_data:[
+			{x:-18,y:-35,size:40,alpha:0.9,visible:true,type:'val'},
+			{x:0,y:0,size:55,alpha:0.9,visible:true,type:'suit'},
+			{x:18,y:37,size:40,alpha:0.9,visible:true,type:'val'}
+		]	
+	},
+	8:{		
+		//земля космос
+		symbols_asset:'cards_symbols2',
+		shirt_asset:'cards_shirt8',
+		bcg_asset:{h:'cards_bcg8_1',d:'cards_bcg8_1',s:'cards_bcg8_2',c:'cards_bcg8_2'},
+		tint:{h:0xffbbbb,d:0xffbbbb,s:0xbbbbff,c:0xbbbbff},
+		elems_data:[
+			{x:-15,y:-30,size:50,alpha:1,visible:true,type:'val'},
+			{x:5,y:20,size:67,alpha:1,visible:true,type:'suit'},
+			{x:22,y:37,size:37.8,alpha:1,visible:false,type:'val'}
+		]
+	},
+	9:{		
+		symbols_asset:'cards_symbols3',
+		shirt_asset:'cards_shirt9',
+		bcg_asset:{h:'cards_bcg9_1',d:'cards_bcg9_1',s:'cards_bcg9_2',c:'cards_bcg9_2'},
+		tint:{h:0xffffff,d:0xffffff,s:0xffffff,c:0xffffff},
+		elems_data:[
+			{x:-22,y:-37,size:37.8,alpha:1,visible:true,type:'val'},
+			{x:0,y:0,size:67,alpha:1,visible:true,type:'suit'},
+			{x:22,y:37,size:37.8,alpha:1,visible:true,type:'val'}
+		]	
+	},
+		
+}
 
 fbs_once=async function(path){	
 	let info=await fbs.ref(path).get();
@@ -169,55 +291,60 @@ class playing_cards_class extends PIXI.Container {
 		this.trump_hl.anchor.set(0.5,0.5);	
 
 		
-		this.bcg = new PIXI.Sprite(assets.pcard_bcg);
+		this.bcg = new PIXI.Sprite(assets.cards_bcg0);
 		this.bcg.anchor.set(0.5,0.5);	
 		this.interactive = true;
 		this.buttonMode = true;
 		this.pointerdown = function(){table.card_down(this)};
-		this.type = 'COMMON';			
 		
+		
+		//значение карты
 		this.suit = ['h','d','s','c','h','h','h','h'][Math.floor(id/9)];		
-		this.suit_img = new PIXI.Sprite(assets[this.suit+'_bcg']);
-		this.suit_img.anchor.set(0.5,0.5);
+		this.val = ['6','7','8','9','10','J','Q','K','T'][id%9];			
 		
-		let _val = ['6','7','8','9','10','J','Q','K','T'][id%9];	
-		this.text_value = new PIXI.BitmapText(_val, {fontName: 'comic_sans',fontSize: 55});
-		this.text_value.anchor.set(0.5,0.5);
-		this.text_value.y=-26;
-		
-		if (this.suit === 'h' || this.suit === 'd')
-			this.text_value.tint = 0xff0000;
-		else
-			this.text_value.tint = 0x000000;
-				
+		//элементы фронта
+		this.elem=[];
+		for (let i=0;i<3;i++){
+			this.elem[i]=new PIXI.Sprite();
+			this.elem[i].anchor.set(0.5,0.5);
+		}
+						
 		//this.scale_xy=0.3;
-		this.addChild( this.bcg, this.trump_hl, this.suit_img, this.text_value);
+		this.addChild( this.bcg, this.trump_hl, ...this.elem);
 	}	
 		
-	set (suit, value) {
-		
+	set(suit, value) {		
 		this.suit = suit;
-		this.suit_img.texture = assets[suit+'_bcg'];
-		this.text_value.text = ['6','7','8','9','10','J','Q','K','T'][value];	
-		
-		if (this.suit === 'h' || this.suit === 'd')
-			this.text_value.tint = 0xff0000;
-		else
-			this.text_value.tint = 0x000000;
-		
+		this.val=value.toString();		
 	}
 	
-	set_shirt () {
-		this.text_value.visible = false;
-		this.suit_img.texture = assets['shirt'+(my_data.shirt_id||0)];
-		
+	set_shirt (style_id) {		
+		const style=cards_styles[style_id||my_data.cards_style_id];
+		this.elem.forEach(e=>e.visible=false);
+		this.bcg.texture = assets[style.shirt_asset||'cards_bcg0'];		
 	}
 	
-	unshirt () {
-		
-		this.text_value.visible = true;
-		this.suit_img.texture = assets[this.suit+'_bcg'];
-		
+	unshirt (style_id) {		
+			
+		const style=cards_styles[style_id||my_data.cards_style_id];		
+		for (let i=0;i<3;i++){
+			const e=this.elem[i];
+			const e_data=style.elems_data[i];
+			e.visible=e_data.visible;
+			e.alpha=e_data.alpha;
+			e.x=e_data.x;
+			e.y=e_data.y;
+			e.angle=e_data.angle||0;
+			e.width=e.height=e_data.size;
+			if (e_data.type==='val')
+				e.texture=assets[style.symbols_asset][this.val]
+			else
+				e.texture=assets[style.symbols_asset][this.suit]			
+		}	
+				
+		const tint=style.tint[this.suit];
+		this.elem.forEach(e=>e.tint=tint);		
+		this.bcg.texture = assets[style.bcg_asset[this.suit]];		
 	}
 		
 	
@@ -1595,6 +1722,7 @@ mp_game={
 	NO_RATING_GAME:0,
 	no_rating_msg_timer:0,
 	last_opponents:[],
+	unique_opps:{},
 	
 	calc_new_rating(old_rating, game_result) {		
 		
@@ -1696,7 +1824,10 @@ mp_game={
 		}
 	},
 	
-	update_last_opps(opp_id){
+	update_last_opps(opp_id){		
+			
+		//уникальные соперники
+		this.unique_opps[opp_id]=1;
 		
 		this.last_opponents.push(opp_id);
         if (this.last_opponents.length > 20)
@@ -1945,7 +2076,7 @@ mp_game={
 			
 			//тестовые фишки
 			fbs.ref('LO/'+my_data.uid).set(this.last_opponents);
-				
+
 			
 			//увеличиваем количество игр
 			my_data.games++;
@@ -2337,7 +2468,8 @@ table={
 		//определяем козырную карту
 		this.trump = this.big_deck.get_first_card();
 						
-		objects.trump_card.set(this.trump.suit,this.trump.value);
+		objects.trump_card.set(this.trump.suit,this.trump.val);
+		objects.trump_card.unshirt(my_data.cards_style_id);
 				
 		sound.play('razdacha');
 				
@@ -2518,24 +2650,24 @@ table={
 		
 		if (this.state === 'my_defence') {			
 			this.center_deck.push(this.my_deck.pop(card));
-			await anim2.add(card,{x:[card.x, last_card_x + 30], y:[card.y, 250],scale_xy : [card.scale_xy, 0.7]}, true, 0.25,'easeInOutCubic');					
+			await anim2.add(card,{x:[card.x, last_card_x + 30],angle:[0,360], y:[card.y, 250],scale_xy : [card.scale_xy, 0.7]}, true, 0.25,'easeInOutCubic');					
 		}
 		
 		if (this.state === 'my_attack' || this.state === 'my_toss'  ) {			
 			this.center_deck.push(this.my_deck.pop(card));
-			await anim2.add(card,{x:[card.x, last_card_x + 60], y:[card.y, 225],scale_xy : [card.scale_xy, 0.7]}, true, 0.25,'easeInOutCubic');					
+			await anim2.add(card,{x:[card.x, last_card_x + 60],angle:[0,360], y:[card.y, 225],scale_xy : [card.scale_xy, 0.7]}, true, 0.25,'easeInOutCubic');					
 		}
 		
 		if (this.state === 'opp_defence') {			
 			this.center_deck.push(card);
 			card.unshirt();
-			await anim2.add(card,{x:[card.x, last_card_x + 30], y:[card.y, 200],scale_xy : [card.scale_xy, 0.7]}, true, 0.25,'easeInOutCubic');					
+			await anim2.add(card,{x:[card.x, last_card_x + 30],angle:[0,360], y:[card.y, 200],scale_xy : [card.scale_xy, 0.7]}, true, 0.25,'easeInOutCubic');					
 		}
 		
 		if (this.state === 'opp_attack') {			
 			this.center_deck.push(card);
 			card.unshirt();
-			await anim2.add(card,{x:[card.x, last_card_x + 60], y:[card.y, 225],scale_xy : [card.scale_xy, 0.7]}, true, 0.25,'easeInOutCubic');					
+			await anim2.add(card,{x:[card.x, last_card_x + 60],angle:[0,360], y:[card.y, 225],scale_xy : [card.scale_xy, 0.7]}, true, 0.25,'easeInOutCubic');					
 		}		
 		
 		//пододвигаем центральную колоду
@@ -3408,48 +3540,79 @@ keyboard={
 pref={
 	
 	cur_pic_url:'',
-	avatar_changed:0,
-	cur_shirt_id:0,
+	cur_style_id:5,
 	avatar_switch_center:0,
 	avatar_swtich_cur:0,
+	last_serv_tm_check:0,
+	hours_to_nick_change:0,
+	hours_to_photo_change:0,
+	info_timer:0,
 	
 	activate(){		
-		
-		//пока ничего не изменено
-		this.avatar_changed=0;
-		this.name_changed=0;
-		
+				
 		//заполняем имя и аватар
 		objects.pref_name.set2(my_data.name,260);
 		objects.pref_avatar.set_texture(players_cache.players[my_data.uid].texture);	
 		objects.pref_rating.text='Рейтинг: '+my_data.rating;
 		objects.pref_games.text='Игры: '+my_data.games;
-				
-				
-		this.cur_shirt_id=my_data.shirt_id;
+		
+		//кнопки сохранения пока не видно
+		objects.pref_conf_cards_btn.visible=false;
+		objects.pref_conf_photo_btn.visible=false;
+						
+		this.cur_style_id=my_data.cards_style_id;
 		this.switch_shirt(0);
+		this.update_available_actions();
 		
 		this.avatar_switch_center=this.avatar_swtich_cur=irnd(9999,999999);
 	},
+	
+	async update_available_actions(){
 		
-	check_time(last_time){
-		
-		//провряем можно ли менять
 		const tm=Date.now();
-		const days_since_nick_change=~~((tm-last_time)/86400000);
-		const days_befor_change=30-days_since_nick_change;
-		const ln=days_befor_change%10;
-		const opt=[0,5,6,7,8,9].includes(ln)*0+[2,3,4].includes(ln)*1+(ln===1)*2;
-		const day_str=['дней','дня','день'][opt];
+		if (tm-this.last_serv_tm_check<30000) return;
+		this.last_serv_tm_check=tm;		
+		serv_tm=await my_ws.get_tms()||serv_tm;
 		
-		if (days_befor_change>0){
-			objects.pref_info.text=`Поменять можно через ${days_befor_change} ${day_str}`;
-			anim2.add(objects.pref_info,{alpha:[0,1]}, false, 3,'easeBridge',false);	
-			sound.play('locked');
-			return 0;
+		if (!serv_tm){
+			this.send_info('Ошибка получения серверного времени(((');
+			this.update_buttons();
+			return;
 		}
 		
-		return 1;
+		this.update_buttons();		
+	
+	},
+	
+	getHoursEnding(hours) {
+		hours = Math.abs(hours) % 100;
+		let lastDigit = hours % 10;
+
+		if (hours > 10 && hours < 20) {
+			return 'часов';
+		} else if (lastDigit == 1) {
+			return 'час';
+		} else if (lastDigit >= 2 && lastDigit <= 4) {
+			return 'часа';
+		} else {
+			return 'часов';
+		}
+	},
+	
+	update_buttons(){
+		
+		objects.pref_conf_photo_btn.visible=false;
+		
+		//сколько осталось до изменения
+		this.hours_to_nick_change=Math.max(0,Math.floor(720-(serv_tm-my_data.nick_tm)*0.001/3600));
+		this.hours_to_photo_change=Math.max(0,Math.floor(720-(serv_tm-my_data.avatar_tm)*0.001/3600));
+		
+		//определяем какие кнопки доступны
+		objects.pref_change_name_btn.alpha=(this.hours_to_nick_change>0||my_data.games<200||!serv_tm)?0.5:1;
+		objects.pref_arrow_left.alpha=(this.hours_to_photo_change>0||!serv_tm)?0.5:1;
+		objects.pref_arrow_right.alpha=(this.hours_to_photo_change>0||!serv_tm)?0.5:1;	
+		objects.pref_reset_avatar_btn.alpha=(this.hours_to_photo_change>0||!serv_tm)?0.5:1;	
+		
 	},
 		
 	async check_leader_downtime(){
@@ -3469,10 +3632,10 @@ pref={
 			const hours_to_confirm_rating=Math.max(DAYS_TO_CONF_RATING*24-hours_since_last_game,0);
 									
 			if (!hours_to_confirm_rating){
-				my_data.rating=MAX_NO_REP_RATING;
+				my_data.rating=MAX_NO_CONF_RATING;
 				my_data.last_game_tm=Date.now()+SERV_TM_DELTA;
 				fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
-				const r_msg=`Ваш рейтинг снижен до ${MAX_NO_REP_RATING}. Причина - отсутвие игр.`
+				const r_msg=`Ваш рейтинг снижен до ${MAX_NO_CONF_RATING}. Причина - отсутвие игр.`
 				message.add(r_msg,7000);
 				objects.pref_rating_conf_info.text=r_msg;		
 			}else{
@@ -3485,53 +3648,96 @@ pref={
 			
 	async change_name_down(){
 		
-		if (my_data.games<=200){
-			objects.pref_info.text='Нужно сыграть 200 онлайн партий чтобы поменять имя.';
-			objects.pref_info.visible=true;
+		if (!serv_tm){
+			this.send_info('Ошибка получения серверного времени(((');
+			sound.play('locked');
+			return;
+		}
+		
+		if (my_data.games<200){
+			this.send_info('Нужно сыграть 200 онлайн партий чтобы поменять имя(((');
+			sound.play('locked');
 			return;
 		}
 				
 		//провряем можно ли менять ник
-		if(!this.check_time(my_data.nick_tm)) return;
-										
+		if(this.hours_to_nick_change>0){
+			this.send_info(`Имя можно поменять через ${this.hours_to_nick_change} ${this.getHoursEnding(this.hours_to_nick_change)}.`);
+			sound.play('locked');
+			return;
+		} 
+		
+		//получаем новое имя
 		const name=await keyboard.read(15);
-		if (name.replace(/\s/g, '').length>3){			
-			this.name_changed=name;
+		if (name&&name.replace(/\s/g, '').length>3){			
+			
+			//обновляем данные о времени
+			my_data.nick_tm=serv_tm;
+			fbs.ref(`players/${my_data.uid}/nick_tm`).set(my_data.nick_tm);	
+						
+			my_data.name=name;	
+			fbs.ref(`players/${my_data.uid}/name`).set(my_data.name);			
+			
+			this.update_buttons();		
+			
 			objects.pref_name.set2(name,260);
-			objects.pref_info.text='Нажмите ОК чтобы сохранить';
-			objects.pref_info.visible=true;	
+			this.send_info('Вы изменили имя)))');
+			sound.play('confirm_dialog');	
+			
 		}else{			
-			objects.pref_info.text='Какая-то ошибка';
+			this.send_info('Неправильное имя(((');
 			anim2.add(objects.pref_info,{alpha:[0,1]}, false, 3,'easeBridge',false);			
 		}		
 	},
 			
 	async reset_avatar_down(){
 				
+		if (!serv_tm){
+			this.send_info('Ошибка получения серверного времени(((');
+			sound.play('locked');
+			return;
+		}
+								
 		if (anim2.any_on()||this.tex_loading) {
 			sound.play('blocked');
 			return;
 		}
+			
+		//провряем можно ли менять фото
+		if(this.hours_to_photo_change>0){
+			this.send_info(`Фото можно поменять через ${this.hours_to_photo_change}  ${this.getHoursEnding(this.hours_to_photo_change)}.`);
+			sound.play('locked');
+			return;
+		} 		
 		
-		this.avatar_changed=1;
-		this.cur_pic_url=my_data.orig_pic_url;
+		this.cur_pic_url=my_data.orig_pic_url;		
+		
+		objects.pref_conf_cards_btn.visible=true;
 		this.tex_loading=1;
 		const t=await players_cache.my_texture_from(my_data.orig_pic_url);
 		objects.pref_avatar.set_texture(t);
 		this.tex_loading=0;
-		objects.pref_info.text='Нажмите ОК чтобы сохранить';
-		objects.pref_info.visible=true;
 	},
-		
+	
 	async arrow_down(dir){
+		
+		if (!serv_tm){
+			this.send_info('Ошибка получения серверного времени(((');
+			sound.play('locked');
+			return;
+		}
 		
 		if (anim2.any_on()||this.tex_loading) {
 			sound.play('blocked');
 			return;
-		}
+		}				
 				
-		if(!this.check_time(my_data.avatar_tm)) return;
-		this.avatar_changed=1;
+		//провряем можно ли менять фото
+		if(this.hours_to_photo_change>0){
+			this.send_info(`Фото можно поменять через ${this.hours_to_photo_change} ${this.getHoursEnding(this.hours_to_photo_change)}.`);
+			sound.play('locked');
+			return;
+		} 	
 				
 		//перелистываем аватары
 		this.avatar_swtich_cur+=dir;
@@ -3541,22 +3747,57 @@ pref={
 			this.cur_pic_url='mavatar'+this.avatar_swtich_cur;
 		}		
 		
+		objects.pref_conf_photo_btn.visible=true;		
 		this.tex_loading=1;		
 		const t=await players_cache.my_texture_from(multiavatar(this.cur_pic_url));
-		this.tex_loading=0;
-		
-		objects.pref_avatar.set_texture(t);
-		objects.pref_info.text='Нажмите ОК чтобы сохранить';
-		objects.pref_info.visible=true;		
+		objects.pref_avatar.set_texture(t);		
+		this.tex_loading=0;				
+
+
 	
 	},
+	
+	send_info(msg,timeout){
 		
-	change_avatar(){
+		objects.pref_info.text=msg;
+		anim2.add(objects.pref_info,{alpha:[0,1]}, true, 0.25,'linear',false);
+		clearTimeout(this.info_timer);
+		this.info_timer=setTimeout(()=>{
+			anim2.add(objects.pref_info,{alpha:[1,0]}, false, 0.25,'linear',false);	
+		},timeout||3000);	
+	},
+	
+	conf_photo_down(){
 		
-		if(!this.check_time(my_data.avatar_tm)) return;
-		this.avatar_changed=1;
-		this.cur_pic_url='mavatar'+irnd(10,999999);
-		objects.pref_avatar.texture=PIXI.Texture.from(multiavatar(this.cur_pic_url));
+		my_data.avatar_tm=serv_tm;		
+		fbs.ref(`players/${my_data.uid}/pic_url`).set(this.cur_pic_url);
+		fbs.ref(`players/${my_data.uid}/avatar_tm`).set(my_data.avatar_tm);			
+			
+		this.send_info('Вы изменили фото)))');		
+		sound.play('confirm_dialog');	
+
+
+		this.update_buttons();		
+		
+		//обновляем аватар в кэше
+		players_cache.update_avatar_forced(my_data.uid,this.cur_pic_url).then(()=>{
+			const my_card=objects.mini_cards.find(card=>card.uid===my_data.uid);
+			my_card.avatar.set_texture(players_cache.players[my_data.uid].texture);				
+		})	
+			
+	},
+	
+	conf_cards_down(){
+		
+		my_data.cards_style_id=this.cur_style_id;
+		this.send_info('Вы изменили оформление колоды карт)))');	
+		objects.pref_conf_cards_btn.visible=false;
+		
+		//сохраняем обычные карты
+		if (my_data.cards_style_id<5)
+			fbs.ref('players/'+my_data.uid+'/cards_style_id').set(my_data.cards_style_id);	
+		
+		sound.play('confirm_dialog');	
 		
 	},
 	
@@ -3592,28 +3833,50 @@ pref={
 		
 	},
 		
-	switch_shirt(dir){
+	switch_shirt(dir){		
 		
-		this.cur_shirt_id+=dir;
-		if(dir) sound.play('swift');
-
-		objects.pref_shirt_back.visible=this.cur_shirt_id>0;
-		objects.pref_shirt_forth.visible=this.cur_shirt_id<5;		
+		if(dir) sound.play('swift');		
+				
+		this.cur_style_id+=dir;
 		
-		objects.pref_shirt.texture=assets['shirt'+this.cur_shirt_id];
-		
-	},
-	
-	close_btn_down(button_data){
-		
-		if(anim2.any_on()){
-			sound.play('locked');
-			return;			
+		if (this.cur_style_id>9){
+			sound.play('locked')
+			this.cur_style_id=9;
+			return;
 		}
-		sound.play('click');		
-		this.switch_to_lobby();		
-	},
 		
+		if (this.cur_style_id<0){
+			sound.play('locked')
+			this.cur_style_id=0;
+			return;
+		}
+				
+		objects.pref_conf_cards_btn.visible=this.cur_style_id!==my_data.cards_style_id;				
+		objects.pref_shirt.set_shirt(this.cur_style_id);
+		
+		//премиальные колоды
+		if (this.cur_style_id>=5){
+			const unique_games_needed={5:5,6:10,7:15,8:20,9:25}[this.cur_style_id];
+			const unique_opps=Object.keys(mp_game.unique_opps).length;
+			
+			if (unique_opps<unique_games_needed){
+				objects.pref_premium_info.visible=true;
+				objects.pref_premium_info.text=`Сыграйте ${unique_games_needed} онлайн игр с разными соперниками для получения доступа\n(сыграно:${unique_opps}/${unique_games_needed})`;				
+				objects.pref_conf_cards_btn.visible=false;
+			}else{
+				objects.pref_premium_info.visible=false;
+			}
+		}else{
+			objects.pref_premium_info.visible=false;
+		}
+		
+		const rand_suit = ['h','d','s','c'][irnd(0,3)];		
+		const rand_val = ['6','7','8','9','10','J','Q','K','T'][irnd(0,8)];	
+		objects.pref_open.set(rand_suit,rand_val);
+		objects.pref_open.unshirt(this.cur_style_id);
+		
+	},
+			
 	ok_btn_down(){
 		
 		if(anim2.any_on()){
@@ -3623,43 +3886,7 @@ pref={
 		
 		sound.play('click');		
 		this.switch_to_lobby();	
-		
-		if (this.avatar_changed){
-									
-			fbs.ref(`players/${my_data.uid}/pic_url`).set(this.cur_pic_url);
-			//fbs.ref(`pdata/${my_data.uid}/PUB/pic_url`).set(this.cur_pic_url);			
-
-			my_data.avatar_tm=Date.now();
-			fbs.ref(`players/${my_data.uid}/avatar_tm`).set(my_data.avatar_tm);
-			//fbs.ref(`pdata/${my_data.uid}/PRV/avatar_tm`).set(my_data.avatar_tm);
-					
-			//обновляем аватар в кэше
-			players_cache.update_avatar_forced(my_data.uid,this.cur_pic_url).then(()=>{
-				const my_card=objects.mini_cards.find(card=>card.uid===my_data.uid);
-				my_card.avatar.set_texture(players_cache.players[my_data.uid].texture);				
-			})				
-		}
-		
-		if (this.name_changed){			
-			
-			my_data.name=this.name_changed;
-
-			//обновляем мое имя в разных системах			
-			set_state({});			
-			
-			my_data.nick_tm=Date.now();			
-			fbs.ref(`players/${my_data.uid}/nick_tm`).set(my_data.nick_tm);
-			fbs.ref(`players/${my_data.uid}/name`).set(my_data.name);
-			
-			//fbs.ref(`pdata/${my_data.uid}/PRV/nick_tm`).set(my_data.nick_tm);
-			//fbs.ref(`pdata/${my_data.uid}/PUB/name`).set(my_data.name);
-			
-		}
-		
-		if (this.cur_shirt_id!==my_data.shirt_id){
-			my_data.shirt_id=this.cur_shirt_id;
-			fbs.ref('players/'+my_data.uid+'/shirt_id').set(my_data.shirt_id);			
-		}		
+	
 	}
 	
 }
@@ -5482,7 +5709,7 @@ main_loader={
 		const loader=new PIXI.Loader();	
 		
 		//добавляем текстуры стикеров
-		for (var i=0;i<16;i++)
+		for (let i=0;i<16;i++)
 			loader.add('sticker_texture_'+i, git_src+'stickers/'+i+'.png');
 		
 			
@@ -5521,6 +5748,28 @@ main_loader={
 		//добавляем смешные загрузки
 		loader.add('fun_logs', 'https://akukamil.github.io/common/fun_logs.txt');	
 		
+		//добавляем стили
+		for (let i=0;i<10;i++)
+			loader.add('cards_shirt'+i, git_src+'res/cards_designs/cards_shirt'+i+'.png');
+		for (let i=0;i<5;i++)
+			loader.add('cards_symbols_all'+i, git_src+'res/cards_designs/cards_symbols_all'+i+'.png');
+
+		loader.add('cards_bcg0', git_src+'res/cards_designs/cards_bcg0.png');
+		loader.add('cards_bcg2', git_src+'res/cards_designs/cards_bcg2.png');
+		loader.add('cards_bcg7', git_src+'res/cards_designs/cards_bcg7.png');
+		
+		loader.add('cards_bcg5_1', git_src+'res/cards_designs/cards_bcg5_1.png');
+		loader.add('cards_bcg5_2', git_src+'res/cards_designs/cards_bcg5_2.png');
+		
+		loader.add('cards_bcg6_1', git_src+'res/cards_designs/cards_bcg6_1.png');
+		loader.add('cards_bcg6_2', git_src+'res/cards_designs/cards_bcg6_2.png');
+		
+		loader.add('cards_bcg8_1', git_src+'res/cards_designs/cards_bcg8_1.png');
+		loader.add('cards_bcg8_2', git_src+'res/cards_designs/cards_bcg8_2.png');
+		
+		loader.add('cards_bcg9_1', git_src+'res/cards_designs/cards_bcg9_1.png');
+		loader.add('cards_bcg9_2', git_src+'res/cards_designs/cards_bcg9_2.png');	
+		
 		//прогресс
 		loader.onProgress.add((l,res)=>{
 			objects.loader_progress_mask.width =  objects.loader_progress_mask.base_width*l.progress*0.01;
@@ -5535,6 +5784,19 @@ main_loader={
 			const res=loader.resources[res_name];			
 			assets[res_name]=res.texture||res.sound||res.data;			
 		}		
+
+		//создаем ассеты стилей карт - сразу загружаем и масти и значения
+		for (let s=0;s<5;s++){			
+			const cards_data=['6','7','8','9','10','J','Q','K','T','c','h','s','d']
+			const bt_values=assets[`cards_symbols_all${s}`].baseTexture
+			assets['cards_symbols'+s]={};
+			for (let c = 0;c < 13;c++) {			
+				const card_data=cards_data[c];
+				const rect = new PIXI.Rectangle(c*90, 0, 90, 90);				
+				assets['cards_symbols'+s][card_data]=new PIXI.Texture(bt_values, rect);
+			}
+		}
+
 
 		//добавялем библиотеку аватаров
 		const script = document.createElement('script');
@@ -5768,10 +6030,9 @@ async function init_game_env(l) {
 	my_data.vk_invite = other_data?.vk_invite || 0;
 	my_data.vk_share = other_data?.vk_share || 0;
 	my_data.icon=other_data?.icon || 0;
-	my_data.shirt_id=other_data?.shirt_id || 0;
+	my_data.cards_style_id=other_data?.cards_style_id || 0;
 	my_data.nick_tm = other_data?.nick_tm || 0;
 	my_data.avatar_tm = other_data?.avatar_tm || 0;
-	my_data.opp_hist=other_data?.opp_hist||[];
 	
 	//правильно определяем аватарку
 	if (other_data?.pic_url && other_data.pic_url.includes('mavatar'))
