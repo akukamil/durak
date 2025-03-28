@@ -319,14 +319,14 @@ class playing_cards_class extends PIXI.Container {
 	}
 	
 	set_shirt (style_id) {		
-		const style=cards_styles[style_id||my_data.cards_style_id];
+		const style=style_id === 0 ? cards_styles[0] : cards_styles[style_id || my_data.cards_style_id];
 		this.elem.forEach(e=>e.visible=false);
 		this.bcg.texture = assets[style.shirt_asset||'cards_bcg0'];		
 	}
 	
 	unshirt (style_id) {		
 			
-		const style=cards_styles[style_id||my_data.cards_style_id];		
+		const style=style_id === 0 ? cards_styles[0] : cards_styles[style_id || my_data.cards_style_id];		
 		for (let i=0;i<3;i++){
 			const e=this.elem[i];
 			const e_data=style.elems_data[i];
