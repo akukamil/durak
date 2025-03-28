@@ -3861,7 +3861,7 @@ pref={
 			
 			if (unique_opps<unique_games_needed){
 				objects.pref_premium_info.visible=true;
-				objects.pref_premium_info.text=`Сыграйте ${unique_games_needed} онлайн игр с разными соперниками для получения доступа\n(сыграно:${unique_opps}/${unique_games_needed})`;				
+				objects.pref_premium_info.text=`Сыграйте ${unique_games_needed} онлайн игр с разными соперниками для получения доступа\n(сыграно: ${unique_opps}/${unique_games_needed})`;				
 				objects.pref_conf_cards_btn.visible=false;
 			}else{
 				objects.pref_premium_info.visible=false;
