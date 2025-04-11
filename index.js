@@ -3330,7 +3330,7 @@ req_dialog={
 
 
 
-		anim2.add(objects.req_cont,{y:[objects.req_cont.sy, -260]}, false, 0.5,'easeInBack');
+		anim2.add(objects.req_cont,{y:[objects.req_cont.sy, -260]}, false, 0.25,'easeInBack');
 
 		fbs.ref("inbox/"+req_dialog._opp_data.uid).set({sender:my_data.uid,message:"REJECT",tm:Date.now()});
 	},
@@ -3343,7 +3343,7 @@ req_dialog={
 		//устанавливаем окончательные данные оппонента
 		opp_data = req_dialog._opp_data;	
 	
-		anim2.add(objects.req_cont,{y:[objects.req_cont.sy, -260]}, false, 0.5,'easeInBack');
+		anim2.add(objects.req_cont,{y:[objects.req_cont.sy, -260]}, false, 0.25,'easeInBack');
 
 		//отправляем информацию о согласии играть с идентификатором игры
 		game_id=~~(Math.random()*1999);
