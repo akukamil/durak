@@ -3269,7 +3269,7 @@ process_new_message=function(msg) {
 	}
 
 	//айди клиента для удаления дубликатов
-	if (msg.message==="CLIEND_ID") 
+	if (msg.message==="CLIENT_ID") 
 		if (msg.client_id !== client_id)
 			kill_game();
 		
