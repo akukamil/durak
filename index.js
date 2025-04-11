@@ -3306,7 +3306,7 @@ req_dialog={
 		
 		sound.play('receive_sticker');	
 		
-		anim2.add(objects.req_cont,{y:[-260, objects.req_cont.sy]}, true, 0.75,'easeOutElastic');
+		anim2.add(objects.req_cont,{y:[-260, objects.req_cont.sy]}, true, 0.35,'easeOutElastic');
 							
 		//Отображаем  имя и фамилию в окне приглашения
 		req_dialog._opp_data.uid=uid;		
