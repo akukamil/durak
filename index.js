@@ -4325,6 +4325,7 @@ lobby={
 	bot_on:1,
 	on:0,
 	global_players:{},
+	req_hist:[],
 		
 	activate(room,bot_on) {
 		
@@ -4908,6 +4909,11 @@ lobby={
 		
 		//если мы в списке игроков которые нас недавно отврегли
 		if (this.rejected_invites[lobby._opp_data.uid] && Date.now()-this.rejected_invites[lobby._opp_data.uid]<60000) invite_available=false;
+			
+		//слишком частые приглашения
+		const tm=Date.now();
+		this.req_hist = this.req_hist.filter(item=>item.tm>tm-60000);
+		if (this.req_hist.filter(item=>item.uid===lobby._opp_data.uid).length>3) invite_available=false;
 
 		//показыаем кнопку приглашения только если это допустимо
 		objects.invite_button.visible=invite_available;
@@ -5188,11 +5194,14 @@ lobby={
 		if (lobby._opp_data.uid==='bot'){
 			await this.close();	
 			sp_game.activate('master',0);
-		} else {
+		} else {		
+			
 			sound.play('click');
 			objects.invite_button.texture=assets.invite_wait_img;			
 			fbs.ref(`inbox/${lobby._opp_data.uid}`).set({sender:my_data.uid,message:'INV',tm:Date.now()});
 			pending_player=lobby._opp_data.uid;
+			const tm=Date.now();
+			this.req_hist.push({uid:pending_player,tm});
 
 		}
 
