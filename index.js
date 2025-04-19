@@ -606,7 +606,7 @@ chat={
 
 		//вопроизводитим гифки
 		objects.chat_records.forEach(r=>{
-			if(r.visible&&r.gif.visible)
+			if(r.visible&&r.gif.texture.baseTexture.resource&&r.gif.visible)
 				r.gif.texture.baseTexture.resource.source.play();
 		})
 	},
