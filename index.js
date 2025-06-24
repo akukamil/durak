@@ -3672,13 +3672,17 @@ pref={
 		fbs.ref('players/'+my_data.uid+'/coins').set(my_data.coins)
 	},
 	
-	check_coins(prv_tm_fbs){
+	check_coins(prv_tm_fbs, no_prv_coins){
 		
 		//от файербейса
 		if(prv_tm_fbs){
 			this.prv_tm=prv_tm_fbs			
 			objects.pref_coins_info.text=my_data.coins
 		}
+		
+		//если это самый первый заход
+		if (no_prv_coins)
+			this.prv_tm=0		
 		
 		//текущее время
 		const tm=Date.now()+SERV_TM_DELTA
@@ -6210,7 +6214,7 @@ async function init_game_env(l) {
 	SERV_TM_DELTA=serv_tm-Date.now();
 
 	//проверяем предыдущих вход
-	pref.check_coins(other_data?.tm)
+	pref.check_coins(other_data?.tm,!other_data?.coins)
 
 	//контроль за присутсвием
 	fbs.ref(".info/connected").on("value", snap => {
