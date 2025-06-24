@@ -3704,7 +3704,7 @@ pref={
 			}			
 		}			
 		
-		this.check_coins_timer=setTimeout(()=>this.check_coins(),1000)
+		this.check_coins_timer=setTimeout(()=>this.check_coins(),60000)
 		
 	},
 
