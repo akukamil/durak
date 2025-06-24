@@ -4394,7 +4394,12 @@ lobby={
 		//первый запуск лобби
 		if (!this.activated){
 			//расставляем по соответствующим координатам
-
+			
+			if (safe_ls('durak_info_checked'))
+				objects.lobby_info_btn.alpha=0.2
+			else
+				objects.lobby_info_btn.alpha=1
+			
 			for(let i=0;i<objects.mini_cards.length;i++) {
 
 				const iy=i%4;
@@ -4887,7 +4892,7 @@ lobby={
 		const card=objects.mini_cards[card_id]
 		
 		if (card.type==='table')
-			show_table_dlg(card)
+			this.show_table_dlg(card)
 			
 		if (card.type==='single')
 			this.show_invite_dlg(card.uid)
@@ -5412,7 +5417,7 @@ lobby={
 			return
 		};
 		sound.play('click');
-
+		safe_ls('durak_info_checked',1)
 		anim2.add(objects.info_cont,{alpha:[0,1]}, true, 0.25,'linear');
 
 	},
