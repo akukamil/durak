@@ -5235,7 +5235,7 @@ lobby={
 	process(){
 		
 		//проверка слепой игры
-		//if (my_data.rating<1500) return
+		if (my_data.rating<1500) return
 		
 		const tm=Date.now()
 		const card0=objects.mini_cards[0]
