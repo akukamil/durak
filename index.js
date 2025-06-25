@@ -4548,6 +4548,24 @@ lobby={
 		//если мы в игре то пока не обновляем карточки
 		if (state==='p'||state==='b')
 			return;
+		
+		
+		//конвертируем сокращенные данные начали 25.06.2025, нужно позже перейти полностью на сокращенный режим
+		for (let uid in players){	
+			
+			const player=players[uid]
+			if (player.n)
+				player.name=player.n
+			if (player.r)
+				player.rating=player.r
+			if (player.s)
+				player.state=player.s
+			if (player.h)
+				player.hidden=player.hidden
+			if (player.g)
+				player.game_id=player.g
+		}
+		
 
 		//это столы
 		let tables = {};
@@ -5217,7 +5235,7 @@ lobby={
 	process(){
 		
 		//проверка слепой игры
-		if (my_data.rating<1500) return
+		//if (my_data.rating<1500) return
 		
 		const tm=Date.now()
 		const card0=objects.mini_cards[0]
