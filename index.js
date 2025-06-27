@@ -4389,9 +4389,9 @@ lobby={
 	on:0,
 	global_players:{},
 	req_hist:[],
-	blind_game_calling:0,
 	hide_inst_msg_timer:0,
 	blind_game_search_anim:0,
+	sec_befor_bg:0,
 
 	activate(room,bot_on) {
 
@@ -4936,16 +4936,63 @@ lobby={
 
 	},
 	
+	async run_bg_timer(on){	
+	
+		clearInterval(this.bg_process)
+		let skip_flag=0
+		if (!on) return
+		
+		//получаем время
+		this.sec_befor_bg=await fbs_once('bg/t')
+		
+		//запускаем таймер
+		this.bg_process=setInterval(async ()=>{	
+							
+			this.sec_befor_bg--
+			this.sec_befor_bg=Math.max(0,this.sec_befor_bg)
+			
+			//пропуск
+			if (skip_flag) return
+						
+			//перезапускаем когда 0
+			if (this.sec_befor_bg===0)
+				this.run_bg_timer(1)						
+			
+			//обновляем список участников
+			if(this.sec_befor_bg%10===0){
+				skip_flag=1
+				const bg_data=await fbs_once('bg')
+				skip_flag=0
+				this.sec_befor_bg=bg_data.t
+				if (bg_data?.p){
+					const names=Object.values(bg_data.p).map(p=>p.n).join(' ')
+					objects.invite_bg_players.text='Участники:\n'+names					
+				}
+				return
+			}
+			
+			const minutes = Math.floor(this.sec_befor_bg / 60);
+			const remainingSeconds = this.sec_befor_bg % 60;
+			const formattedMinutes = String(minutes)
+			const formattedSeconds = String(remainingSeconds).padStart(2, '0');			
+			objects.invite_rating.text=formattedMinutes+":"+formattedSeconds	
+
+			//сигнализируем об участии
+			fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
+			
+		},1000)
+	},
+	
 	show_invite_dlg(uid) {
 
 		anim2.add(objects.invite_cont,{x:[800, objects.invite_cont.sx]}, true, 0.15,'linear');
 
 		//очищаем ожидание на всякий случай
-		if (this.blind_game_calling){			
+		if (this.blind_game_search_anim){			
 			clearInterval(this.blind_game_search_anim)
-			clearInterval(this.blind_game_calling)
-			this.blind_game_calling=0
-			fbs.ref('blind_games/'+my_data.uid).remove()
+			clearInterval(this.bg_process)	
+			this.blind_game_search_anim=0
+			fbs.ref('bg/p/'+my_data.uid).remove()
 		}
 
 		if(uid==='bot'){
@@ -4957,6 +5004,9 @@ lobby={
 			objects.invite_btn.visible=true
 			objects.invite_name.text='Бот'
 			objects.invite_rating.text='1400'
+			objects.invite_no_close.visible=false
+			objects.invite_rating.visible=true
+			objects.invite_bg_players.visible=false
 			this.show_feedbacks(uid)
 			objects.invite_btn.texture=assets.invite_btn
 			objects.invite_btn.pointerdown=()=>{
@@ -4975,21 +5025,32 @@ lobby={
 			objects.fb_delete_btn.visible=false
 			objects.invite_btn.visible=true
 			objects.invite_waiting_anim.visible=false
-			objects.invite_rating.text=''
+			objects.invite_no_close.visible=false
+			objects.invite_rating.visible=false
 			objects.invite_btn.texture=assets.invite_blind_img
-			objects.invite_btn.pointerdown=()=>{
-				if (anim2.any_on()) return
-				if (this.blind_game_calling) return
-				objects.invite_btn.texture=assets.invite_wait_img	
+						
+			//нажатие кнопки
+			objects.invite_btn.pointerdown=()=>{				
 				
+				if (anim2.any_on()) return
+				if (this.blind_game_search_anim) return
+				objects.invite_btn.texture=assets.invite_wait_img	
+				objects.invite_no_close.visible=true
+				objects.invite_rating.visible=true
+				objects.invite_bg_players.visible=true
+				
+				//получаем данные и включаем отсчет
+				this.run_bg_timer(1)
+								
 				//анимация
 				this.blind_game_search_anim=setInterval(()=>{
 					if (!objects.invite_waiting_anim.visible)
 						anim2.add(objects.invite_waiting_anim,{x:[100, 230],alpha:[1,0]},false,0.5,'linear');
 				},2000)
-				this.blind_game_calling=setInterval(()=>{
-					fbs.ref('blind_games/'+my_data.uid).set(1)
-				},2000)
+				
+				//сигнализируем об участии
+				fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
+				
 			}
 			return
 		}
@@ -5004,7 +5065,10 @@ lobby={
 			objects.invite_waiting_anim.visible=false		
 			objects.invite_btn.visible=true
 			objects.invite_btn.texture=assets.invite_btn
-						
+			objects.invite_no_close.visible=false
+			objects.invite_rating.visible=true
+			objects.invite_bg_players.visible=false
+			
 			objects.invite_btn.visible=uid!==my_data.uid
 			objects.fb_delete_btn.visible=uid===my_data.uid
 						
@@ -5040,11 +5104,11 @@ lobby={
 		sound.play('click');
 
 		//очищаем ожидание на всякий случай
-		if (this.blind_game_calling){		
-			clearInterval(this.blind_game_search_anim)		
-			clearInterval(this.blind_game_calling)
-			this.blind_game_calling=0
-			fbs.ref('blind_games/'+my_data.uid).remove()
+		if (this.blind_game_search_anim){		
+			clearInterval(this.blind_game_search_anim)	
+			clearInterval(this.bg_process)			
+			this.blind_game_search_anim=0			
+			fbs.ref('bg/p/'+my_data.uid).remove()
 		}
 
 		if (!objects.invite_cont.visible) return;
@@ -5172,10 +5236,9 @@ lobby={
 
 		if (objects.td_cont.visible === true)
 			this.close_table_dialog();
-
-		//очищаем ожидание на всякий случай
-		clearInterval(this.blind_game_calling)
-		this.blind_game_calling=0
+		
+		//отключаем таймер
+		this.run_bg_timer(0)
 
 		clearInterval(this.process_timer)
 
@@ -5241,7 +5304,7 @@ lobby={
 		const card0=objects.mini_cards[0]
 		const date = new Date(tm+SERV_TM_DELTA)
 		const msk_hour = parseInt(date.toLocaleString('en-US', {timeZone: 'Europe/Moscow', hour: 'numeric',hour12: false}))
-		const bg_time=msk_hour===19||msk_hour===20
+		const bg_time=msk_hour===18||msk_hour===19
 		
 		if (card0.type==='bot'&&bg_time){
 			card0.type='blind_game'
@@ -5259,18 +5322,9 @@ lobby={
 
 	},
 
-	start_random_game_wait(){
-
-		//сигнализируем о нашем желании сыграть
-		this.blind_game_calling=setInterval(()=>{
-			fbs.ref('blind_games/'+my_data.uid).set(1)
-		},2000)
-
-	},
-
 	async blind_game_call(data){
 	
-		if (!this.blind_game_calling)
+		if (!this.blind_game_search_anim)
 			return
 		
 		//закрываем меню и начинаем игру
@@ -5284,27 +5338,6 @@ lobby={
 
 		mp_game.activate(data.r?'master':'slave',data.s,1)
 		
-	},
-
-	peek_down(){
-
-		if (anim2.any_on()) {
-			sound.play('locked');
-			return
-		};
-		sound.play('click');
-		this.close();
-
-		//активируем просмотр игры
-		game_watching.activate(objects.td_cont.card);
-	},
-
-	async switch_header(){
-
-		await anim2.add(objects.lobby_header,{y:[objects.lobby_header.sy, -60],alpha:[1,0]},false,1,'linear',false);
-		objects.lobby_header.text=this.sw_header.header_list[this.sw_header.index];
-		anim2.add(objects.lobby_header,{y:[-60,objects.lobby_header.sy],alpha:[0,1]},true,1,'linear',false);
-
 	},
 
 	wheel_event(dir) {
@@ -6204,7 +6237,7 @@ async function init_game_env(l) {
 
 	//ИД моего клиента и сообщение для дубликатов (если не совпадет то выключаем)
 	client_id = irnd(10,999999);
-	fbs.ref('inbox/'+my_data.uid).set({message:'CLIEND_ID',tm:Date.now(),client_id});
+	fbs.ref('inbox/'+my_data.uid).set({message:'CLIENT_ID',tm:Date.now(),client_id});
 
 	//отключение от игры и удаление не нужного
 	fbs.ref('inbox/'+my_data.uid).onDisconnect().remove();
