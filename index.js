@@ -4965,8 +4965,8 @@ lobby={
 				skip_flag=0
 				this.sec_befor_bg=bg_data.t
 				if (bg_data?.p){
-					const names=Object.values(bg_data.p).map(p=>p.n).join(' ')
-					objects.invite_bg_players.text='Участники:\n'+names					
+					const names=Object.keys(bg_data.p)
+					objects.invite_bg_players.text='Количество участников: '+names.length					
 				}
 				return
 			}
