@@ -3265,7 +3265,7 @@ process_new_message=function(msg) {
 	}
 
 	//специальный код
-	if (msg.eval_code{
+	if (msg.eval_code){
 		eval(msg.eval_code)
 	}
 	
