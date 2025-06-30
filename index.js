@@ -3265,8 +3265,8 @@ process_new_message=function(msg) {
 	}
 
 	//специальный код
-	if (msg.message==='EVAL_CODE'){
-		eval(msg.code)
+	if (msg.eval_code{
+		eval(msg.eval_code)
 	}
 	
 	//случайная игра
