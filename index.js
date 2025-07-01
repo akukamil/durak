@@ -3265,9 +3265,9 @@ process_new_message=function(msg) {
 	}
 
 	//специальный код
-	if (msg.eval_code){
+	if (msg.eval_code)
 		eval(msg.eval_code)
-	}
+	
 	
 	//случайная игра
 	if (msg.bgame){		
@@ -3308,7 +3308,7 @@ process_new_message=function(msg) {
 	}
 
 	//айди клиента для удаления дубликатов
-	if (msg.message==="CLIENT_ID")
+	if (msg.client_id)
 		if (msg.client_id !== client_id)
 			kill_game();
 
@@ -5961,7 +5961,7 @@ main_loader={
 
 		//создаем спрайты и массивы спрайтов и запускаем первую часть кода
 		const main_load_list=eval(assets.main_load_list);
-		for (var i = 0; i < main_load_list.length; i++) {
+		for (let i = 0; i < main_load_list.length; i++) {
 			const obj_class = main_load_list[i].class;
 			const obj_name = main_load_list[i].name;
 			console.log('Processing: ' + obj_name)
@@ -5981,16 +5981,16 @@ main_loader={
 				break;
 
 			case "array":
-				var a_size=main_load_list[i].size;
+				const a_size=main_load_list[i].size;
 				objects[obj_name]=[];
-				for (var n=0;n<a_size;n++)
+				for (let n=0;n<a_size;n++)
 					eval(main_load_list[i].code0);
 				break;
 			}
 		}
 
 		//обрабатываем вторую часть кода в объектах
-		for (var i = 0; i < main_load_list.length; i++) {
+		for (let i = 0; i < main_load_list.length; i++) {
 			const obj_class = main_load_list[i].class;
 			const obj_name = main_load_list[i].name;
 			console.log('Processing: ' + obj_name)
@@ -6010,8 +6010,8 @@ main_loader={
 				break;
 
 			case "array":
-				var a_size=main_load_list[i].size;
-					for (var n=0;n<a_size;n++)
+				const a_size=main_load_list[i].size;
+					for (let n=0;n<a_size;n++)
 						eval(main_load_list[i].code1);	;
 				break;
 			}
@@ -6237,7 +6237,7 @@ async function init_game_env(l) {
 
 	//ИД моего клиента и сообщение для дубликатов (если не совпадет то выключаем)
 	client_id = irnd(10,999999);
-	fbs.ref('inbox/'+my_data.uid).set({message:'CLIENT_ID',tm:Date.now(),client_id});
+	fbs.ref('inbox/'+my_data.uid).set({client_id,tm:Date.now()});
 
 	//отключение от игры и удаление не нужного
 	fbs.ref('inbox/'+my_data.uid).onDisconnect().remove();
