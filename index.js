@@ -5335,7 +5335,7 @@ lobby={
 		//устанаваем окончательные данные оппонента
 		await players_cache.update(data.opp_uid)
 		await players_cache.update_avatar(data.opp_uid)
-
+		game_id=+data.s
 		mp_game.activate(data.r?'master':'slave',data.s,1)
 		
 	},
