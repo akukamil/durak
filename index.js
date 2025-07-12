@@ -1801,7 +1801,7 @@ mp_game={
 			this.no_rating_msg_timer=setTimeout(()=>{message.add('Выбирайте разных соперников для получения и подтверждения рейтинга')},5000);
 
 		//вычиcляем рейтинг при проигрыше и устанавливаем его в базу он потом изменится
-		const lose_rating = this.blind_game_flag?my_data.rating-14:this.calc_new_rating(my_data.rating, LOSE)
+		const lose_rating = this.blind_game_flag?my_data.rating-20:this.calc_new_rating(my_data.rating, LOSE)
 		if (lose_rating >100 && lose_rating<9999)
 			fbs.ref('players/'+my_data.uid+'/rating').set(lose_rating);
 
