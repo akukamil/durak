@@ -1801,7 +1801,7 @@ mp_game={
 			this.no_rating_msg_timer=setTimeout(()=>{message.add('Выбирайте разных соперников для получения и подтверждения рейтинга')},5000);
 
 		//вычиcляем рейтинг при проигрыше и устанавливаем его в базу он потом изменится
-		const lose_rating = this.calc_new_rating(my_data.rating, LOSE);
+		const lose_rating = this.blind_game_flag?my_data.rating-14:this.calc_new_rating(my_data.rating, LOSE)
 		if (lose_rating >100 && lose_rating<9999)
 			fbs.ref('players/'+my_data.uid+'/rating').set(lose_rating);
 
@@ -2073,6 +2073,11 @@ mp_game={
 
 		//если диалоги еще открыты
 		if (objects.confirm_cont.visible===true) confirm_dialog.close();
+		
+		//штраф за неигру
+		if (this.blind_game_flag&&result_info==='my_timeout'){			
+			safe_ls('durak_bg_stop',Date.now()+120*60*1000)
+		}
 
 		//убираем элементы
 		objects.timer_cont.visible = false;
@@ -5028,6 +5033,15 @@ lobby={
 			objects.invite_no_close.visible=false
 			objects.invite_rating.visible=false
 			objects.invite_btn.texture=assets.invite_blind_img
+			
+			//проверка штрафа за отказ в игре
+			const bg_next_time=safe_ls('durak_bg_stop')||0
+			const tm=Date.now()
+			if (tm<bg_next_time){
+				objects.invite_btn.visible=false
+				objects.invite_name.text='Слепая игра недосупна'
+				return
+			}
 						
 			//нажатие кнопки
 			objects.invite_btn.pointerdown=()=>{				
