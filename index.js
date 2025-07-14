@@ -2075,7 +2075,7 @@ mp_game={
 		if (objects.confirm_cont.visible===true) confirm_dialog.close();
 		
 		//штраф за неигру
-		if (this.blind_game_flag&&result_info==='my_timeout'){			
+		if (this.blind_game_flag&&result==='my_timeout'){			
 			safe_ls('durak_bg_stop',Date.now()+120*60*1000)
 		}
 
