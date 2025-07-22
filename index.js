@@ -1649,40 +1649,53 @@ message={
 
 }
 
-big_message={
+big_msg={
 
 	p_resolve : 0,
 
-	async show(t1, t2, t3, feedback_on) {
+	show(params) {
 
-		this.feedback_on = feedback_on;
+		objects.big_msg_t1.text=params.t1||''
+		objects.big_msg_t2.text=params.t2||''
+		objects.big_msg_t3.text=params.t3||''
 
-		if (t2!==undefined || t2!=="")
-			objects.big_message_text2.text=t2;
-		else
-			objects.big_message_text2.text='**********';
-
-		objects.big_message_text3.text=''||t3;
-
-		objects.feedback_button.visible = (my_data.blocked===0)&&feedback_on;
-		objects.big_message_text.text=t1;
-		anim2.add(objects.big_message_cont,{y:[-180,objects.big_message_cont.sy]}, true, 0.6,'easeOutBack');
+		objects.big_msg_fb_btn.visible = (!my_data.blocked)&&params.fb
+		anim2.add(objects.big_msg_cont,{y:[-180,objects.big_msg_cont.sy]}, true, 0.6,'easeOutBack');
+		
+		this.show_bonus_anim(objects.big_msg_lights,params.lights_bonus||0)
+		this.show_bonus_anim(objects.big_msg_crystals,params.crystals_bonus||0)
 
 		return new Promise(function(resolve, reject){
-			big_message.p_resolve = resolve;
+			big_msg.p_resolve = resolve;
 		});
 
 	},
+	
+	show_bonus_anim(text_obj,tar_val){
+		
+		if (tar_val===0){
+			text_obj.text=0			
+			return
+		}
+		
+		let lights=0
+		const t=setInterval(()=>{
+			lights++
+			text_obj.text='+'+lights
+			if (lights===tar_val)
+				clearInterval(t)
+		},100)	
+		
+	},
 
-	async feedback_down() {
+	async fb_btn_down() {
 
-		if (objects.big_message_cont.ready===false) {
+		if (objects.big_msg_cont.ready===false) {
 			sound.play('locked');
 			return;
 		}
 
-
-		anim2.add(objects.big_message_cont,{y:[objects.big_message_cont.sy,450]}, false, 0.4,'easeInBack');
+		anim2.add(objects.big_msg_cont,{y:[objects.big_msg_cont.sy,450]}, false, 0.4,'easeInBack');
 
 		//пишем отзыв и отправляем его
 		const fb = await keyboard.read();
@@ -1697,11 +1710,13 @@ big_message={
 
 	async close() {
 
-		if (objects.big_message_cont.ready===false)
-			return;
+		if (anim2.any_on()){
+			sound.play('locked')
+			return;			
+		}
 
 		sound.play('click');
-		await anim2.add(objects.big_message_cont,{y:[objects.big_message_cont.y,-300]}, false, 0.4,'easeInBack');
+		await anim2.add(objects.big_msg_cont,{y:[objects.big_msg_cont.y,-300]}, false, 0.4,'easeInBack');
 		this.p_resolve("close");
 	}
 
@@ -2021,7 +2036,9 @@ mp_game={
 
 	async stop(result) {
 
-		table.state = 'stop';
+		table.state = 'stop'
+		let lights_bonus=0
+		let crystals_bonus=0
 
 		const res_array = [
 			['my_win',WIN , ['Вы выиграли!\n','You win!\nOpponent out of time']],
@@ -2037,14 +2054,13 @@ mp_game={
 			['my_no_connection',LOSE , ['Потеряна связь!\nИспользуйте надежное интернет соединение.','Lost connection!\nUse a reliable internet connection']]
 		];
 
-		clearTimeout(this.timer_id);
-		clearTimeout(this.no_rating_msg_timer);
+		clearTimeout(this.timer_id)
+		clearTimeout(this.no_rating_msg_timer)
 
-		const result_row = res_array.find( p => p[0] === result);
-		const result_str = result_row[0];
-		const result_number = result_row[1];
-		const result_info = result_row[2][0];
-
+		const result_row = res_array.find(p => p[0] === result)
+		const result_str = result_row[0]
+		const result_number = result_row[1]
+		const result_info = result_row[2][0]
 
 		//определяем новый рейтинг и сообщения
 		let auth_msg='';
@@ -2061,18 +2077,17 @@ mp_game={
 			auth_msg='Выбирайте разных соперников для получения рейтинга';
 		}
 
-
 		//записываем рейтинг в базу
-		fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating);
+		fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating)
 
 		//обновляем даные на карточке
 		objects.my_card_rating.text=my_data.rating;
 
 		//если диалоги еще открыты
-		if (objects.stickers_cont.visible===true) stickers.hide_panel();
+		if (objects.stickers_cont.visible===true) stickers.hide_panel()
 
 		//если диалоги еще открыты
-		if (objects.confirm_cont.visible===true) confirm_dialog.close();
+		if (objects.confirm_cont.visible===true) confirm_dialog.close()
 		
 		//штраф за неигру
 		if (this.blind_game_flag&&result==='my_timeout'){			
@@ -2080,33 +2095,37 @@ mp_game={
 		}
 
 		//убираем элементы
-		objects.timer_cont.visible = false;
-		objects.game_buttons.visible = false;
+		objects.timer_cont.visible = false
+		objects.game_buttons.visible = false
 
 		//воспроизводим звук
 		if (result_number === DRAW || result_number === LOSE || result_number === NOSYNC )
-			sound.play('lose');
+			sound.play('lose')
 		else
-			sound.play('win');
+			sound.play('win')
 
 		//если игра результативна то записываем дополнительные данные
 		if (result_number === DRAW || result_number === LOSE || result_number === WIN) {
 
-			//записываем инфу о последних играх в LC
-			this.update_last_opps(opp_data.uid);
+
 
 			//увеличиваем количество игр
-			my_data.games++;
+			my_data.games++
 			fbs.ref('players/'+my_data.uid+'/games').set(my_data.games)
 			
-			//если это слепая игра то бонус
-			if (this.blind_game_flag){				
-				my_data.coins+=10
-				my_data.coins=Math.min(my_data.coins,120)
-				fbs.ref('players/'+my_data.uid+'/coins').set(my_data.coins)
-				this.show_coin_bonus_anim()
+			//записываем и проверяем инфу о последних играх в LC
+			if (!this.unique_opps[opp_data.uid]) lights_bonus+=20			
+			this.update_last_opps(opp_data.uid)
+			
+			//если это слепая игра
+			if (this.blind_game_flag){
+				lights_bonus+=10
+				crystals_bonus+=10
 			}
-
+						
+			//бонус за игру и выигрыш
+			result_number===WIN?lights_bonus+=5:lights_bonus+=3
+			
 			//записываем дату последней игры
 			if(!this.NO_RATING_GAME){
 				fbs.ref('players/'+my_data.uid+'/last_game_tm').set(firebase.database.ServerValue.TIMESTAMP);
@@ -2119,28 +2138,18 @@ mp_game={
 				const data={uid:my_data.uid,player1:objects.my_card_name.text,player2:objects.opp_card_name.text, res:result_number,fin_type:result_str,duration,bg:this.blind_game_flag, rating: [old_rating,my_data.rating],game_id,client_id,tm:'TMS'}
 				my_ws.safe_send({cmd:'log',logger:`${game_name}_games`,data});
 			}
+			
+			//утверждаем бонусы
+			pref.change_coins(crystals_bonus)
+			pref.change_lights(lights_bonus)
+			
 		}
 
-		await big_message.show(result_info, 'Рейтинг'+`: ${old_rating} > ${my_data.rating}`,auth_msg, true)
+		await big_msg.show({t1:result_info, t2:'Рейтинг'+`: ${old_rating} > ${my_data.rating}`,t3:auth_msg, fb:true,lights_bonus,crystals_bonus})
 		set_state({state:'o'});
 		this.close();
 		main_menu.activate();
 
-	},
-	
-	show_coin_bonus_anim(){
-		
-		anim2.add(objects.coin_bonus_cont,{alpha:[0, 1]},false,4,'easeBridge');
-		some_process.coin_bonus_anim=()=>{
-			objects.coin_bonus_bcg.rotation+=0.02
-			objects.coin_bonus_bcg.scale_xy=1+Math.sin(game_tick*5)*0.1
-			objects.coin_bonus_icon.rotation=Math.sin(game_tick*2)*0.1
-		}
-		//выключаем
-		setTimeout(()=>{
-			some_process.coin_bonus_anim=()=>{}
-		},5000)
-		
 	},
 
 	async giveup() {
@@ -2175,7 +2184,6 @@ mp_game={
 
 sp_game={
 
-	name :'bot',
 	on : 0,
 	state : 'opp_move',
 	center_size : 0,
@@ -2184,7 +2192,9 @@ sp_game={
 
 		this.on = 1;
 
-		opponent = this;
+		opponent = this
+		
+		opp_data.uid='bot'
 
 		//инициируем стол
 		let seed2 = irnd(0,999999)
@@ -2317,7 +2327,6 @@ sp_game={
 
 	async stop(result) {
 
-
 		this.on = 0;
 		let res_array = [
 			['my_win',WIN , ['Вы выиграли!\n','You win!\nYou have captured more territory!']],
@@ -2331,14 +2340,11 @@ sp_game={
 		let result_number = result_row[1];
 		let result_info = result_row[2][0];
 
-
 		let bee ={};
 		if (result_number === WIN)
 			bee = objects.bee_win
 		else
 			bee = objects.bee_lose
-
-
 
 		//воспроизводим звук
 		if (result_number === DRAW || result_number === LOSE || result_number === NOSYNC )
@@ -2347,7 +2353,7 @@ sp_game={
 			sound.play('win');
 
 
-		await big_message.show (result_info, "Сыграйте с реальным соперником для получения рейтинга",'',true);
+		await big_msg.show ({t1:result_info, t2:"Сыграйте с реальным соперником для получения рейтинга",fb:true});
 		set_state({state : 'o'});
 		this.close();
 		main_menu.activate();
@@ -2361,7 +2367,7 @@ sp_game={
 		if (anim2.any_on()===true)
 			return;
 
-		if (objects.big_message_cont.visible === true)
+		if (objects.big_msg_cont.visible === true)
 			return;
 
 		let res = await confirm_dialog.show('Закончить игру?')
@@ -3381,7 +3387,7 @@ req_dialog={
 
 	accept() {
 
-		if (objects.req_cont.ready===false || objects.req_cont.visible===false ||  objects.confirm_cont.visible===true || objects.big_message_cont.visible===true || anim2.any_on() === true)
+		if (objects.req_cont.ready===false || objects.req_cont.visible===false ||  objects.confirm_cont.visible===true || objects.big_msg_cont.visible===true || anim2.any_on() === true)
 			return;
 
 		//устанавливаем окончательные данные оппонента
@@ -3596,6 +3602,7 @@ pref={
 	info_timer:0,
 	check_coins_timer:0,
 	prv_tm:0,
+	prv_moscow_dow:0,
 
 	activate(){
 
@@ -3609,8 +3616,9 @@ pref={
 		objects.pref_conf_cards_btn.visible=false;
 		objects.pref_conf_photo_btn.visible=false;
 		
-		//информация о монетах
+		//информация о бонусах
 		objects.pref_coins_info.text=my_data.coins
+		objects.pref_lights_info.text=my_data.lights
 
 		this.cur_style_id=my_data.cards_style_id;
 		this.switch_shirt(0);
@@ -3675,6 +3683,27 @@ pref={
 		
 		objects.pref_coins_info.text=my_data.coins
 		fbs.ref('players/'+my_data.uid+'/coins').set(my_data.coins)
+	},
+	
+	async change_lights(amount){
+				
+		const server_time=await my_ws.get_tms()
+		if(!server_time) return
+		const moscow_time=new Date(server_time).toLocaleString("en-US", {timeZone: "Europe/Moscow"})
+		const moscow_dow =  new Date(moscow_time).getDate()
+				
+		if (moscow_dow!==this.prv_moscow_dow)
+			my_data.lights=0
+		
+		this.prv_moscow_dow=moscow_dow
+		
+		my_data.lights+=amount		
+		objects.pref_lights_info.text=my_data.lights
+			
+		//отправляем в топ3		
+		my_ws.safe_send({cmd:'top3',path:'day_top3',val:{uid:my_data.uid,val:my_data.lights}})
+
+
 	},
 	
 	check_coins(prv_tm_fbs, no_prv_coins){
@@ -4297,7 +4326,7 @@ stickers={
 	show_panel() {
 
 
-		if (objects.big_message_cont.visible === true || objects.req_cont.visible === true || objects.stickers_cont.ready===false) {
+		if (objects.big_msg_cont.visible === true || objects.req_cont.visible === true || objects.stickers_cont.ready===false) {
 			return;
 		}
 
@@ -4326,7 +4355,7 @@ stickers={
 
 	async send(id) {
 
-		if (objects.big_message_cont.visible === true || objects.req_cont.visible === true || objects.stickers_cont.ready===false) {
+		if (objects.big_msg_cont.visible === true || objects.req_cont.visible === true || objects.stickers_cont.ready===false) {
 			return;
 		}
 
@@ -5382,9 +5411,9 @@ lobby={
 		lobby._opp_data={};
 		this.close_invite_dialog();
 		if(msg==='REJECT_ALL')
-			big_message.show('Соперник пока не принимает приглашения.','---','');
+			big_msg.show({t1:'Соперник пока не принимает приглашения.'});
 		else
-			big_message.show('Соперник отказался от игры. Повторить приглашение можно через 1 минуту.','---','');
+			big_msg.show({t1:'Соперник отказался от игры. Повторить приглашение можно через 1 минуту.',t2:'---'});
 	},
 
 	async accepted_invite(seed) {
@@ -6142,7 +6171,6 @@ async function init_game_env(l) {
 	resize();
 	window.addEventListener("resize", resize);
 
-
 	//запускаем главный цикл
 	main_loop();
 
@@ -6188,6 +6216,7 @@ async function init_game_env(l) {
 	my_data.nick_tm = other_data?.nick_tm || 0
 	my_data.avatar_tm = other_data?.avatar_tm || 0
 	my_data.coins = other_data?.coins ?? 120
+	my_data.lights=0
 
 	//правильно определяем аватарку
 	if (other_data?.pic_url && other_data.pic_url.includes('mavatar'))
