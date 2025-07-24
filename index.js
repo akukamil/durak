@@ -5012,7 +5012,7 @@ lobby={
 			objects.invite_rating.text=formattedMinutes+":"+formattedSeconds	
 
 			//сигнализируем об участии
-			//my_ws.safe_send({cmd:'set_no_event',path:'bg/p/'+my_data.uid,val:'TMS'})
+			my_ws.safe_send({cmd:'set_no_event',path:'bg/p/'+my_data.uid,val:'TMS'})
 			fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
 			
 		},1000)
@@ -5095,7 +5095,7 @@ lobby={
 				},2000)
 				
 				//сигнализируем об участии
-				//my_ws.safe_send({n:my_data.name,t:'TMS'})
+				my_ws.safe_send({cmd:'set_no_event',path:'bg/p/'+my_data.uid,val:'TMS'})
 				fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
 				
 			}
