@@ -242,35 +242,35 @@ class lb_player_card_class extends PIXI.Container{
 	constructor(x,y,place) {
 		super();
 
-		this.bcg=new PIXI.Sprite(assets.lb_player_card_bcg);
-		this.bcg.interactive=true;
-		this.bcg.pointerover=function(){this.tint=0x55ffff};
-		this.bcg.pointerout=function(){this.tint=0xffffff};
-		this.bcg.width = 370;
-		this.bcg.height = 70;
+		this.bcg=new PIXI.Sprite(assets.lb_player_card_bcg)
+		this.bcg.interactive=true
+		this.bcg.pointerover=function(){this.tint=0x55ffff}
+		this.bcg.pointerout=function(){this.tint=0xffffff}
+		this.bcg.width = 370
+		this.bcg.height = 70
 
-		this.place=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
-		this.place.tint=0xffffff;
-		this.place.x=20;
-		this.place.y=22;
+		this.place=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'})
+		this.place.tint=0xffffff
+		this.place.x=20
+		this.place.y=22
 
-		this.avatar=new PIXI.Sprite();
-		this.avatar.x=43;
-		this.avatar.y=14;
-		this.avatar.width=this.avatar.height=44;
+		this.avatar=new PIXI.Graphics()
+		this.avatar.x=43
+		this.avatar.y=13
+		this.avatar.w=this.avatar.h=44
+		this.avatar.width=this.avatar.height=44
 
+		this.name=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'})
+		this.name.tint=0xcceeff
+		this.name.x=105
+		this.name.y=22
 
-		this.name=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
-		this.name.tint=0xcceeff;
-		this.name.x=105;
-		this.name.y=22;
+		this.rating=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'})
+		this.rating.x=298
+		this.rating.tint=0xFFFF00
+		this.rating.y=22
 
-		this.rating=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'});
-		this.rating.x=298;
-		this.rating.tint=0xFFFF00;
-		this.rating.y=22;
-
-		this.addChild(this.bcg,this.place, this.avatar, this.name, this.rating);
+		this.addChild(this.bcg,this.place, this.avatar, this.name, this.rating)
 	}
 
 
@@ -2107,8 +2107,6 @@ mp_game={
 		//если игра результативна то записываем дополнительные данные
 		if (result_number === DRAW || result_number === LOSE || result_number === WIN) {
 
-
-
 			//увеличиваем количество игр
 			my_data.games++
 			fbs.ref('players/'+my_data.uid+'/games').set(my_data.games)
@@ -2167,7 +2165,7 @@ mp_game={
 		this.stop('my_giveup')
 
 		//отправляем сопернику что мы сдались
-		fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"GIVEUP",tm:Date.now()});
+		fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'GIVEUP',tm:Date.now()});
 
 	},
 
@@ -3701,7 +3699,7 @@ pref={
 		objects.pref_lights_info.text=my_data.lights
 			
 		//отправляем в топ3		
-		my_ws.safe_send({cmd:'top3',path:'day_top3',val:{uid:my_data.uid,val:my_data.lights}})
+		my_ws.safe_send({cmd:'top3',path:'_day_top3',val:{uid:my_data.uid,val:my_data.lights}})
 
 
 	},
@@ -4194,7 +4192,7 @@ lb={
 			const target=top[place];
 			const leader=leaders_array[place];
 			await players_cache.update_avatar(leader.uid);
-			target.avatar.texture=players_cache.players[leader.uid].texture;
+			target.avatar.set_texture(players_cache.players[leader.uid].texture)
 		}
 
 	}
@@ -4977,9 +4975,9 @@ lobby={
 		if (!on) return
 		
 		//получаем время
-		this.sec_befor_bg=await fbs_once('bg/t')
+		this.sec_befor_bg=await my_ws.get('bg/t')
 		
-		//запускаем таймер
+		//запускаем таймер каждую секунду
 		this.bg_process=setInterval(async ()=>{	
 							
 			this.sec_befor_bg--
@@ -4992,10 +4990,10 @@ lobby={
 			if (this.sec_befor_bg===0)
 				this.run_bg_timer(1)						
 			
-			//обновляем список участников
+			//обновляем список участников и время до начала каждые 10 сек
 			if(this.sec_befor_bg%10===0){
 				skip_flag=1
-				const bg_data=await fbs_once('bg')
+				const bg_data=await my_ws.get('bg')
 				skip_flag=0
 				this.sec_befor_bg=bg_data.t
 				if (bg_data?.p){
@@ -5005,14 +5003,15 @@ lobby={
 				return
 			}
 			
-			const minutes = Math.floor(this.sec_befor_bg / 60);
+			const minutes = Math.floor(this.sec_befor_bg/60);
 			const remainingSeconds = this.sec_befor_bg % 60;
 			const formattedMinutes = String(minutes)
 			const formattedSeconds = String(remainingSeconds).padStart(2, '0');			
 			objects.invite_rating.text=formattedMinutes+":"+formattedSeconds	
 
 			//сигнализируем об участии
-			fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
+			my_ws.safe_send({cmd:'set_no_event',path:'bg/p/'+my_data.uid,val:'TMS'})
+			//fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
 			
 		},1000)
 	},
@@ -5092,7 +5091,8 @@ lobby={
 				},2000)
 				
 				//сигнализируем об участии
-				fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
+				my_ws.safe_send({n:my_data.name,t:'TMS'})
+				//fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
 				
 			}
 			return
@@ -5558,13 +5558,13 @@ players_cache={
 		if (!this.players[uid]) this.players[uid]={}
 
 		//ссылка на игрока
-		const player=this.players[uid];
+		const player=this.players[uid]
 
 		//заполняем параметры которые дали
-		for (let param in params) player[param]=params[param];
+		for (let param in params) player[param]=params[param]
 
-		if (!player.name) player.name=await fbs_once('players/'+uid+'/name');
-		if (!player.rating) player.rating=await fbs_once('players/'+uid+'/rating');
+		if (!player.name) player.name=await fbs_once('players/'+uid+'/name')
+		if (!player.rating) player.rating=await fbs_once('players/'+uid+'/rating')
 
 
 	},
@@ -5748,6 +5748,65 @@ auth={
 
 	}
 
+}
+
+top3={
+	
+	async activate(){
+		
+		const top3=await my_ws.get('day_top3')
+		if(!top3) return
+		const uids=Object.keys(top3)
+		if (uids.length!==3) return
+		
+		await players_cache.update(uids[0])		
+		objects.day_top3_name1.set2(players_cache.players[uids[0]].name,145)
+		
+		await players_cache.update(uids[1])		
+		objects.day_top3_name2.set2(players_cache.players[uids[1]].name,145)
+		
+		await players_cache.update(uids[2])
+		objects.day_top3_name3.set2(players_cache.players[uids[2]].name,145)
+			
+				
+		await players_cache.update_avatar(uids[0])		
+		objects.day_top3_avatar1.set_texture(players_cache.players[uids[0]].texture)
+		
+		await players_cache.update_avatar(uids[1])		
+		objects.day_top3_avatar2.set_texture(players_cache.players[uids[1]].texture)
+		
+		await players_cache.update_avatar(uids[2])
+		objects.day_top3_avatar3.set_texture(players_cache.players[uids[2]].texture)
+		
+		objects.day_top3_lights1.text=top3[uids[0]]
+		objects.day_top3_lights2.text=top3[uids[1]]
+		objects.day_top3_lights3.text=top3[uids[2]]
+		
+		some_process.top3_anim=()=>{this.process()}
+		sound.play('top3')
+		anim2.add(objects.day_top3_cont,{alpha:[0, 1]}, true, 0.5,'linear');
+		
+						
+	},
+	
+	process(){
+		
+		objects.day_top3_sunrays.rotation+=0.01
+		
+	},
+	
+	close(){
+		
+		if (anim2.any_on()) {
+			sound.play('locked')
+			return
+		}
+		
+		anim2.add(objects.day_top3_cont,{alpha:[1, 0]}, false, 0.5,'linear');
+		
+		
+	}	
+	
 }
 
 function resize() {
@@ -5938,6 +5997,7 @@ main_loader={
 		loader.add('keypress',git_src+'sounds/keypress.mp3');
 		loader.add('online_message',git_src+'sounds/online_message.mp3');
 		loader.add('inst_msg',git_src+'sounds/inst_msg.mp3');
+		loader.add('top3',git_src+'sounds/top3.mp3');
 
 		//добавляем библиотеку аватаров
 		loader.add('multiavatar', git_src+'multiavatar.min.txt');
@@ -6333,6 +6393,10 @@ async function init_game_env(l) {
 		chat.init(),
 		new Promise(resolve=> setTimeout(() => {console.log('chat is not loaded!');resolve()}, 5000))
 	]);
+
+
+	//отображаем лидеров вчерашнего дня
+	//top3.activate()
 
 	//убираем ИД контейнер
 	some_process.loup_anim = function(){};
