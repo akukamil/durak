@@ -5020,6 +5020,8 @@ lobby={
 
 		anim2.add(objects.invite_cont,{x:[800, objects.invite_cont.sx]}, true, 0.15,'linear');
 
+		sound.play('click')
+		
 		//очищаем ожидание на всякий случай
 		if (this.blind_game_search_anim){			
 			clearInterval(this.blind_game_search_anim)
