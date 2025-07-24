@@ -4975,7 +4975,8 @@ lobby={
 		if (!on) return
 		
 		//получаем время
-		this.sec_befor_bg=await my_ws.get('bg/t')
+		this.sec_befor_bg=await fbs_once('bg/t')
+		//this.sec_befor_bg=await my_ws.get('bg/t')
 		
 		//запускаем таймер каждую секунду
 		this.bg_process=setInterval(async ()=>{	
@@ -4993,7 +4994,8 @@ lobby={
 			//обновляем список участников и время до начала каждые 10 сек
 			if(this.sec_befor_bg%10===0){
 				skip_flag=1
-				const bg_data=await my_ws.get('bg')
+				//const bg_data=await my_ws.get('bg')
+				const bg_data=await fbs_once('bg')
 				skip_flag=0
 				this.sec_befor_bg=bg_data.t
 				if (bg_data?.p){
@@ -5010,8 +5012,8 @@ lobby={
 			objects.invite_rating.text=formattedMinutes+":"+formattedSeconds	
 
 			//сигнализируем об участии
-			my_ws.safe_send({cmd:'set_no_event',path:'bg/p/'+my_data.uid,val:'TMS'})
-			//fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
+			//my_ws.safe_send({cmd:'set_no_event',path:'bg/p/'+my_data.uid,val:'TMS'})
+			fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
 			
 		},1000)
 	},
@@ -5093,8 +5095,8 @@ lobby={
 				},2000)
 				
 				//сигнализируем об участии
-				my_ws.safe_send({n:my_data.name,t:'TMS'})
-				//fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
+				//my_ws.safe_send({n:my_data.name,t:'TMS'})
+				fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
 				
 			}
 			return
