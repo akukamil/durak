@@ -3600,7 +3600,7 @@ pref={
 	info_timer:0,
 	check_coins_timer:0,
 	prv_tm:0,
-	prv_moscow_dow:0,
+	prv_moscow_dow:-1,
 
 	activate(){
 
@@ -3690,7 +3690,7 @@ pref={
 		const moscow_time=new Date(server_time).toLocaleString("en-US", {timeZone: "Europe/Moscow"})
 		const moscow_dow =  new Date(moscow_time).getDate()
 				
-		if (moscow_dow!==this.prv_moscow_dow)
+		if ((moscow_dow!==this.prv_moscow_dow)&&this.prv_moscow_dow!==-1)
 			my_data.lights=0
 		
 		this.prv_moscow_dow=moscow_dow
@@ -3700,7 +3700,6 @@ pref={
 			
 		//отправляем в топ3		
 		my_ws.safe_send({cmd:'top3',path:'_day_top3',val:{uid:my_data.uid,val:my_data.lights}})
-
 
 	},
 	
@@ -4409,6 +4408,108 @@ stickers={
 
 }
 
+bg={
+	
+	sec_to_start:999,
+	timer:0,
+	i:0,
+	on:0,
+	btn_anim_timer:0,
+	
+	async activate(){
+		
+		this.on=1
+		
+		//анимация кнопки
+		this.btn_anim_timer=setInterval(()=>{
+			if (!objects.invite_waiting_anim.visible)
+				anim2.add(objects.invite_waiting_anim,{x:[100, 230],alpha:[1,0]},false,0.5,'linear');
+		},2000)	
+		
+		//просто счетчик секунд
+		this.i=0
+					
+		//обновляем все данные
+		this.update_all()
+		
+		//сразу записываемся в игроки
+		my_ws.safe_send({cmd:'set_no_event',path:'bg/p/'+my_data.uid,val:'TMS'})
+		
+		this.timer=setInterval(()=>{
+			this.process()
+		},1000)	
+		
+	},
+	
+	async update_all(){
+		
+		console.log('update_all')
+		const bg_data=await my_ws.get('bg')
+		this.update_time(bg_data.t)
+		this.update_players(bg_data.p)
+		
+	},	
+	
+	async update_time(inp_t){
+		
+		console.log('update_time')
+		const t=inp_t||await my_ws.get('bg/t')||999
+		this.sec_to_start=t
+		if(inp_t)
+			this.draw_sec_to_start()
+		
+	},
+	
+	async update_players(inp_p){
+		
+		console.log('update_players')
+		const p=inp_p||await my_ws.get('bg/p')
+		objects.invite_bg_players.text='Количество участников: '+Object.keys(p).length	
+		
+	},
+	
+	process(){
+		
+		console.log('process_call',Date.now())
+		
+		this.sec_to_start--
+		this.draw_sec_to_start()
+		
+		my_ws.safe_send({cmd:'set_no_event',path:'bg/p/'+my_data.uid,val:'TMS'})
+		
+		if (this.i===4||this.i===8)
+			this.update_players()
+		
+		if (this.i===11){
+			this.update_time()			
+			this.i=0		
+		}
+
+		this.i++		
+	},
+	
+	stop(){
+		
+		this.on=0
+		clearInterval(this.timer)
+		clearInterval(this.btn_anim_timer)
+		my_ws.safe_send({cmd:'remove',path:'bg/p/'+my_data.uid})
+	},	
+	
+	draw_sec_to_start(){		
+	
+		if (this.sec_to_start<0) this.sec_to_start=0
+		
+		const minutes = Math.floor(this.sec_to_start/60)
+		const remainingSeconds = this.sec_to_start % 60
+		const formattedMinutes = String(minutes)
+		const formattedSeconds = String(remainingSeconds).padStart(2, '0')		
+		objects.invite_rating.text=formattedMinutes+":"+formattedSeconds	
+			
+	}
+	
+}
+
 lobby={
 
 	state_tint :{},
@@ -4422,7 +4523,6 @@ lobby={
 	global_players:{},
 	req_hist:[],
 	hide_inst_msg_timer:0,
-	blind_game_search_anim:0,
 	sec_befor_bg:0,
 
 	activate(room,bot_on) {
@@ -4967,57 +5067,7 @@ lobby={
 			this.show_table_dialog(card_id);*/
 
 	},
-	
-	async run_bg_timer(on){	
-	
-		clearInterval(this.bg_process)
-		let skip_flag=0
-		if (!on) return
 		
-		//получаем время
-		this.sec_befor_bg=await fbs_once('bg/t')
-		//this.sec_befor_bg=await my_ws.get('bg/t')
-		
-		//запускаем таймер каждую секунду
-		this.bg_process=setInterval(async ()=>{	
-							
-			this.sec_befor_bg--
-			this.sec_befor_bg=Math.max(0,this.sec_befor_bg)
-			
-			//пропуск
-			if (skip_flag) return
-						
-			//перезапускаем когда 0
-			if (this.sec_befor_bg===0)
-				this.run_bg_timer(1)						
-			
-			//обновляем список участников и время до начала каждые 10 сек
-			if(this.sec_befor_bg%10===0){
-				skip_flag=1
-				//const bg_data=await my_ws.get('bg')
-				const bg_data=await fbs_once('bg')
-				skip_flag=0
-				this.sec_befor_bg=bg_data.t
-				if (bg_data?.p){
-					const names=Object.keys(bg_data.p)
-					objects.invite_bg_players.text='Количество участников: '+names.length					
-				}
-				return
-			}
-			
-			const minutes = Math.floor(this.sec_befor_bg/60);
-			const remainingSeconds = this.sec_befor_bg % 60;
-			const formattedMinutes = String(minutes)
-			const formattedSeconds = String(remainingSeconds).padStart(2, '0');			
-			objects.invite_rating.text=formattedMinutes+":"+formattedSeconds	
-
-			//сигнализируем об участии
-			my_ws.safe_send({cmd:'set_no_event',path:'bg/p/'+my_data.uid,val:'TMS'})
-			fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
-			
-		},1000)
-	},
-	
 	show_invite_dlg(uid) {
 
 		anim2.add(objects.invite_cont,{x:[800, objects.invite_cont.sx]}, true, 0.15,'linear');
@@ -5025,12 +5075,8 @@ lobby={
 		sound.play('click')
 		
 		//очищаем ожидание на всякий случай
-		if (this.blind_game_search_anim){			
-			clearInterval(this.blind_game_search_anim)
-			clearInterval(this.bg_process)	
-			this.blind_game_search_anim=0
-			fbs.ref('bg/p/'+my_data.uid).remove()
-		}
+		if (bg.on) bg.stop()
+		
 
 		if(uid==='bot'){
 		
@@ -5064,6 +5110,7 @@ lobby={
 			objects.invite_waiting_anim.visible=false
 			objects.invite_no_close.visible=false
 			objects.invite_rating.visible=false
+			objects.invite_bg_players.visible=false
 			objects.invite_btn.texture=assets.invite_blind_img
 			
 			//проверка штрафа за отказ в игре
@@ -5079,24 +5126,14 @@ lobby={
 			objects.invite_btn.pointerdown=()=>{				
 				
 				if (anim2.any_on()) return
-				if (this.blind_game_search_anim) return
+				if (bg.on) return
 				objects.invite_btn.texture=assets.invite_wait_img	
 				objects.invite_no_close.visible=true
 				objects.invite_rating.visible=true
 				objects.invite_bg_players.visible=true
 				
 				//получаем данные и включаем отсчет
-				this.run_bg_timer(1)
-								
-				//анимация
-				this.blind_game_search_anim=setInterval(()=>{
-					if (!objects.invite_waiting_anim.visible)
-						anim2.add(objects.invite_waiting_anim,{x:[100, 230],alpha:[1,0]},false,0.5,'linear');
-				},2000)
-				
-				//сигнализируем об участии
-				my_ws.safe_send({cmd:'set_no_event',path:'bg/p/'+my_data.uid,val:'TMS'})
-				fbs.ref('bg/p/'+my_data.uid).set({n:my_data.name,t:Date.now()})
+				bg.activate()		
 				
 			}
 			return
@@ -5151,12 +5188,7 @@ lobby={
 		sound.play('click');
 
 		//очищаем ожидание на всякий случай
-		if (this.blind_game_search_anim){		
-			clearInterval(this.blind_game_search_anim)	
-			clearInterval(this.bg_process)			
-			this.blind_game_search_anim=0			
-			fbs.ref('bg/p/'+my_data.uid).remove()
-		}
+		if (bg.on) bg.stop()
 
 		if (!objects.invite_cont.visible) return;
 
@@ -5285,7 +5317,7 @@ lobby={
 			this.close_table_dialog();
 		
 		//отключаем таймер
-		this.run_bg_timer(0)
+		if (bg.on) bg.stop()
 
 		clearInterval(this.process_timer)
 
@@ -5344,6 +5376,9 @@ lobby={
 
 	process(){
 		
+		//objects.mini_cards[0].type='blind_game'
+		//return
+		
 		//проверка слепой игры
 		if (my_data.rating<1600) return
 		
@@ -5371,8 +5406,7 @@ lobby={
 
 	async blind_game_call(data){
 	
-		if (!this.blind_game_search_anim)
-			return
+		if (!bg.on) return
 		
 		//закрываем меню и начинаем игру
 		await lobby.close();
