@@ -1678,13 +1678,15 @@ big_msg={
 			return
 		}
 		
+		const interval_time=(tar_val*52+948)/tar_val
+		
 		let lights=0
 		const t=setInterval(()=>{
 			lights++
 			text_obj.text='+'+lights
 			if (lights===tar_val)
 				clearInterval(t)
-		},100)	
+		},interval_time)	
 		
 	},
 
