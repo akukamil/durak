@@ -4470,7 +4470,7 @@ bg={
 	
 	process(){
 		
-		console.log('process_call',Date.now())
+		//console.log('process_call',Date.now())
 		
 		this.sec_to_start--
 		this.draw_sec_to_start()
