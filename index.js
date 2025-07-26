@@ -5790,9 +5790,9 @@ auth={
 
 top3={
 	
-	async activate(){
+	async activate(path){
 		
-		const top3=await my_ws.get('day_top3')
+		const top3=await my_ws.get(path||'day_top3')
 		if(!top3) return
 		const uids=Object.keys(top3)
 		if (uids.length!==3) return
