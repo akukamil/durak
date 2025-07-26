@@ -3602,10 +3602,37 @@ pref={
 	info_timer:0,
 	check_coins_timer:0,
 	prv_tm:0,
-	prv_moscow_dow:-1,
+	init:0,
+	
+	async start_day_change_check(skip_start_timer){
+		
+		const server_time=await my_ws.get_tms()||Date.now()
+		const cur_msk_day=+new Date(server_time).toLocaleString('en-US', {timeZone: 'Europe/Moscow',day:'numeric'})
+		const last_msk_day=safe_ls('durak_last_msk_day')||0
+		
+		//console.log('day_change_check',cur_msk_day,last_msk_day)
+		if (last_msk_day!==cur_msk_day){
+			safe_ls('durak_last_msk_day',cur_msk_day)			
+			
+			//день поменялся начинаем заново
+			my_data.lights=0		
+			objects.pref_lights_info.text=my_data.lights
+			safe_ls('durak_lights',my_data.lights)
+			
+			//другие изменения
+		}
 
-	activate(){
+		
+		if(skip_start_timer) return
+		
+		setInterval(()=>{
+			this.start_day_change_check(1)			
+		},120000)
+		
+	},
 
+	activate(){				
+		
 		//заполняем имя и аватар
 		objects.pref_name.set2(my_data.name,260);
 		objects.pref_avatar.set_texture(players_cache.players[my_data.uid].texture);
@@ -3686,19 +3713,10 @@ pref={
 	},
 	
 	async change_lights(amount){
-				
-		const server_time=await my_ws.get_tms()
-		if(!server_time) return
-		const moscow_time=new Date(server_time).toLocaleString("en-US", {timeZone: "Europe/Moscow"})
-		const moscow_dow =  new Date(moscow_time).getDate()
-				
-		if ((moscow_dow!==this.prv_moscow_dow)&&this.prv_moscow_dow!==-1)
-			my_data.lights=0
-		
-		this.prv_moscow_dow=moscow_dow
-		
+						
 		my_data.lights+=amount		
 		objects.pref_lights_info.text=my_data.lights
+		safe_ls('durak_lights',my_data.lights)
 			
 		//отправляем в топ3		
 		my_ws.safe_send({cmd:'top3',path:'_day_top3',val:{uid:my_data.uid,val:my_data.lights}})
@@ -6302,6 +6320,9 @@ async function init_game_env(l) {
 	};
 	runScyfiLogs();
 
+	//загрузка сокета
+	await auth.load_script('https://akukamil.github.io/common/my_ws.js');
+
 	//загружаем остальные данные
 	const other_data = await fbs_once('players/'+my_data.uid)
 
@@ -6316,7 +6337,7 @@ async function init_game_env(l) {
 	my_data.nick_tm = other_data?.nick_tm || 0
 	my_data.avatar_tm = other_data?.avatar_tm || 0
 	my_data.coins = other_data?.coins ?? 120
-	my_data.lights=0
+	my_data.lights=safe_ls('durak_lights')||0
 
 	//правильно определяем аватарку
 	if (other_data?.pic_url && other_data.pic_url.includes('mavatar'))
@@ -6333,17 +6354,16 @@ async function init_game_env(l) {
 	await players_cache.update_avatar(my_data.uid);
 
 	//устанавливаем фотки в попап
-	objects.my_avatar.texture=players_cache.players[my_data.uid].texture;
-	objects.id_avatar.set_texture(players_cache.players[my_data.uid].texture);
-	objects.id_name.set2(my_data.name,150);
-
+	objects.my_avatar.texture=players_cache.players[my_data.uid].texture
+	objects.id_avatar.set_texture(players_cache.players[my_data.uid].texture)
+	objects.id_name.set2(my_data.name,150)
 
 	//устанавлием мое имя в карточки
 	objects.id_name.set2(my_data.name,150);
 	objects.my_card_name.set2(my_data.name,150);
 
 	//новогодняя акция снег
-	snow.init();
+	snow.init()
 
 	//определение номера комнаты
 	const rooms_bins = [0,1396,1450,1583,9999]
@@ -6387,8 +6407,7 @@ async function init_game_env(l) {
 	fbs.ref(room_name+'/'+my_data.uid).onDisconnect().remove();
 
 	//это событие когда меняется видимость приложения
-	document.addEventListener("visibilitychange", function(){tabvis.change()});
-
+	document.addEventListener("visibilitychange", function(){tabvis.change()})
 
 	//событие ролика мыши в карточном меню
 	window.addEventListener('wheel', (event) => {
@@ -6404,8 +6423,8 @@ async function init_game_env(l) {
 	setInterval(()=>{keep_alive()}, 40000);
 
 	//получаем время сервера и дельту
-	const serv_tm=await fbs_once('players/'+my_data.uid+'/tm');
-	SERV_TM_DELTA=serv_tm-Date.now();
+	const serv_tm=await fbs_once('players/'+my_data.uid+'/tm')
+	SERV_TM_DELTA=serv_tm-Date.now()
 
 	//проверяем предыдущих вход
 	pref.check_coins(other_data?.tm,!other_data?.coins)
@@ -6425,16 +6444,15 @@ async function init_game_env(l) {
 	//читаем и проверяем последних соперников
 	mp_game.read_last_opps();
 
-	//загрузка сокета
-	await auth.load_script('https://akukamil.github.io/common/my_ws.js');
-
 	//ждем загрузки чата
 	await Promise.race([
 		chat.init(),
 		new Promise(resolve=> setTimeout(() => {console.log('chat is not loaded!');resolve()}, 5000))
 	]);
-
-
+	
+	//обработка изменения дня
+	pref.start_day_change_check()
+	
 	//отображаем лидеров вчерашнего дня
 	//top3.activate()
 
