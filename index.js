@@ -1744,7 +1744,7 @@ mp_game={
 	giveup_button_pos:[0,0,0],
 	NO_RATING_GAME:0,
 	no_rating_msg_timer:0,
-	last_opponents:[],
+	last_opps:[],
 	unique_opps:[],
 	blind_game_flag:0,
 
@@ -1812,7 +1812,7 @@ mp_game={
 		this.start_time = Date.now();
 
 		//сколько игрок играл с этим соперником
-		const prv_plays=this.count_in_arr(this.last_opponents,opp_data.uid);
+		const prv_plays=this.count_in_arr(this.last_opps,opp_data.uid);
 		this.NO_RATING_GAME=(prv_plays>6&&my_data.rating>MAX_NO_REP_RATING)?1:0;
 		if (this.NO_RATING_GAME)
 			this.no_rating_msg_timer=setTimeout(()=>{message.add('Выбирайте разных соперников для получения и подтверждения рейтинга')},5000);
@@ -1852,7 +1852,7 @@ mp_game={
 	read_last_opps(){
 		
 		//последние соперники
-		this.last_opponents=safe_ls(game_name+'_lo') || []
+		this.last_opps=safe_ls(game_name+'_lo') || []
 				
 		//уникальные соперники
 		this.unique_opps=safe_ls(game_name+'_uo') || []
@@ -1870,10 +1870,10 @@ mp_game={
 		}
 
 		//просто последние соперники
-		this.last_opponents.push(opp_id);
-        if (this.last_opponents.length > 20)
-            this.last_opponents = this.last_opponents.slice(-20)
-		safe_ls(game_name+'_lo', this.last_opponents)
+		this.last_opps.push(opp_id);
+        if (this.last_opps.length > 20)
+            this.last_opps = this.last_opps.slice(-20)
+		safe_ls(game_name+'_lo', this.last_opps)
 
 	},
 
