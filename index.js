@@ -1,4 +1,4 @@
-var M_WIDTH=800, M_HEIGHT=450,SERV_TM_DELTA=0;
+var M_WIDTH=800, M_HEIGHT=450,SERV_TM_DELTA=0,SERVER_TM=0;
 var app ={stage:{},renderer:{}},assets={},serv_tm, objects={}, state='',game_tick=0, game_id=0, connected = 1, h_state=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
 const MAX_NO_AUTH_RATING=1950;
 const MAX_NO_REP_RATING=1900;
@@ -3600,37 +3600,7 @@ pref={
 	hours_to_nick_change:0,
 	hours_to_photo_change:0,
 	info_timer:0,
-	check_coins_timer:0,
-	prv_tm:0,
-	init:0,
 	
-	async start_day_change_check(skip_start_timer){
-		
-		const server_time=await my_ws.get_tms()||Date.now()
-		const cur_msk_day=+new Date(server_time).toLocaleString('en-US', {timeZone: 'Europe/Moscow',day:'numeric'})
-		const last_msk_day=safe_ls('durak_last_msk_day')||0
-		
-		//console.log('day_change_check',cur_msk_day,last_msk_day)
-		if (last_msk_day!==cur_msk_day){
-			safe_ls('durak_last_msk_day',cur_msk_day)			
-			
-			//день поменялся начинаем заново
-			my_data.lights=0		
-			objects.pref_lights_info.text=my_data.lights
-			safe_ls('durak_lights',my_data.lights)
-			
-			//другие изменения
-		}
-
-		
-		if(skip_start_timer) return
-		
-		setInterval(()=>{
-			this.start_day_change_check(1)			
-		},120000)
-		
-	},
-
 	activate(){				
 		
 		//заполняем имя и аватар
@@ -3652,6 +3622,21 @@ pref={
 		this.update_available_actions();
 
 		this.avatar_switch_center=this.avatar_swtich_cur=irnd(9999,999999);
+	},
+
+	init(){
+	
+		let i=0
+		setInterval(()=>{
+			
+			if(i===10) this.update_server_tm()			
+			if(i===15) this.check_coins2()			
+			if(i===20) this.check_lights2()	
+
+			i = (i + 1) % 60
+			
+		},1000)
+		
 	},
 
 	async update_available_actions(){
@@ -3709,7 +3694,8 @@ pref={
 		if (my_data.coins<0) my_data.coins=0
 		
 		objects.pref_coins_info.text=my_data.coins
-		fbs.ref('players/'+my_data.uid+'/coins').set(my_data.coins)
+		fbs.ref('players/'+my_data.uid+'/coins').set(my_data.coins)	
+		
 	},
 	
 	async change_lights(amount){
@@ -3723,46 +3709,69 @@ pref={
 
 	},
 	
-	check_coins(prv_tm_fbs, no_prv_coins){
+	update_server_tm(){
 		
-		//от файербейса
-		if(prv_tm_fbs){
-			this.prv_tm=prv_tm_fbs			
-			objects.pref_coins_info.text=my_data.coins
-		}
-		
-		//если это самый первый заход
-		if (no_prv_coins)
-			this.prv_tm=0		
-		
-		//текущее время
-		const tm=Date.now()+SERV_TM_DELTA
-				
-		if (this.prv_tm===0) this.prv_tm=tm		
-					
-		const d=tm-this.prv_tm
-		const int_passed=Math.floor(d/(1000*60*60))
-		if (int_passed>0){	
-		
-			//уменьшаем только для рейтинговых игроков
-			if (my_data.rating>MAX_NO_CONF_RATING)
-				this.change_coins(-int_passed)
-			
-			this.prv_tm=tm
-			
-			//закончились монеты
-			if (my_data.rating>MAX_NO_CONF_RATING&&!my_data.coins){	
-				message.add(`У вас закончились кристаллы. Ваш рейтинг понижен до ${MAX_NO_CONF_RATING}`,6000)
-				my_data.rating=MAX_NO_CONF_RATING
-				fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating)
-				//console.log('Ваше рейтинг понижен до: ',MAX_NO_CONF_RATING)
-			}			
-		}			
-		
-		this.check_coins_timer=setTimeout(()=>this.check_coins(),60000)
+		//тупо обновляем время
+		my_ws.get_tms().then(t=>{
+			SERVER_TM=t
+		})
 		
 	},
+		
+	check_lights2(){
+		
+		//нужно удалит первую версию
+		
+		if(!SERVER_TM) return
+		const prv_tm=safe_ls('durak_lights_prv_tm')
+		
+		const cur_msk_day=+new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',day:'numeric'})
+		const prv_msk_day=+new Date(prv_tm).toLocaleString('en-US', {timeZone: 'Europe/Moscow',day:'numeric'})
+		
+		if (cur_msk_day!==prv_msk_day){			
+			
+			//день поменялся начинаем заново
+			my_data.lights=0		
+			objects.pref_lights_info.text=my_data.lights
+			safe_ls('durak_lights',my_data.lights)			
+			
+		}	
 
+		safe_ls('durak_lights_prv_tm',SERVER_TM)
+	
+	},
+	
+	check_coins2(){
+		
+		//нужно удалит первую версию
+		
+		if(!SERVER_TM) return
+		let prv_tm=safe_ls('durak_coins_prv_tm')
+		
+		//если нет в локальном хранилище (новый игрок)
+		if (!prv_tm) {prv_tm=SERVER_TM;safe_ls('durak_coins_prv_tm',SERVER_TM)}
+			
+		const d=SERVER_TM-prv_tm
+		const int_passed=Math.floor(d/(1000*60*60))
+		if (int_passed>0){
+			
+			//уменьшаем только для рейтинговых игроков
+			if (my_data.rating>MAX_NO_CONF_RATING){
+				
+				this.change_coins(-int_passed)	
+				
+				//закончились монеты
+				if (my_data.coins<=0){	
+					message.add(`У вас закончились кристаллы. Ваш рейтинг понижен до ${MAX_NO_CONF_RATING}`,6000)
+					my_data.rating=MAX_NO_CONF_RATING
+					fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating)
+				}
+			}
+			
+			safe_ls('durak_coins_prv_tm',SERVER_TM)
+		}		
+	},
+	
 	async change_name_down(){
 
 		if (!serv_tm){
@@ -4463,7 +4472,7 @@ bg={
 	
 	async update_all(){
 		
-		console.log('update_all')
+		//console.log('update_all')
 		const bg_data=await my_ws.get('bg')
 		this.update_time(bg_data.t)
 		this.update_players(bg_data.p)
@@ -4472,7 +4481,7 @@ bg={
 	
 	async update_time(inp_t){
 		
-		console.log('update_time')
+		//console.log('update_time')
 		const t=inp_t||await my_ws.get('bg/t')||999
 		this.sec_to_start=t
 		if(inp_t)
@@ -4482,7 +4491,7 @@ bg={
 	
 	async update_players(inp_p){
 		
-		console.log('update_players')
+		//console.log('update_players')
 		const p=inp_p||await my_ws.get('bg/p')
 		objects.invite_bg_players.text='Количество участников: '+Object.keys(p).length	
 		
@@ -5817,28 +5826,31 @@ top3={
 		const uids=Object.keys(top3)
 		if (uids.length!==3) return
 		
-		await players_cache.update(uids[0])		
-		objects.day_top3_name1.set2(players_cache.players[uids[0]].name,145)
+		const sorted_top3 = Object.entries(top3).sort((a, b) => b[1] - a[1])
+		const ordered_uids = [sorted_top3[1][0], sorted_top3[0][0], sorted_top3[2][0]]
 		
-		await players_cache.update(uids[1])		
-		objects.day_top3_name2.set2(players_cache.players[uids[1]].name,145)
+		await players_cache.update(ordered_uids[0])		
+		objects.day_top3_name1.set2(players_cache.players[ordered_uids[0]].name,145)
 		
-		await players_cache.update(uids[2])
-		objects.day_top3_name3.set2(players_cache.players[uids[2]].name,145)
+		await players_cache.update(ordered_uids[1])		
+		objects.day_top3_name2.set2(players_cache.players[ordered_uids[1]].name,145)
+		
+		await players_cache.update(ordered_uids[2])
+		objects.day_top3_name3.set2(players_cache.players[ordered_uids[2]].name,145)
 			
 				
-		await players_cache.update_avatar(uids[0])		
-		objects.day_top3_avatar1.set_texture(players_cache.players[uids[0]].texture)
+		await players_cache.update_avatar(ordered_uids[0])		
+		objects.day_top3_avatar1.set_texture(players_cache.players[ordered_uids[0]].texture)
 		
-		await players_cache.update_avatar(uids[1])		
-		objects.day_top3_avatar2.set_texture(players_cache.players[uids[1]].texture)
+		await players_cache.update_avatar(ordered_uids[1])		
+		objects.day_top3_avatar2.set_texture(players_cache.players[ordered_uids[1]].texture)
 		
-		await players_cache.update_avatar(uids[2])
-		objects.day_top3_avatar3.set_texture(players_cache.players[uids[2]].texture)
+		await players_cache.update_avatar(ordered_uids[2])
+		objects.day_top3_avatar3.set_texture(players_cache.players[ordered_uids[2]].texture)
 		
-		objects.day_top3_lights1.text=top3[uids[0]]
-		objects.day_top3_lights2.text=top3[uids[1]]
-		objects.day_top3_lights3.text=top3[uids[2]]
+		objects.day_top3_lights1.text=top3[ordered_uids[0]]
+		objects.day_top3_lights2.text=top3[ordered_uids[1]]
+		objects.day_top3_lights3.text=top3[ordered_uids[2]]
 		
 		some_process.top3_anim=()=>{this.process()}
 		sound.play('top3')
@@ -6417,17 +6429,17 @@ async function init_game_env(l) {
 	window.addEventListener('keydown',function(event){keyboard.keydown(event.key)});
 
 	//проверяем блокировку
-	my_data.blocked=await fbs_once('blocked/'+my_data.uid)||0;
+	my_data.blocked=await fbs_once('blocked/'+my_data.uid)||0
 
 	//keep-alive сервис
-	setInterval(()=>{keep_alive()}, 40000);
+	setInterval(()=>{keep_alive()}, 40000)
 
 	//получаем время сервера и дельту
 	const serv_tm=await fbs_once('players/'+my_data.uid+'/tm')
 	SERV_TM_DELTA=serv_tm-Date.now()
 
 	//проверяем предыдущих вход
-	pref.check_coins(other_data?.tm,!other_data?.coins)
+	pref.init()
 
 	//контроль за присутсвием
 	fbs.ref(".info/connected").on("value", snap => {
@@ -6439,29 +6451,28 @@ async function init_game_env(l) {
 	});
 
 	//одноразовое сообщение от админа
-	await check_admin_info();
+	await check_admin_info()
 
 	//читаем и проверяем последних соперников
-	mp_game.read_last_opps();
+	mp_game.read_last_opps()
 
 	//ждем загрузки чата
 	await Promise.race([
 		chat.init(),
 		new Promise(resolve=> setTimeout(() => {console.log('chat is not loaded!');resolve()}, 5000))
 	]);
-	
-	//обработка изменения дня
-	pref.start_day_change_check()
-	
+		
 	//отображаем лидеров вчерашнего дня
-	//top3.activate()
+	top3.activate()
 
 	//убираем ИД контейнер
-	some_process.loup_anim = function(){};
-	anim2.add(objects.id_cont,{y:[objects.id_cont.sy, -200]}, false, 0.5,'easeInBack');
+	some_process.loup_anim = function(){}
+	anim2.add(objects.id_cont,{y:[objects.id_cont.sy, -200]}, false, 0.5,'easeInBack')
 
 	//показыаем основное меню
-	main_menu.activate();
+	main_menu.activate()
+	
+	
 
 }
 
