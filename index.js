@@ -1745,7 +1745,7 @@ mp_game={
 	NO_RATING_GAME:0,
 	no_rating_msg_timer:0,
 	last_opponents:[],
-	unique_opps:{},
+	unique_opps:[],
 	blind_game_flag:0,
 
 	calc_new_rating(old_rating, game_result) {
@@ -1850,24 +1850,30 @@ mp_game={
 	},
 
 	read_last_opps(){
-		try {
-			const stored = localStorage.getItem(game_name+'_lo');
-			this.last_opponents=stored ? JSON.parse(stored) : [];
-		} catch (error) {
-			console.error('Error parsing opponents from localStorage:', error);
-			this.last_opponents=[];
-		}
+		
+		//последние соперники
+		this.last_opponents=safe_ls(game_name+'_lo') || []
+				
+		//уникальные соперники
+		this.unique_opps=safe_ls(game_name+'_uo') || []
+
 	},
 
 	update_last_opps(opp_id){
 
 		//уникальные соперники
-		this.unique_opps[opp_id]=1;
+		if (!this.unique_opps.includes(opp_id)){
+			this.unique_opps.push(opp_id)
+			if (this.unique_opps.length > 35)
+				this.unique_opps = this.unique_opps.slice(-35)
+			safe_ls(game_name+'_uo', this.unique_opps)
+		}
 
+		//просто последние соперники
 		this.last_opponents.push(opp_id);
         if (this.last_opponents.length > 20)
-            this.last_opponents = this.last_opponents.slice(-20);
-		localStorage.setItem(game_name+'_lo', JSON.stringify(this.last_opponents));
+            this.last_opponents = this.last_opponents.slice(-20)
+		safe_ls(game_name+'_lo', this.last_opponents)
 
 	},
 
@@ -2114,7 +2120,7 @@ mp_game={
 			fbs.ref('players/'+my_data.uid+'/games').set(my_data.games)
 			
 			//записываем и проверяем инфу о последних играх в LC
-			if (!this.unique_opps[opp_data.uid]) lights_bonus+=20			
+			if (!this.unique_opps.includes(opp_data.uid)) lights_bonus+=15			
 			this.update_last_opps(opp_data.uid)
 			
 			//если это слепая игра
@@ -3982,8 +3988,8 @@ pref={
 
 		//премиальные колоды
 		if (this.cur_style_id>=5){
-			const unique_games_needed={5:5,6:10,7:15,8:20,9:25}[this.cur_style_id];
-			const unique_opps=Object.keys(mp_game.unique_opps).length;
+			const unique_games_needed={5:5,6:10,7:15,8:20,9:25}[this.cur_style_id]
+			const unique_opps=mp_game.unique_opps.length
 
 			if (unique_opps<unique_games_needed){
 				objects.pref_premium_info.visible=true;
