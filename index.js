@@ -5410,11 +5410,10 @@ lobby={
 		
 		//проверка слепой игры
 		if (my_data.rating<1600) return
-		
-		const tm=Date.now()
+		if (!SERVER_TM) return
+
 		const card0=objects.mini_cards[0]
-		const date = new Date(tm+SERV_TM_DELTA)
-		const msk_hour = parseInt(date.toLocaleString('en-US', {timeZone: 'Europe/Moscow', hour: 'numeric',hour12: false}))
+		const msk_hour = +new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',hour:'numeric',hour12: false})
 		const bg_time=msk_hour===18||msk_hour===19
 		
 		if (card0.type==='bot'&&bg_time){
