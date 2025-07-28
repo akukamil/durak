@@ -1,5 +1,5 @@
-var M_WIDTH=800, M_HEIGHT=450,SERV_TM_DELTA=0,SERVER_TM=0;
-var app ={stage:{},renderer:{}},assets={},serv_tm, objects={}, state='',game_tick=0, game_id=0, connected = 1, h_state=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
+var M_WIDTH=800, M_HEIGHT=450,SERVER_TM=0;
+var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, game_id=0, connected = 1, h_state=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
 const MAX_NO_AUTH_RATING=1950;
 const MAX_NO_REP_RATING=1900;
 const MAX_NO_CONF_RATING=1950;
@@ -2133,11 +2133,9 @@ mp_game={
 			result_number===WIN?lights_bonus+=5:lights_bonus+=3
 			
 			//записываем дату последней игры
-			if(!this.NO_RATING_GAME){
-				fbs.ref('players/'+my_data.uid+'/last_game_tm').set(firebase.database.ServerValue.TIMESTAMP);
-				my_data.last_game_tm=Date.now()+SERV_TM_DELTA;
-			}
-
+			if(!this.NO_RATING_GAME)
+				fbs.ref('players/'+my_data.uid+'/last_game_tm').set(firebase.database.ServerValue.TIMESTAMP)
+		
 			//контрольные концовки логируем на виртуальной машине
 			if (my_data.rating>1800 || opp_data.rating>1800){
 				const duration = Math.floor((Date.now() - this.start_time)*0.001);
@@ -3635,7 +3633,7 @@ pref={
 		let i=0
 		setInterval(()=>{
 			
-			if(i===10) this.update_server_tm()			
+			if(i===5) this.update_server_tm()			
 			if(i===15) this.check_coins2()			
 			if(i===20) this.check_lights2()	
 
@@ -3650,9 +3648,8 @@ pref={
 		const tm=Date.now();
 		if (tm-this.last_serv_tm_check<30000) return;
 		this.last_serv_tm_check=tm;
-		serv_tm=await my_ws.get_tms()||serv_tm;
 
-		if (!serv_tm){
+		if (!SERVER_TM){
 			this.send_info('Ошибка получения серверного времени(((');
 			this.update_buttons();
 			return;
@@ -3682,14 +3679,14 @@ pref={
 		objects.pref_conf_photo_btn.visible=false;
 
 		//сколько осталось до изменения
-		this.hours_to_nick_change=Math.max(0,Math.floor(720-(serv_tm-my_data.nick_tm)*0.001/3600));
-		this.hours_to_photo_change=Math.max(0,Math.floor(720-(serv_tm-my_data.avatar_tm)*0.001/3600));
+		this.hours_to_nick_change=Math.max(0,Math.floor(720-(SERVER_TM-my_data.nick_tm)*0.001/3600));
+		this.hours_to_photo_change=Math.max(0,Math.floor(720-(SERVER_TM-my_data.avatar_tm)*0.001/3600));
 
 		//определяем какие кнопки доступны
-		objects.pref_change_name_btn.alpha=(this.hours_to_nick_change>0||my_data.games<200||!serv_tm)?0.5:1;
-		objects.pref_arrow_left.alpha=(this.hours_to_photo_change>0||!serv_tm)?0.5:1;
-		objects.pref_arrow_right.alpha=(this.hours_to_photo_change>0||!serv_tm)?0.5:1;
-		objects.pref_reset_avatar_btn.alpha=(this.hours_to_photo_change>0||!serv_tm)?0.5:1;
+		objects.pref_change_name_btn.alpha=(this.hours_to_nick_change>0||my_data.games<200||!SERVER_TM)?0.5:1;
+		objects.pref_arrow_left.alpha=(this.hours_to_photo_change>0||!SERVER_TM)?0.5:1;
+		objects.pref_arrow_right.alpha=(this.hours_to_photo_change>0||!SERVER_TM)?0.5:1;
+		objects.pref_reset_avatar_btn.alpha=(this.hours_to_photo_change>0||!SERVER_TM)?0.5:1;
 
 	},
 		
@@ -3739,7 +3736,11 @@ pref={
 			//день поменялся начинаем заново
 			my_data.lights=0		
 			objects.pref_lights_info.text=my_data.lights
-			safe_ls('durak_lights',my_data.lights)			
+			safe_ls('durak_lights',my_data.lights)		
+
+			//обновляем уникальных соперников (начиниаем с начала)
+			mp_game.unique_opps=[]
+			safe_ls(game_name+'_uo', mp_game.unique_opps)
 			
 		}	
 
@@ -3780,7 +3781,7 @@ pref={
 	
 	async change_name_down(){
 
-		if (!serv_tm){
+		if (!SERVER_TM){
 			this.send_info('Ошибка получения серверного времени(((');
 			sound.play('locked');
 			return;
@@ -3804,7 +3805,7 @@ pref={
 		if (name&&name.replace(/\s/g, '').length>3){
 
 			//обновляем данные о времени
-			my_data.nick_tm=serv_tm;
+			my_data.nick_tm=SERVER_TM;
 			fbs.ref(`players/${my_data.uid}/nick_tm`).set(my_data.nick_tm);
 
 			my_data.name=name;
@@ -3824,7 +3825,7 @@ pref={
 
 	async reset_avatar_down(){
 
-		if (!serv_tm){
+		if (!SERVER_TM){
 			this.send_info('Ошибка получения серверного времени(((');
 			sound.play('locked');
 			return;
@@ -3853,7 +3854,7 @@ pref={
 
 	async arrow_down(dir){
 
-		if (!serv_tm){
+		if (!SERVER_TM){
 			this.send_info('Ошибка получения серверного времени(((');
 			sound.play('locked');
 			return;
@@ -3901,7 +3902,7 @@ pref={
 
 	conf_photo_down(){
 
-		my_data.avatar_tm=serv_tm;
+		my_data.avatar_tm=SERVER_TM;
 		fbs.ref(`players/${my_data.uid}/pic_url`).set(this.cur_pic_url);
 		fbs.ref(`players/${my_data.uid}/avatar_tm`).set(my_data.avatar_tm);
 
@@ -6438,10 +6439,6 @@ async function init_game_env(l) {
 
 	//keep-alive сервис
 	setInterval(()=>{keep_alive()}, 40000)
-
-	//получаем время сервера и дельту
-	const serv_tm=await fbs_once('players/'+my_data.uid+'/tm')
-	SERV_TM_DELTA=serv_tm-Date.now()
 
 	//проверяем предыдущих вход
 	pref.init()
