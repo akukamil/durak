@@ -3890,6 +3890,18 @@ pref={
 
 	},
 
+	lights_down(e){
+		
+		if (anim2.any_on()){
+			sound.play('locked')
+			return			
+		}
+		
+		const mx = e.data.global.x/app.stage.scale.x
+		if (mx<670)
+			top3.activate()
+	},
+
 	send_info(msg,timeout){
 
 		objects.pref_info.text=msg;
