@@ -1883,7 +1883,7 @@ mp_game={
 		const cur_time=Date.now();
 		if (cur_time-this.timer_prv_time>5000||cur_time<this.timer_prv_time){
 			this.stop('timer_error');
-			fbs.ref('TIMER_ERRORS').push({uid:my_data.uid,cur_time,start_time:this.start_time,prv_time:this.timer_prv_time,h:window.location.href})
+			//fbs.ref('TIMER_ERRORS').push({uid:my_data.uid,cur_time,start_time:this.start_time,prv_time:this.timer_prv_time,h:window.location.href})
 			return;
 		}
 		this.timer_prv_time=cur_time;
@@ -3621,9 +3621,9 @@ pref={
 		objects.pref_coins_info.text=my_data.coins
 		objects.pref_lights_info.text=my_data.lights
 
-		this.cur_style_id=my_data.cards_style_id;
-		this.switch_shirt(0);
-		this.update_available_actions();
+		this.cur_style_id=my_data.cards_style_id
+		this.switch_shirt(0)
+		this.update_buttons()
 
 		this.avatar_switch_center=this.avatar_swtich_cur=irnd(9999,999999);
 	},
@@ -3643,22 +3643,6 @@ pref={
 		
 	},
 
-	async update_available_actions(){
-
-		const tm=Date.now();
-		if (tm-this.last_serv_tm_check<30000) return;
-		this.last_serv_tm_check=tm;
-
-		if (!SERVER_TM){
-			this.send_info('Ошибка получения серверного времени(((');
-			this.update_buttons();
-			return;
-		}
-
-		this.update_buttons();
-
-	},
-
 	getHoursEnding(hours) {
 		hours = Math.abs(hours) % 100;
 		let lastDigit = hours % 10;
@@ -3675,6 +3659,11 @@ pref={
 	},
 
 	update_buttons(){
+
+		if (!SERVER_TM){
+			this.send_info('Ошибка получения серверного времени(((')
+			return
+		}
 
 		objects.pref_conf_photo_btn.visible=false;
 
@@ -3801,20 +3790,20 @@ pref={
 		}
 
 		//получаем новое имя
-		const name=await keyboard.read(15);
+		const name=await keyboard.read(15)
 		if (name&&name.replace(/\s/g, '').length>3){
 
 			//обновляем данные о времени
-			my_data.nick_tm=SERVER_TM;
-			fbs.ref(`players/${my_data.uid}/nick_tm`).set(my_data.nick_tm);
+			my_data.nick_tm=SERVER_TM
+			fbs.ref(`players/${my_data.uid}/nick_tm`).set(my_data.nick_tm)
 
-			my_data.name=name;
-			fbs.ref(`players/${my_data.uid}/name`).set(my_data.name);
+			my_data.name=name
+			fbs.ref(`players/${my_data.uid}/name`).set(my_data.name)
 
-			this.update_buttons();
+			this.update_buttons()
 
-			objects.pref_name.set2(name,260);
-			this.send_info('Вы изменили имя)))');
+			objects.pref_name.set2(name,260)
+			this.send_info('Вы изменили имя)))')
 			sound.play('confirm_dialog');
 
 		}else{
@@ -6396,7 +6385,7 @@ async function init_game_env(l) {
 	snow.init()
 
 	//определение номера комнаты
-	const rooms_bins = [0,1396,1450,1583,9999]
+	const rooms_bins = [0,1396,1460,1600,9999]
 	for (let i=1;i<rooms_bins.length;i++){
 		const f=rooms_bins[i-1];
 		const t=rooms_bins[i];
