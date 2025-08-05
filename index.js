@@ -266,7 +266,7 @@ class lb_player_card_class extends PIXI.Container{
 		this.name.y=22
 
 		this.rating=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 25,align: 'center'})
-		this.rating.x=298
+		this.rating.x=303
 		this.rating.tint=0xFFFF00
 		this.rating.y=22
 
@@ -1780,8 +1780,7 @@ mp_game={
 
 		//показыаем карточки
 		anim2.add(objects.my_card_cont,{x:[-100,objects.my_card_cont.sx]}, true, 0.6,'easeOutBack');
-		
-		
+				
 		//заполняем и показываем карточку соперника
 		const player_data=players_cache.players[opp_data.uid]
 		opp_data.rating=player_data.rating
@@ -3690,7 +3689,7 @@ pref={
 		
 	},
 	
-	async change_lights(amount){
+	change_lights(amount){
 						
 		my_data.lights+=amount		
 		objects.pref_lights_info.text=my_data.lights
