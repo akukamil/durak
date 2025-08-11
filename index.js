@@ -3634,9 +3634,9 @@ pref={
 		let i=0
 		setInterval(()=>{
 			
-			if(i===5) this.update_server_tm()
-			if(i===15) this.check_crystals2()
-			if(i===20) this.check_energy2()
+			if(i===25) this.update_server_tm()
+			if(i===3) this.check_crystals2()
+			if(i===6) this.check_energy2()
 
 			i = (i + 1) % 60
 			
@@ -6436,8 +6436,9 @@ async function init_game_env(l) {
 		tm:firebase.database.ServerValue.TIMESTAMP,
 		session_start:firebase.database.ServerValue.TIMESTAMP
 	})
-	
 
+	SERVER_TM=await fbs_once('tm') 
+	
 	//устанавливаем мой статус в онлайн
 	set_state({state:'o'});
 
