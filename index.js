@@ -1662,7 +1662,7 @@ big_msg={
 		objects.big_msg_fb_btn.visible = (!my_data.blocked)&&params.fb
 		anim2.add(objects.big_msg_cont,{y:[-180,objects.big_msg_cont.sy]}, true, 0.6,'easeOutBack');
 		
-		this.show_bonus_anim(objects.big_msg_lights,params.lights_bonus||0)
+		this.show_bonus_anim(objects.big_msg_lights,params.energy_bonus||0)
 		this.show_bonus_anim(objects.big_msg_crystals,params.crystals_bonus||0)
 
 		return new Promise(function(resolve, reject){
@@ -2044,7 +2044,7 @@ mp_game={
 	async stop(result) {
 
 		table.state = 'stop'
-		let lights_bonus=0
+		let energy_bonus=0
 		let crystals_bonus=0
 
 		const res_array = [
@@ -2119,17 +2119,17 @@ mp_game={
 			fbs.ref('players/'+my_data.uid+'/games').set(my_data.games)
 			
 			//записываем и проверяем инфу о последних играх в LC
-			if (!this.unique_opps.includes(opp_data.uid)) lights_bonus+=15			
+			if (!this.unique_opps.includes(opp_data.uid)) energy_bonus+=15			
 			this.update_last_opps(opp_data.uid)
 			
 			//если это слепая игра
 			if (this.blind_game_flag){
-				lights_bonus+=10
+				energy_bonus+=10
 				crystals_bonus+=10
 			}
 						
 			//бонус за игру и выигрыш
-			result_number===WIN?lights_bonus+=5:lights_bonus+=3
+			result_number===WIN?energy_bonus+=5:energy_bonus+=3
 			
 			//записываем дату последней игры
 			if(!this.NO_RATING_GAME)
@@ -2143,12 +2143,12 @@ mp_game={
 			}
 			
 			//утверждаем бонусы
-			pref.change_coins(crystals_bonus)
-			pref.change_lights(lights_bonus)
+			pref.change_crystals(crystals_bonus)
+			pref.change_energy(energy_bonus)
 			
 		}
 
-		await big_msg.show({t1:result_info, t2:'Рейтинг'+`: ${old_rating} > ${my_data.rating}`,t3:auth_msg, fb:true,lights_bonus,crystals_bonus})
+		await big_msg.show({t1:result_info, t2:'Рейтинг'+`: ${old_rating} > ${my_data.rating}`,t3:auth_msg, fb:true,energy_bonus,crystals_bonus})
 		set_state({state:'o'});
 		this.close();
 		main_menu.activate();
@@ -2245,6 +2245,8 @@ sp_game={
 
 			let card = table.opp_deck.cards[i];
 
+
+
 			if (this.can_toss_card(card, table.last_cards)) {
 
 				let test_deck = [...table.opp_deck.cards];
@@ -2259,7 +2261,7 @@ sp_game={
 					table.my_deck.push(card);
 					table.my_deck.organize();
 					table.opp_deck.organize();
-					this.process_tossing();
+					await this.process_tossing();
 					return
 				}
 			}
@@ -2832,7 +2834,7 @@ table={
 		let new_cards_required = 6 - deck.size;
 		new_cards_available = Math.min(this.big_deck.size, new_cards_required)
 		for (let i = 0 ; i < new_cards_available ; i++)	{
-			sound.play_delayed('inc_card',i*30)
+			sound.play_delayed('inc_card',i*90)
 			deck.push(this.big_deck.pop());
 		}
 
@@ -3617,8 +3619,8 @@ pref={
 		objects.pref_conf_photo_btn.visible=false;
 		
 		//информация о бонусах
-		objects.pref_coins_info.text=my_data.coins
-		objects.pref_lights_info.text=my_data.lights
+		objects.pref_crystals_info.text=my_data.crystals
+		objects.pref_energy_info.text=my_data.energy
 
 		this.cur_style_id=my_data.cards_style_id
 		this.switch_shirt(0)
@@ -3632,9 +3634,9 @@ pref={
 		let i=0
 		setInterval(()=>{
 			
-			if(i===5) this.update_server_tm()			
-			if(i===15) this.check_coins2()			
-			if(i===20) this.check_lights2()	
+			if(i===5) this.update_server_tm()
+			if(i===15) this.check_crystals2()
+			if(i===20) this.check_energy2()
 
 			i = (i + 1) % 60
 			
@@ -3678,28 +3680,30 @@ pref={
 
 	},
 		
-	change_coins(amount){
+	change_crystals(amount){
 		
-		my_data.coins+=amount
-		if (my_data.coins>120) my_data.coins=120
-		if (my_data.coins<0) my_data.coins=0
+		my_data.crystals+=amount
+		if (my_data.crystals>120) my_data.crystals=120
+		if (my_data.crystals<0) my_data.crystals=0
 		
-		objects.pref_coins_info.text=my_data.coins
-		fbs.ref('players/'+my_data.uid+'/coins').set(my_data.coins)	
+		objects.pref_crystals_info.text=my_data.crystals
+		fbs.ref('players/'+my_data.uid+'/crystals').set(my_data.crystals)	
 		
 	},
 	
-	change_lights(amount){
+	change_energy(amount){
+		
+		if (amount===0) return
 						
-		my_data.lights+=amount		
-		objects.pref_lights_info.text=my_data.lights
-		safe_ls('durak_lights',my_data.lights)
+		my_data.energy+=amount		
+		objects.pref_energy_info.text=my_data.energy
+		safe_ls('durak_energy',my_data.energy)
 			
 		//отправляем в топ3		
-		my_ws.safe_send({cmd:'top3',path:'_day_top3',val:{uid:my_data.uid,val:my_data.lights}})
+		my_ws.safe_send({cmd:'top3',path:'_day_top3',val:{uid:my_data.uid,val:my_data.energy}})
 
 	},
-	
+
 	update_server_tm(){
 		
 		//тупо обновляем время
@@ -3709,12 +3713,12 @@ pref={
 		
 	},
 		
-	check_lights2(){
+	check_energy2(){
 		
 		//нужно удалит первую версию
 		
 		if(!SERVER_TM) return
-		const prv_tm=safe_ls('durak_lights_prv_tm')
+		const prv_tm=safe_ls('durak_energy_prv_tm')
 		
 		const cur_msk_day=+new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',day:'numeric'})
 		const prv_msk_day=+new Date(prv_tm).toLocaleString('en-US', {timeZone: 'Europe/Moscow',day:'numeric'})
@@ -3722,9 +3726,9 @@ pref={
 		if (cur_msk_day!==prv_msk_day){			
 			
 			//день поменялся начинаем заново
-			my_data.lights=0		
-			objects.pref_lights_info.text=my_data.lights
-			safe_ls('durak_lights',my_data.lights)		
+			my_data.energy=0		
+			objects.pref_energy_info.text=my_data.energy
+			safe_ls('durak_energy',my_data.energy)
 
 			//обновляем уникальных соперников (начиниаем с начала)
 			mp_game.unique_opps=[]
@@ -3732,40 +3736,42 @@ pref={
 			
 		}	
 
-		safe_ls('durak_lights_prv_tm',SERVER_TM)
+		safe_ls('durak_energy_prv_tm',SERVER_TM)
 	
 	},
 	
-	check_coins2(){
-		
-		//нужно удалит первую версию
-		
+	check_crystals2(){		
+				
 		if(!SERVER_TM) return
-		let prv_tm=safe_ls('durak_coins_prv_tm')
 		
-		//если нет в локальном хранилище (новый игрок)
-		if (!prv_tm) {prv_tm=SERVER_TM;safe_ls('durak_coins_prv_tm',SERVER_TM)}
+		//если нет данных (новый игрок)
+		if (!my_data.c_prv_tm) {
+			my_data.c_prv_tm=SERVER_TM
+			fbs.ref('players/'+my_data.uid+'/c_prv_tm').set(SERVER_TM)
+			return
+		}			
 			
-		const d=SERVER_TM-prv_tm
+		const d=SERVER_TM-my_data.c_prv_tm
 		const int_passed=Math.floor(d/(1000*60*60))
 		if (int_passed>0){
-			
+
 			//уменьшаем только для рейтинговых игроков
 			if (my_data.rating>MAX_NO_CONF_RATING){
 				
-				this.change_coins(-int_passed)	
+				this.change_crystals(-int_passed)	
 				
 				//закончились монеты
-				if (my_data.coins<=0){	
+				if (my_data.crystals<=0){	
 					message.add(`У вас закончились кристаллы. Ваш рейтинг понижен до ${MAX_NO_CONF_RATING}`,6000)
 					my_data.rating=MAX_NO_CONF_RATING
 					fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating)
 				}
 			}
 			
-			safe_ls('durak_coins_prv_tm',SERVER_TM)
+			my_data.c_prv_tm=SERVER_TM
+			fbs.ref('players/'+my_data.uid+'/c_prv_tm').set(SERVER_TM)
 		}		
-	},
+	},	
 	
 	async change_name_down(){
 
@@ -3922,13 +3928,13 @@ pref={
 
 	conf_cards_down(){
 
-		my_data.cards_style_id=this.cur_style_id;
-		this.send_info('Вы изменили оформление колоды карт)))');
-		objects.pref_conf_cards_btn.visible=false;
+		my_data.cards_style_id=this.cur_style_id
+		this.send_info('Вы изменили оформление колоды карт)))')
+		objects.pref_conf_cards_btn.visible=false
 
 		//сохраняем обычные карты
 		if (my_data.cards_style_id<5)
-			fbs.ref('players/'+my_data.uid+'/cards_style_id').set(my_data.cards_style_id);
+			safe_ls('durak_cards_style_id',my_data.cards_style_id)
 
 		sound.play('confirm_dialog');
 
@@ -4587,7 +4593,16 @@ lobby={
 				}
 			}
 
-			this.activated=true;
+			this.activated=true
+			
+			//это одноразовые сообщения
+			let info_data=safe_ls('durak_info')
+			if(!(info_data?.id===this.INFO_MSG_ID)){
+				info_data={read:0,id:this.INFO_MSG_ID}
+				safe_ls('durak_info',info_data)
+			}
+			objects.lobby_info_btn.alpha=info_data.read?0.25:1
+			
 		}
 
 		//objects.bcg.texture=gres.lobby_bcg.texture;
@@ -6348,14 +6363,15 @@ async function init_game_env(l) {
 	my_data.rating = other_data?.rating || 1400
 	my_data.games = other_data?.games || 0
 	my_data.name = other_data?.name || my_data.name
-	my_data.vk_invite = other_data?.vk_invite || 0
-	my_data.vk_share = other_data?.vk_share || 0
-	my_data.icon=other_data?.icon || 0
-	my_data.cards_style_id=other_data?.cards_style_id || 0
 	my_data.nick_tm = other_data?.nick_tm || 0
 	my_data.avatar_tm = other_data?.avatar_tm || 0
-	my_data.coins = other_data?.coins ?? 120
-	my_data.lights=safe_ls('durak_lights')||0
+	my_data.crystals = other_data?.crystals ?? 120
+	my_data.c_prv_tm = other_data?.c_prv_tm ||0
+		
+	my_data.cards_style_id = safe_ls('durak_cards_style_id') || 0
+	my_data.vk_invite = safe_ls('durak_vk_invite') || 0
+	my_data.vk_share = safe_ls('durak_vk_share') || 0
+	my_data.energy=safe_ls('energy')||0
 
 	//правильно определяем аватарку
 	if (other_data?.pic_url && other_data.pic_url.includes('mavatar'))
@@ -6405,13 +6421,21 @@ async function init_game_env(l) {
 	fbs.ref('inbox/'+my_data.uid).on('value',d=>process_new_message(d.val()))
 
 	//обновляем базовые данные в файербейс так могло что-то поменяться
-	fbs.ref('players/'+my_data.uid+'/name').set(my_data.name)
-	fbs.ref('players/'+my_data.uid+'/pic_url').set(my_data.pic_url)
-	fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating)
-	fbs.ref('players/'+my_data.uid+'/auth_mode').set(my_data.auth_mode)
-	fbs.ref('players/'+my_data.uid+'/coins').set(my_data.coins)
-	fbs.ref('players/'+my_data.uid+'/session_start').set(firebase.database.ServerValue.TIMESTAMP)
-	await fbs.ref('players/'+my_data.uid+'/tm').set(firebase.database.ServerValue.TIMESTAMP)
+	await fbs.ref('players/'+my_data.uid).set({
+		name:my_data.name,
+		pic_url:my_data.pic_url,
+		rating:my_data.rating,
+		games:my_data.games,
+		nick_tm:my_data.nick_tm,
+		avatar_tm:my_data.avatar_tm,
+		c_prv_tm:my_data.c_prv_tm,
+		auth_mode:my_data.auth_mode,
+		crystals:my_data.crystals,
+		country:my_data.country||'',
+		tm:firebase.database.ServerValue.TIMESTAMP,
+		session_start:firebase.database.ServerValue.TIMESTAMP
+	})
+	
 
 	//устанавливаем мой статус в онлайн
 	set_state({state:'o'});
