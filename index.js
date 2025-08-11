@@ -4566,7 +4566,8 @@ lobby={
 	req_hist:[],
 	hide_inst_msg_timer:0,
 	sec_befor_bg:0,
-
+	INFO_MSG_ID:1,
+	
 	activate(room,bot_on) {
 
 		//первый запуск лобби
@@ -5603,7 +5604,7 @@ lobby={
 			return
 		};
 		sound.play('click');
-		safe_ls('durak_info_checked',1)
+		safe_ls('durak_info',{read:1,id:this.INFO_MSG_ID})
 		anim2.add(objects.info_cont,{alpha:[0,1]}, true, 0.25,'linear');
 
 	},
