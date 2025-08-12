@@ -3909,19 +3909,18 @@ pref={
 	conf_photo_down(){
 
 		my_data.avatar_tm=SERVER_TM;
-		fbs.ref(`players/${my_data.uid}/pic_url`).set(this.cur_pic_url);
-		fbs.ref(`players/${my_data.uid}/avatar_tm`).set(my_data.avatar_tm);
+		fbs.ref(`players/${my_data.uid}/pic_url`).set(this.cur_pic_url)
+		fbs.ref(`players/${my_data.uid}/avatar_tm`).set(my_data.avatar_tm)
 
-		this.send_info('Вы изменили фото)))');
-		sound.play('confirm_dialog');
+		this.send_info('Вы изменили фото)))')
+		sound.play('confirm_dialog')
 
-
-		this.update_buttons();
+		this.update_buttons()
 
 		//обновляем аватар в кэше
 		players_cache.update_avatar_forced(my_data.uid,this.cur_pic_url).then(()=>{
-			const my_card=objects.mini_cards.find(card=>card.uid===my_data.uid);
-			my_card.avatar.set_texture(players_cache.players[my_data.uid].texture);
+			const my_card=objects.mini_cards.find(card=>card.uid===my_data.uid)
+			my_card.avatar.set_texture(players_cache.players[my_data.uid].texture)
 		})
 
 	},
