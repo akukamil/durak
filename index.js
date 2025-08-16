@@ -2059,6 +2059,9 @@ mp_game={
 	},
 
 	async stop(result) {
+		
+		//защита от двойных стопов
+		if (table.state==='stop') return
 
 		table.state = 'stop'
 		let energy_bonus=0
