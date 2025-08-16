@@ -4,6 +4,18 @@ const MAX_NO_AUTH_RATING=1950;
 const MAX_NO_REP_RATING=1900;
 const MAX_NO_CONF_RATING=1950;
 
+
+my_log={
+	log_arr:[],
+	add(data){
+		this.log_arr.push(data);
+		if (this.log_arr.length>50)
+			this.log_arr.shift();
+	}
+
+};
+
+
 cards_styles={
 
 	0:{
@@ -1760,6 +1772,8 @@ mp_game={
 
 	async activate (role, seed, blind) {
 
+		my_log.log_arr=[]
+		my_log.add({e:'start',seed:seed||'noseed',tm:Date.now()})
 		this.my_role = role;
 
 		opponent = this;
@@ -1829,6 +1843,8 @@ mp_game={
 	},
 
 	send_move (data) {
+		
+		my_log.add({e:'send_move',data,tm:Date.now()})
 
 		if (data.message !== 'TOSS')
 			this.reset_timer(OPP_TURN);
@@ -1979,7 +1995,8 @@ mp_game={
 			anim2.add(objects.hl_main_button,{alpha:[1,0]}, false, 0.6,'linear');
 		}
 
-
+		my_log.add({e:'game_buttons_down',min_button_id,tm:Date.now()})
+		
 		if (min_button_id === 0)
 			stickers.show_panel();
 		if (min_button_id === 1)
@@ -2086,6 +2103,12 @@ mp_game={
 
 		//записываем рейтинг в базу
 		fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating)
+
+
+		if (result==='opp_timeout'&&my_data.rating>1800){
+			my_log.add({e:'opp_timeout',tm:Date.now()})
+			fbs.ref('BAD_CASE/'+my_data.uid+'/'+game_id).set(my_log.log_arr)
+		}
 
 		//обновляем даные на карточке
 		objects.my_card_rating.text=my_data.rating;
@@ -3270,6 +3293,8 @@ process_new_message=function(msg) {
 	//проверяем плохие сообщения
 	if (msg===null || msg===undefined)
 		return;
+
+	my_log.add({e:'online_msg',msg,tm:Date.now()})
 
 	//принимаем только положительный ответ от соответствующего соперника и начинаем игру
 	if (msg.message==="ACCEPT"  && pending_player===msg.sender && state !== "p") {
