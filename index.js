@@ -2127,6 +2127,10 @@ mp_game={
 				energy_bonus+=10
 				crystals_bonus+=10
 			}
+			
+			//бонус кристаллов за заход в зону подтверждения
+			if (my_data.rating>MAX_NO_CONF_RATING&&old_rating<=MAX_NO_CONF_RATING)
+				crystals_bonus+=30
 						
 			//бонус за игру и выигрыш
 			result_number===WIN?energy_bonus+=5:energy_bonus+=3
@@ -3754,11 +3758,11 @@ pref={
 		const d=SERVER_TM-my_data.c_prv_tm
 		const int_passed=Math.floor(d/(1000*60*60))
 		if (int_passed>0){
-
+			
+			this.change_crystals(-int_passed)
+			
 			//уменьшаем только для рейтинговых игроков
-			if (my_data.rating>MAX_NO_CONF_RATING){
-				
-				this.change_crystals(-int_passed)	
+			if (my_data.rating>MAX_NO_CONF_RATING){				
 				
 				//закончились монеты
 				if (my_data.crystals<=0){	
