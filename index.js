@@ -2162,8 +2162,8 @@ mp_game={
 			result_number===WIN?energy_bonus+=5:energy_bonus+=3
 			
 			//записываем дату последней игры
-			if(!this.NO_RATING_GAME)
-				fbs.ref('players/'+my_data.uid+'/last_game_tm').set(firebase.database.ServerValue.TIMESTAMP)
+			//if(!this.NO_RATING_GAME)
+			//	fbs.ref('players/'+my_data.uid+'/last_game_tm').set(firebase.database.ServerValue.TIMESTAMP)
 		
 			//контрольные концовки логируем на виртуальной машине
 			if (my_data.rating>1800 || opp_data.rating>1800){
