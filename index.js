@@ -6507,6 +6507,7 @@ async function init_game_env(l) {
 	  } else {
 		connected = 0;
 	  }
+	  my_log.add({e:'connected',connected,tm:Date.now()})
 	});
 
 	//одноразовое сообщение от админа
