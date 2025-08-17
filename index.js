@@ -2168,7 +2168,7 @@ mp_game={
 			//контрольные концовки логируем на виртуальной машине
 			if (my_data.rating>1800 || opp_data.rating>1800){
 				const duration = Math.floor((Date.now() - this.start_time)*0.001);
-				const data={uid:my_data.uid,player1:objects.my_card_name.text,player2:objects.opp_card_name.text, res:result_number,fin_type:result_str,duration,bg:this.blind_game_flag, rating: [old_rating,my_data.rating],game_id,client_id,tm:'TMS'}
+				const data={uid:my_data.uid,p1:objects.my_card_name.text,p2:objects.opp_card_name.text, f:result_str,d:duration,bg:this.blind_game_flag, r: [old_rating,my_data.rating],gid:game_id,cid:client_id,tm:'TMS'}
 				my_ws.safe_send({cmd:'log',logger:`${game_name}_games`,data});
 			}
 			
