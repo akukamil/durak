@@ -2154,9 +2154,9 @@ mp_game={
 				crystals_bonus+=10
 			}
 			
-			//бонус кристаллов за заход в зону подтверждения
+			//восстанавливаем кристаллы за заход в зону подтверждения
 			if (my_data.rating>MAX_NO_CONF_RATING&&old_rating<=MAX_NO_CONF_RATING)
-				crystals_bonus+=30
+				crystals_bonus=120-my_data.crystals
 						
 			//бонус за игру и выигрыш
 			result_number===WIN?energy_bonus+=5:energy_bonus+=3
