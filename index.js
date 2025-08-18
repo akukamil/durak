@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450,SERVER_TM=0;
-var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, game_id=0, connected = 1, h_state=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
+var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, game_id=0, connected = 1, hidden=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
 const MAX_NO_AUTH_RATING=1950;
 const MAX_NO_REP_RATING=1900;
 const MAX_NO_CONF_RATING=1950;
@@ -1831,7 +1831,7 @@ mp_game={
 			this.no_rating_msg_timer=setTimeout(()=>{message.add('Выбирайте разных соперников для получения и подтверждения рейтинга')},5000);
 
 		//вычиcляем рейтинг при проигрыше и устанавливаем его в базу он потом изменится
-		const lose_rating = this.blind_game_flag?my_data.rating-20:this.calc_new_rating(my_data.rating, LOSE)
+		const lose_rating = my_data.rating-20
 		if (lose_rating >100 && lose_rating<9999)
 			fbs.ref('players/'+my_data.uid+'/rating').set(lose_rating);
 
@@ -3267,7 +3267,7 @@ confirm_dialog = {
 
 keep_alive=()=>{
 
-	if (h_state === 1) {
+	if (hidden === 1) {
 
 		//убираем из списка если прошло время с момента перехода в скрытое состояние
 		let cur_ts = Date.now();
@@ -4762,25 +4762,17 @@ lobby={
 
 		//если мы в игре то пока не обновляем карточки
 		if (state==='p'||state==='b')
-			return;
-		
+			return;		
 		
 		//конвертируем сокращенные данные начали 25.06.2025, нужно позже перейти полностью на сокращенный режим
-		for (let uid in players){	
-			
+		for (let uid in players){
 			const player=players[uid]
-			if (player.n)
-				player.name=player.n
-			if (player.r)
-				player.rating=player.r
-			if (player.s)
-				player.state=player.s
-			if (player.h)
-				player.hidden=player.hidden
-			if (player.g)
-				player.game_id=player.g
-		}
-		
+			if (player.n)	player.name=player.n
+			if (player.r)	player.rating=player.r
+			if (player.s)	player.state=player.s
+			if (player.h)	player.hidden=player.h
+			if (player.g)	player.game_id=player.g
+		}		
 
 		//это столы
 		let tables = {};
@@ -5956,14 +5948,14 @@ function set_state(params) {
 		state=params.state;
 
 	if (params.hidden!==undefined)
-		h_state=+params.hidden;
+		hidden=+params.hidden;
 
 	let small_opp_id="";
 	if (opp_data.uid!==undefined)
 		small_opp_id=opp_data.uid.substring(0,10);
 
-	fbs.ref(room_name+'/'+my_data.uid).set({state:state,name:my_data.name, rating:my_data.rating, hidden:h_state, opp_id:small_opp_id});
-
+	//fbs.ref(room_name+'/'+my_data.uid).set({state:state,name:my_data.name, rating:my_data.rating, hidden:hidden, opp_id:small_opp_id});
+	fbs.ref(room_name+'/'+my_data.uid).set({s:state, n:my_data.name, r:my_data.rating, h:hidden, opp_id:small_opp_id, g:game_id});
 }
 
 tabvis={
