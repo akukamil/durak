@@ -1930,8 +1930,7 @@ mp_game={
 		
 		//просто сообщение
 		if (this.move_time_left===0&&turn === OPP_TURN){
-			my_log.add({e:'xxx',state,opp_uid:opp_data.uid,tm:Date.now()})
-			fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'XXX',tm:Date.now()});
+			this.forced_inbox_check()
 		}
 
 		if (connected === 0 && turn === OPP_TURN) {
@@ -2051,19 +2050,13 @@ mp_game={
 
 	async forced_inbox_check(game_id,opp_name){
 
-		let t1=Date.now();
-		let opp_inbox_data=await fbs.ref('inbox/'+opp_data.uid).get();
-		opp_inbox_data=opp_inbox_data.val();
-		let t1_period=Date.now()-t1;
 
-		t1=Date.now();
-		let my_inbox_data=await fbs.ref('inbox/'+my_data.uid).get();
-		my_inbox_data=my_inbox_data.val();
-		let t2_period=Date.now()-t1;
+		const opp_inbox_data=await fbs_once('inbox/'+opp_data.uid)
+		const my_inbox_data=await fbs_once('inbox/'+my_data.uid)
+		
+		my_log.add({e:'opp_inbox',d:opp_inbox_data||'noinbox'})
+		my_log.add({e:'my_inbox',d:my_inbox_data||'noinbox'})
 
-		try{
-			fbs.ref('BAD_CASE2').push({name:my_data.name,opp_name,game_id,t1_period,t2_period,info:'forced_inb_check2',tm:Date.now(),my_inbox:my_inbox_data||'---',opp_inbox:opp_inbox_data||'---'});
-		}catch(e){};
 
 	},
 
