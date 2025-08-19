@@ -1790,6 +1790,7 @@ mp_game={
 		this.blind_game_flag=blind?1:0
 
 		//инициируем стол
+		//seed=301329
 		table.init(role, seed)
 
 		//показыаем карточки
@@ -1896,7 +1897,7 @@ mp_game={
 
 		//проверка таймера
 		const cur_time=Date.now();
-		if (cur_time-this.timer_prv_time>5000||cur_time<this.timer_prv_time){
+		if (cur_time-this.timer_prv_time>3000||cur_time<this.timer_prv_time){
 			this.stop('timer_error');
 			//fbs.ref('TIMER_ERRORS').push({uid:my_data.uid,cur_time,start_time:this.start_time,prv_time:this.timer_prv_time,h:window.location.href})
 			return;
@@ -1917,12 +1918,20 @@ mp_game={
 		}
 
 		if (this.move_time_left < -5 && turn === OPP_TURN) {
-
+			
+			
+			
 			if (this.opp_conf_play === 1)
 				this.stop('opp_timeout');
 			else
 				this.stop('opp_no_sync');
 			return;
+		}
+		
+		//просто сообщение
+		if (this.move_time_left===0&&turn === OPP_TURN){
+			my_log.add({e:'xxx',state,opp_uid:opp_data.uid,tm:Date.now()})
+			fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'XXX',tm:Date.now()});
 		}
 
 		if (connected === 0 && turn === OPP_TURN) {
