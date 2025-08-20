@@ -1905,7 +1905,7 @@ mp_game={
 		this.timer_prv_time=cur_time;
 
 		//определяем сколько времени прошло
-		this.move_time_left=this.time_for_move-~~((Date.now()-this.move_time_start)*0.001);
+		this.move_time_left=this.time_for_move-~~((cur_time-this.move_time_start)*0.001);
 
 		if (this.move_time_left < 0 && turn === MY_TURN)	{
 
@@ -1918,9 +1918,7 @@ mp_game={
 		}
 
 		if (this.move_time_left < -5 && turn === OPP_TURN) {
-			
-			
-			
+
 			if (this.opp_conf_play === 1)
 				this.stop('opp_timeout');
 			else
@@ -2111,7 +2109,7 @@ mp_game={
 
 
 		if (result==='opp_timeout'&&my_data.rating>1800){
-			my_log.add({e:'opp_timeout',tm:Date.now()})
+			my_log.add({e:'opp_timeout',time_left:this.move_time_left||'notime',tm:Date.now()})
 			fbs.ref('BAD_CASE/'+my_data.uid+'/'+game_id).set(my_log.log_arr)
 		}
 
