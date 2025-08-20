@@ -1929,7 +1929,7 @@ mp_game={
 		
 		//просто сообщение
 		if (this.move_time_left===0&&turn === OPP_TURN){
-			my_log.add({e:'0left'})
+			my_log.add({e:'0left',tm:Date.now()})
 			this.forced_inbox_check()
 		}
 
@@ -1943,7 +1943,7 @@ mp_game={
 
 		//подсвечиваем красным если осталость мало времени
 		if (this.move_time_left === 5) {
-			my_log.add({e:'5left'})
+			my_log.add({e:'5left',tm:Date.now()})
 			objects.timer_text.tint=0xff0000;
 			sound.play('clock');
 		}
