@@ -1751,6 +1751,7 @@ mp_game={
 	made_moves: 0,
 	my_role : '',
 	write_fb_timer:0,
+	check_connection_timer:0,
 	stickers_button_pos:[0,0,0],
 	chat_button_pos:[0,0,0],
 	giveup_button_pos:[0,0,0],
@@ -1893,6 +1894,17 @@ mp_game={
 
 	},
 
+	check_connection(){
+		
+		//проверяем работает ли связь
+		clearTimeout(this.check_connection_timer);
+		this.check_connection_timer=setTimeout(function(){mp_game.stop('my_no_connection')}, 4000);
+		fbs_once('tm').then(()=>{
+			clearTimeout(this.check_connection_timer);
+		});	
+		
+	},
+
 	timer_tick () {
 
 		//проверка таймера
@@ -1930,7 +1942,8 @@ mp_game={
 		//просто сообщение
 		if (this.move_time_left===0&&turn === OPP_TURN){
 			my_log.add({e:'0left',tm:Date.now()})
-			this.forced_inbox_check()
+			//this.forced_inbox_check()
+			this.check_connection_timer()
 		}
 
 		if (connected === 0 && turn === OPP_TURN) {
