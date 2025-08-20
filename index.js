@@ -5984,6 +5984,7 @@ tabvis={
 			clearTimeout(this.inactive_timer);
 		}
 
+		my_log.add({e:'h',hidden : document.hidden,tm:Date.now()})
 		set_state({hidden : document.hidden});
 
 	},
