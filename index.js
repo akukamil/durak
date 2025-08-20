@@ -1939,12 +1939,15 @@ mp_game={
 			return;
 		}
 		
-		//просто сообщение
-		if (this.move_time_left===0&&turn === OPP_TURN){
-			my_log.add({e:'0left',tm:Date.now()})
-			//this.forced_inbox_check()
-			this.check_connection_timer()
+		//проверка читинга у рейтинговых игроков
+		if (my_data.rating>1850&&turn===OPP_TURN){
+			if ([20,15,10,5,0].includes(this.move_time_left)){
+				//my_log.add({e:'0left',tm:Date.now()})
+				//this.forced_inbox_check()
+				this.check_connection_timer()
+			}			
 		}
+
 
 		if (connected === 0 && turn === OPP_TURN) {
 			this.disconnect_time ++;
