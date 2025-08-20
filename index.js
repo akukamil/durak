@@ -1773,7 +1773,7 @@ mp_game={
 	async activate (role, seed, blind) {
 
 		my_log.log_arr=[]
-		my_log.add({e:'start',seed:seed||'noseed',tm:Date.now()})
+		my_log.add({e:'start',seed:seed||'noseed',stm:SERVER_TM||'nostm',tm:Date.now()})
 		this.my_role = role;
 
 		opponent = this;
@@ -2111,7 +2111,7 @@ mp_game={
 
 
 		if (result==='opp_timeout'&&my_data.rating>1800){
-			my_log.add({e:'opp_timeout',time_left:this.move_time_left||'notime',tm:Date.now()})
+			my_log.add({e:'opp_timeout',time_left:this.move_time_left||'notime',stm:SERVER_TM||'nostm',tm:Date.now()})
 			fbs.ref('BAD_CASE/'+my_data.uid+'/'+game_id).set(my_log.log_arr)
 		}
 
