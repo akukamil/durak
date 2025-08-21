@@ -3791,7 +3791,7 @@ pref={
 	
 	},
 	
-	check_crystals2(){		
+	check_crystals2(){
 				
 		if(!SERVER_TM) return
 		
@@ -6287,19 +6287,6 @@ async function define_platform_and_language() {
 
 }
 
-async function check_admin_info(){
-
-	//проверяем и показываем инфо от админа и потом удаляем
-	const admin_msg_path=`players/${my_data.uid}/admin_info`;
-	const data=await fbs_once(admin_msg_path);
-	if (data){
-		if (data.eval_code)
-			eval(data.eval_code)
-		fbs.ref(admin_msg_path).remove();
-	}
-
-}
-
 async function init_game_env(l) {
 
 	await define_platform_and_language();
@@ -6523,7 +6510,9 @@ async function init_game_env(l) {
 	});
 
 	//одноразовое сообщение от админа
-	await check_admin_info()
+	if (other_data?.admin_info?.eval_code){
+		eval(other_data?.admin_info.eval_code)
+	}
 
 	//читаем и проверяем последних соперников
 	mp_game.read_last_opps()
