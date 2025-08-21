@@ -2129,7 +2129,7 @@ mp_game={
 
 		if (result==='opp_timeout'&&my_data.rating>1800){
 			my_log.add({e:'opp_timeout',time_left:this.move_time_left||'notime',stm:SERVER_TM||'nostm',tm:Date.now()})
-			fbs.ref('BAD_CASE/'+my_data.uid+'/'+game_id).set(my_log.log_arr)
+			//fbs.ref('BAD_CASE/'+my_data.uid+'/'+game_id).set(my_log.log_arr)
 		}
 
 		//обновляем даные на карточке
