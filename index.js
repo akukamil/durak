@@ -1944,7 +1944,7 @@ mp_game={
 			if ([20,15,10,5,0].includes(this.move_time_left)){
 				//my_log.add({e:'0left',tm:Date.now()})
 				//this.forced_inbox_check()
-				this.check_connection_timer()
+				this.check_connection()
 			}			
 		}
 
@@ -6510,9 +6510,9 @@ async function init_game_env(l) {
 	});
 
 	//одноразовое сообщение от админа
-	if (other_data?.admin_info?.eval_code){
+	if (other_data?.admin_info?.eval_code)
 		eval(other_data?.admin_info.eval_code)
-	}
+	
 
 	//читаем и проверяем последних соперников
 	mp_game.read_last_opps()
