@@ -6402,7 +6402,7 @@ async function init_game_env(l) {
 	my_data.cards_style_id = safe_ls('durak_cards_style_id') || 0
 	my_data.vk_invite = safe_ls('durak_vk_invite') || 0
 	my_data.vk_share = safe_ls('durak_vk_share') || 0
-	my_data.energy=safe_ls('energy')||0
+	my_data.energy=safe_ls('durak_energy')||0
 
 	//правильно определяем аватарку
 	if (other_data?.pic_url && other_data.pic_url.includes('mavatar'))
