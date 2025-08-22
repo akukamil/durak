@@ -6509,9 +6509,7 @@ async function init_game_env(l) {
 	  my_log.add({e:'connected',connected,tm:Date.now()})
 	});
 
-	//одноразовое сообщение от админа
-	if (other_data?.admin_info?.eval_code)
-		eval(other_data?.admin_info.eval_code)
+
 	
 
 	//читаем и проверяем последних соперников
@@ -6525,7 +6523,11 @@ async function init_game_env(l) {
 		
 	//отображаем лидеров вчерашнего дня
 	top3.activate()
-
+	
+	//одноразовое сообщение от админа
+	if (other_data?.admin_info?.eval_code)
+		eval(other_data?.admin_info.eval_code)
+	
 	//убираем ИД контейнер
 	some_process.loup_anim = function(){}
 	anim2.add(objects.id_cont,{y:[objects.id_cont.sy, -200]}, false, 0.5,'easeInBack')
