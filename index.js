@@ -6398,6 +6398,7 @@ async function init_game_env(l) {
 	my_data.avatar_tm = other_data?.avatar_tm || 0
 	my_data.crystals = other_data?.crystals ?? 120
 	my_data.c_prv_tm = other_data?.c_prv_tm ||0
+	my_data.block_num = other_data?.block_num ||0
 		
 	my_data.cards_style_id = safe_ls('durak_cards_style_id') || 0
 	my_data.vk_invite = safe_ls('durak_vk_invite') || 0
@@ -6462,6 +6463,7 @@ async function init_game_env(l) {
 		c_prv_tm:my_data.c_prv_tm,
 		auth_mode:my_data.auth_mode,
 		crystals:my_data.crystals,
+		block_num:my_data.block_num,
 		country:my_data.country||'',
 		tm:firebase.database.ServerValue.TIMESTAMP,
 		session_start:firebase.database.ServerValue.TIMESTAMP
