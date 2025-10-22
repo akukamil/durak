@@ -2129,7 +2129,7 @@ mp_game={
 
 		if (result==='opp_timeout'&&my_data.rating>1800){
 			my_log.add({e:'opp_timeout',time_left:this.move_time_left||'notime',stm:SERVER_TM||'nostm',tm:Date.now()})
-			//fbs.ref('BAD_CASE/'+my_data.uid+'/'+game_id).set(my_log.log_arr)
+			fbs.ref('BAD_CASE/'+my_data.uid+'/'+game_id).set(my_log.log_arr)
 		}
 
 		//обновляем даные на карточке
@@ -4299,7 +4299,7 @@ snow={
 
 	init(){
 		fbs.ref('snow').on('value', function(data){snow.snow_event(data.val())});
-		this.check_snow_end();
+		this.check_snow_end()
 	},
 
 	send_start(){
@@ -4312,31 +4312,24 @@ snow={
 
 		if(data){
 			this.start();
-			this.snow_start_time=data.tm;
+			this.snow_start_time=data.tm
 		}
 		else{
-			this.kill_snow();
+			this.kill_snow()
 		}
 	},
 
 	async check_snow_end(){
+		
+		if (my_data.rating<1500) return
 
 		//ждем немного
-		await new Promise((resolve, reject) => setTimeout(resolve, 3000));
+		await new Promise((resolve, reject) => setTimeout(resolve, 5000));
 
 		if (!this.on) return;
 
-		//устанавливаем текущее время
-		await fbs.ref('server_time').set(firebase.database.ServerValue.TIMESTAMP);
-
-		//ждем немного
-		await new Promise((resolve, reject) => setTimeout(resolve, 3000));
-
-		//получаем время
-		const server_time=await fbs_once('server_time');
-
 		//если снег идет слишком много то выключаем его
-		if (server_time-this.snow_start_time>3600000)
+		if (SERVER_TM-this.snow_start_time>3600000)
 			fbs.ref('snow').set(0);
 
 	},
@@ -6428,9 +6421,6 @@ async function init_game_env(l) {
 	objects.id_name.set2(my_data.name,150);
 	objects.my_card_name.set2(my_data.name,150);
 
-	//новогодняя акция снег
-	snow.init()
-
 	//определение номера комнаты
 	const rooms_bins = [0,1396,1460,1600,9999]
 	for (let i=1;i<rooms_bins.length;i++){
@@ -6471,6 +6461,10 @@ async function init_game_env(l) {
 
 	SERVER_TM=await fbs_once('tm') 
 	
+
+	//новогодняя акция снег
+	snow.init()
+	
 	//устанавливаем мой статус в онлайн
 	set_state({state:'o'});
 
@@ -6510,9 +6504,6 @@ async function init_game_env(l) {
 	  }
 	  my_log.add({e:'connected',connected,tm:Date.now()})
 	});
-
-
-	
 
 	//читаем и проверяем последних соперников
 	mp_game.read_last_opps()
