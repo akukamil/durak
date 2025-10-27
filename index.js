@@ -5817,7 +5817,7 @@ auth={
 			my_data.name = _player.getName();
 			my_data.uid = _player.getUniqueID().replace(/\//g, "Z");
 			my_data.orig_pic_url = _player.getPhoto('medium');
-			my_data.auth_mode=_player.getMode()==='lite'?0:1;
+			my_data.auth_mode=+_player.isAuthorized()
 
 			if (my_data.orig_pic_url === 'https://games-sdk.yandex.ru/games/api/sdk/v1/player/avatar/0/islands-retina-medium')
 				my_data.orig_pic_url = 'mavatar'+my_data.uid;
