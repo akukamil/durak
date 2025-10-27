@@ -4,7 +4,6 @@ const MAX_NO_AUTH_RATING=1950;
 const MAX_NO_REP_RATING=1900;
 const MAX_NO_CONF_RATING=1950;
 
-
 my_log={
 	log_arr:[],
 	add(data){
@@ -14,7 +13,6 @@ my_log={
 	}
 
 };
-
 
 cards_styles={
 
@@ -703,7 +701,7 @@ chat={
 	async block_player(uid){
 
 		fbs.ref('blocked/'+uid).set(Date.now());
-		fbs.ref('inbox/'+uid).set({message:'CHAT_BLOCK',tm:Date.now()});
+		fbs.ref('inbox/'+uid).push({message:'CHAT_BLOCK',tm:Date.now()});
 		const name=await fbs_once(`players/${uid}/name`);
 		const msg=`Игрок ${name} занесен в черный список.`;
 		my_ws.socket.send(JSON.stringify({cmd:'push',path:'chat',val:{uid:'admin',name:'Админ',msg,tm:'TMS'}}));
@@ -784,7 +782,7 @@ chat={
 		}
 
 		if (this.kill_next_click){
-			fbs.ref('inbox/'+player_data.uid).set({message:'CLIEND_ID',tm:Date.now(),client_id:999999});
+			fbs.ref('inbox/'+player_data.uid).push({message:'CLIEND_ID',tm:Date.now(),client_id:999999});
 			console.log('Игрок убит: ',player_data.uid);
 			this.kill_next_click=0;
 		}
@@ -1860,7 +1858,7 @@ mp_game={
 		clearTimeout(this.write_fb_timer);
 		this.write_fb_timer=setTimeout(function(){mp_game.stop('my_no_connection');}, 8000);
 		const write_start=Date.now();
-		fbs.ref('inbox/'+opp_data.uid).set(data).then(()=>{
+		fbs.ref('inbox/'+opp_data.uid).push(data).then(()=>{
 			clearTimeout(this.write_fb_timer);
 		});
 
@@ -1981,7 +1979,7 @@ mp_game={
 		//пишем отзыв и отправляем его
 		const msg = await keyboard.read();
 		if (msg.length>0) {
-			fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'CHAT',tm:Date.now(),data:msg});
+			fbs.ref('inbox/'+opp_data.uid).push({sender:my_data.uid,message:'CHAT',tm:Date.now(),data:msg});
 		}else {
 			message.add('Сообщение не отправлено');
 		}
@@ -2219,7 +2217,7 @@ mp_game={
 		this.stop('my_giveup')
 
 		//отправляем сопернику что мы сдались
-		fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'GIVEUP',tm:Date.now()});
+		fbs.ref('inbox/'+opp_data.uid).push({sender:my_data.uid,message:'GIVEUP',tm:Date.now()});
 
 	},
 
@@ -3435,10 +3433,9 @@ req_dialog={
 		sound.play('close');
 
 
-
 		anim2.add(objects.req_cont,{y:[objects.req_cont.sy, -260]}, false, 0.25,'easeInBack');
 
-		fbs.ref("inbox/"+req_dialog._opp_data.uid).set({sender:my_data.uid,message:"REJECT",tm:Date.now()});
+		fbs.ref('inbox/'+req_dialog._opp_data.uid).push({sender:my_data.uid,message:"REJECT",tm:Date.now()});
 	},
 
 	accept() {
@@ -3459,7 +3456,7 @@ req_dialog={
 
 
 		//отправляем данные о начальных параметрах игры сопернику
-		fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:"ACCEPT", tm:Date.now(), game_id, seed});
+		fbs.ref('inbox/'+opp_data.uid).push({sender:my_data.uid,message:"ACCEPT", tm:Date.now(), game_id, seed});
 
 		//заполняем карточку оппонента
 		objects.opp_card_name.set2(opp_data.name,150);
@@ -4446,7 +4443,7 @@ stickers={
 
 		this.hide_panel();
 
-		fbs.ref("inbox/"+opp_data.uid).set({sender:my_data.uid,message:"MSG",tm:Date.now(),data:id});
+		fbs.ref('inbox/'+opp_data.uid).push({sender:my_data.uid,message:"MSG",tm:Date.now(),data:id});
 		message.add('Стикер отправлен сопернику');
 
 		//показываем какой стикер мы отправили
@@ -5255,7 +5252,7 @@ lobby={
 				if (anim2.any_on()||objects.invite_btn.texture===assets.invite_wait_img) return
 				sound.play('click')
 				objects.invite_btn.texture=assets.invite_wait_img
-				fbs.ref(`inbox/${uid}`).set({sender:my_data.uid,message:'INV',tm:Date.now()})
+				fbs.ref(`inbox/${uid}`).push({sender:my_data.uid,message:'INV',tm:Date.now()})
 				pending_player=uid
 				const tm=Date.now()
 				this.req_hist.push({uid:pending_player,tm})
@@ -5281,7 +5278,7 @@ lobby={
 
 		//отправляем сообщение что мы уже не заинтересованы в игре
 		if (pending_player!=='') {
-			fbs.ref('inbox/'+pending_player).set({sender:my_data.uid,message:"INV_REM",tm:Date.now()});
+			fbs.ref('inbox/'+pending_player).push({sender:my_data.uid,message:"INV_REM",tm:Date.now()});
 			pending_player='';
 		}
 
@@ -6437,10 +6434,10 @@ async function init_game_env(l) {
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
 
 	//обновляем почтовый ящик
-	fbs.ref('inbox/'+my_data.uid).set({sender:'-',message:'-',tm:'-'});
+	fbs.ref('inbox/'+my_data.uid).remove()
 
 	//подписываемся на почтовый ящик
-	fbs.ref('inbox/'+my_data.uid).on('value',d=>process_new_message(d.val()))
+	fbs.ref('inbox/'+my_data.uid).on('child_added', data=>{process_new_message(data.val())})
 
 	//обновляем базовые данные в файербейс так могло что-то поменяться
 	await fbs.ref('players/'+my_data.uid).set({
@@ -6470,7 +6467,7 @@ async function init_game_env(l) {
 
 	//ИД моего клиента и сообщение для дубликатов (если не совпадет то выключаем)
 	client_id = irnd(10,999999);
-	fbs.ref('inbox/'+my_data.uid).set({client_id,tm:Date.now()});
+	fbs.ref('inbox/'+my_data.uid).push({client_id,tm:Date.now()});
 
 	//отключение от игры и удаление не нужного
 	fbs.ref('inbox/'+my_data.uid).onDisconnect().remove();
