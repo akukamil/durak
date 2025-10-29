@@ -1941,7 +1941,8 @@ mp_game={
 		if (my_data.rating>1850&&turn===OPP_TURN){
 			if ([20,15,10,5,0].includes(this.move_time_left)){
 				//my_log.add({e:'0left',tm:Date.now()})
-				//this.forced_inbox_check()
+				if (this.move_time_left===0)
+					this.forced_inbox_check()
 				this.check_connection()
 			}			
 		}
@@ -6428,7 +6429,7 @@ async function init_game_env(l) {
 	}
 
 	//my_data.rating=1999;
-	//room_name= 'states2';
+	//room_name= 'states5';
 
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
