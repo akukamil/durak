@@ -6436,6 +6436,7 @@ async function init_game_env(l) {
 
 
 	//подписываемся на почтовый ящик
+	fbs.ref('inbox/'+my_data.uid).set({tm:Date.now()})
 	fbs.ref('inbox/'+my_data.uid).on('value', data=>{process_new_message(data.val())})
 
 	//обновляем базовые данные в файербейс так могло что-то поменяться
