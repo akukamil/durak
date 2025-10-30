@@ -3445,7 +3445,7 @@ req_dialog={
 			return;
 
 		//устанавливаем окончательные данные оппонента
-		opp_data = req_dialog._opp_data;
+		opp_data = JSON.parse(JSON.stringify(req_dialog._opp_data))
 
 		anim2.add(objects.req_cont,{y:[objects.req_cont.sy, -260]}, false, 0.25,'easeInBack');
 
