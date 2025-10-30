@@ -3295,7 +3295,7 @@ keep_alive=()=>{
 	}
 
 	fbs.ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
-	fbs.ref("inbox/"+my_data.uid).onDisconnect().remove();
+	//fbs.ref("inbox/"+my_data.uid).onDisconnect().remove();
 	fbs.ref(room_name+"/"+my_data.uid).onDisconnect().remove();
 
 	set_state({});
@@ -6470,7 +6470,7 @@ async function init_game_env(l) {
 	fbs.ref('inbox/'+my_data.uid).set({client_id,tm:Date.now()});
 
 	//отключение от игры и удаление не нужного
-	fbs.ref('inbox/'+my_data.uid).onDisconnect().remove();
+	//fbs.ref('inbox/'+my_data.uid).onDisconnect().remove();
 	fbs.ref(room_name+'/'+my_data.uid).onDisconnect().remove();
 
 	//это событие когда меняется видимость приложения
