@@ -640,12 +640,10 @@ chat={
 
 		this.init_yandex_payments();
 
-		await my_ws.init();
-
 		//загружаем чат
-		const chat_data=await my_ws.get('chat',25);
+		const chat_data=await my_ws.get('chat',25)
 
-		await this.chat_load(chat_data);
+		await this.chat_load(chat_data)
 
 		//подписываемся на новые сообщения
 		my_ws.ss_child_added('chat',chat.chat_updated.bind(chat))
@@ -6126,7 +6124,7 @@ main_loader={
 		loader.add('top3',git_src+'sounds/top3.mp3');
 
 		//добавляем библиотеку аватаров
-		loader.add('multiavatar', git_src+'multiavatar.min.txt');
+		loader.add('multiavatar', 'https://akukamil.github.io/common/multiavatar.min.txt');
 
 		//добавляем смешные загрузки
 		loader.add('fun_logs', 'https://akukamil.github.io/common/fun_logs.txt');
@@ -6434,7 +6432,6 @@ async function init_game_env(l) {
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
 
-
 	//подписываемся на почтовый ящик
 	fbs.ref('inbox/'+my_data.uid).set({tm:Date.now()})
 	fbs.ref('inbox/'+my_data.uid).on('value', data=>{process_new_message(data.val())})
@@ -6463,18 +6460,17 @@ async function init_game_env(l) {
 	snow.init()
 	
 	//устанавливаем мой статус в онлайн
-	set_state({state:'o'});
+	set_state({state:'o'})
 
 	//ИД моего клиента и сообщение для дубликатов (если не совпадет то выключаем)
-	client_id = irnd(10,999999);
-	fbs.ref('inbox/'+my_data.uid).set({client_id,tm:Date.now()});
+	client_id = irnd(10,999999)
+	fbs.ref('inbox/'+my_data.uid).set({client_id,tm:Date.now()})
 
 	//отключение от игры и удаление не нужного
-	//fbs.ref('inbox/'+my_data.uid).onDisconnect().remove();
 	fbs.ref(room_name+'/'+my_data.uid).onDisconnect().remove();
 
 	//это событие когда меняется видимость приложения
-	document.addEventListener("visibilitychange", function(){tabvis.change()})
+	document.addEventListener('visibilitychange', function(){tabvis.change()})
 
 	//событие ролика мыши в карточном меню
 	window.addEventListener('wheel', (event) => {
@@ -6488,6 +6484,9 @@ async function init_game_env(l) {
 
 	//keep-alive сервис
 	setInterval(()=>{keep_alive()}, 40000)
+
+	//подключаем сокет
+	await my_ws.init()
 
 	//проверяем предыдущих вход
 	pref.init()

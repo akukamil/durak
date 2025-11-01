@@ -1,2 +1,2 @@
-pngquant -v -f --ext .png res/**/*.png
+pngquant -v -f --ext .png res/RUS/*.png
 pause
