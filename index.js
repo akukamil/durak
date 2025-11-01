@@ -6030,8 +6030,7 @@ main_loader={
 	},
 
 	async load1(){
-		
-		
+				
 		const pre_load_list=eval(await(await fetch('res/common/load_list.txt')).text());
 
 		const loader=new PIXI.Loader();
