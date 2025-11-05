@@ -22,11 +22,12 @@ jobs:
     - name: Sync files to Yandex Storage (with exclude)
       run: |
         aws --endpoint-url=https://storage.yandexcloud.net s3 sync ./ s3://durak/ \
-          --delete \
-          --exclude ".git/*" \
-          --exclude ".github/*" \
-          --exclude ".gitignore" \
-          --exclude "*.exe" \
-          --exclude "*.bat" \
-          --exclude "*.xls" \
-          --exclude "*.xlsx" \
+            --delete \
+            --acl public-read \
+            --exclude ".git/*" \
+            --exclude ".github/*" \
+            --exclude ".gitignore" \
+            --exclude "*.exe" \
+            --exclude "*.bat" \
+            --exclude "*.xls" \
+            --exclude "*.xlsx" \

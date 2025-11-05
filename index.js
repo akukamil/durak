@@ -4705,8 +4705,8 @@ lobby={
 		set_state({state : 'o'});
 
 		//создаем заголовки
-		const room_desc='КОМНАТА #'+room_name.slice(6);
-		objects.t_room_name.text=room_desc;
+		const room_desc='КОМНАТА #'+room_name.slice(6)
+		objects.t_room_name.text=room_desc
 
 	},
 
@@ -5443,17 +5443,23 @@ lobby={
 		},7000)
 	},
 
-	get_room_index_from_rating(){
+	get_room_to_go(){
+				
+		//московское время и ночная комната
+		const msk_hour=+new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',hour:'numeric',hour12: false})
+		if (msk_hour>=0&&msk_hour<6)
+			return 'statesNIGHT'
+		
+		
 		//номер комнаты в зависимости от рейтинга игрока
-		const rooms_bins=[0,1366,1437,1580,9999];
-		let room_to_go='state1';
+		const rooms_bins=[0,1396,1460,1600,9999]
 		for (let i=1;i<rooms_bins.length;i++){
 			const f=rooms_bins[i-1];
 			const t=rooms_bins[i];
 			if (my_data.rating>f&&my_data.rating<=t)
-				return i;
+				return 'states'+i
 		}
-		return 1;
+		return 'states1'
 
 	},
 
@@ -5799,6 +5805,13 @@ auth={
 
 	},
 
+	replace_bad_letter(s){
+		
+		//убираем ё и Ё
+		return s.replace(/ё/g, 'е').replace(/Ё/g, 'Е')
+		
+	},
+
 	async init() {
 
 		if (game_platform === 'YANDEX') {
@@ -5813,15 +5826,16 @@ auth={
 				_player = await window.ysdk.getPlayer();
 			} catch (e) { alert(e)};
 
-			my_data.name = _player.getName();
-			my_data.uid = _player.getUniqueID().replace(/\//g, "Z");
-			my_data.orig_pic_url = _player.getPhoto('medium');
+			my_data.name = _player.getName()
+			my_data.uid = _player.getUniqueID().replace(/\//g, "Z")
+			my_data.orig_pic_url = _player.getPhoto('medium')
 			my_data.auth_mode=+_player.isAuthorized()
 
 			if (my_data.orig_pic_url === 'https://games-sdk.yandex.ru/games/api/sdk/v1/player/avatar/0/islands-retina-medium')
 				my_data.orig_pic_url = 'mavatar'+my_data.uid;
 
-			my_data.name = my_data.name || this.get_random_name(my_data.uid);
+			my_data.name = my_data.name || this.get_random_name(my_data.uid)
+			my_data.name=this.replace_bad_letter(my_data.name)
 
 			return;
 		}
@@ -5840,6 +5854,7 @@ auth={
 			} catch (e) {alert(e)};
 
 			my_data.name = _player.first_name + ' ' + _player.last_name;
+			my_data.name=this.replace_bad_letter(my_data.name)
 			my_data.uid = 'vk'+_player.id;
 			my_data.orig_pic_url = _player.photo_100;
 			my_data.auth_mode=1;
@@ -6339,22 +6354,18 @@ async function init_game_env(l) {
 	}
 
 	//изменение размера окна
-	resize();
-	window.addEventListener("resize", resize);
+	resize()
+	window.addEventListener("resize", resize)
 
 	//запускаем главный цикл
-	main_loop();
+	main_loop()
 
 	//загружаем ресурсы
-	await main_loader.load1();
-	await main_loader.load2();
+	await main_loader.load1()
+	await main_loader.load2()
 
 	//получаем данные авторизации игрока
 	await auth.init();
-
-	//убираем ё
-	my_data.name=my_data.name.replace(/ё/g, 'е');
-	my_data.name=my_data.name.replace(/Ё/g, 'Е');
 
 	//запускаем лупную анимацию
 	some_process.loup_anim=function() {
@@ -6373,9 +6384,10 @@ async function init_game_env(l) {
 	};
 	runScyfiLogs();
 
-	//загрузка сокета
+	//загрузка библиотеки и подключение к серверу
 	await auth.load_script('https://akukamil.github.io/common/my_ws.js');
-
+	await my_ws.init()
+	
 	//загружаем остальные данные
 	const other_data = await fbs_once('players/'+my_data.uid)
 
@@ -6400,13 +6412,9 @@ async function init_game_env(l) {
 	else
 		my_data.pic_url=my_data.orig_pic_url
 
-	//первый вход с 25.09.2024
-	if(!other_data?.first_log_tm)
-		fbs.ref('players/'+my_data.uid+'/first_log_tm').set(firebase.database.ServerValue.TIMESTAMP);
-
 	//загружаем мои данные в кэш
 	await players_cache.update(my_data.uid,{pic_url:my_data.pic_url,name:my_data.name,rating:my_data.rating});
-	await players_cache.update_avatar(my_data.uid);
+	await players_cache.update_avatar(my_data.uid)
 
 	//устанавливаем фотки в попап
 	objects.my_avatar.texture=players_cache.players[my_data.uid].texture
@@ -6414,20 +6422,9 @@ async function init_game_env(l) {
 	objects.id_name.set2(my_data.name,150)
 
 	//устанавлием мое имя в карточки
-	objects.id_name.set2(my_data.name,150);
-	objects.my_card_name.set2(my_data.name,150);
-
-	//определение номера комнаты
-	const rooms_bins = [0,1396,1460,1600,9999]
-	for (let i=1;i<rooms_bins.length;i++){
-		const f=rooms_bins[i-1];
-		const t=rooms_bins[i];
-		if (my_data.rating>f&&my_data.rating<=t)
-			room_name='states'+i;
-	}
-
-	//my_data.rating=1999;
-	//room_name= 'states5';
+	objects.id_name.set2(my_data.name,150)
+	objects.my_card_name.set2(my_data.name,150)	
+	
 
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
@@ -6453,11 +6450,16 @@ async function init_game_env(l) {
 		session_start:firebase.database.ServerValue.TIMESTAMP
 	})
 
-	SERVER_TM=await fbs_once('tm') 
+	//получаем серверное время
+	SERVER_TM=await my_ws.get_tms() || await fbs_once('tm') 
 	
-
 	//новогодняя акция снег
 	snow.init()
+		
+	//определение номера комнаты
+	room_name=lobby.get_room_to_go()
+	//my_data.rating=1999;
+	//room_name= 'states5';	
 	
 	//устанавливаем мой статус в онлайн
 	set_state({state:'o'})
@@ -6485,21 +6487,18 @@ async function init_game_env(l) {
 	//keep-alive сервис
 	setInterval(()=>{keep_alive()}, 40000)
 
-	//подключаем сокет
-	await my_ws.init()
-
 	//проверяем предыдущих вход
 	pref.init()
 
 	//контроль за присутсвием
-	fbs.ref(".info/connected").on("value", snap => {
+	fbs.ref('.info/connected').on('value', snap => {
 	  if (snap.val() === true) {
-		connected = 1;
+		connected = 1
 	  } else {
-		connected = 0;
+		connected = 0
 	  }
 	  my_log.add({e:'connected',connected,tm:Date.now()})
-	});
+	})
 
 	//читаем и проверяем последних соперников
 	mp_game.read_last_opps()
@@ -6514,17 +6513,15 @@ async function init_game_env(l) {
 	top3.activate()
 	
 	//одноразовое сообщение от админа
-	if (other_data?.admin_info?.eval_code)
-		eval(other_data?.admin_info.eval_code)
+	if (other_data?.eval_code)
+		eval(other_data?.eval_code)
 	
 	//убираем ИД контейнер
 	some_process.loup_anim = function(){}
 	anim2.add(objects.id_cont,{y:[objects.id_cont.sy, -200]}, false, 0.5,'easeInBack')
 
 	//показыаем основное меню
-	main_menu.activate()
-	
-	
+	main_menu.activate()		
 
 }
 
