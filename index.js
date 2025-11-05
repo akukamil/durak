@@ -5446,10 +5446,11 @@ lobby={
 	get_room_to_go(){
 				
 		//московское время и ночная комната
-		const msk_hour=+new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',hour:'numeric',hour12: false})
-		if (msk_hour>=0&&msk_hour<6)
-			return 'statesNIGHT'
-		
+		if (SERVER_TM){
+			const msk_hour=+new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',hour:'numeric',hour12: false})
+			if (msk_hour>=0&&msk_hour<6)
+				return 'statesNIGHT'		
+		}		
 		
 		//номер комнаты в зависимости от рейтинга игрока
 		const rooms_bins=[0,1396,1460,1600,9999]
