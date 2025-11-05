@@ -6521,7 +6521,10 @@ async function init_game_env(l) {
 	anim2.add(objects.id_cont,{y:[objects.id_cont.sy, -200]}, false, 0.5,'easeInBack')
 
 	//показыаем основное меню
-	main_menu.activate()		
+	main_menu.activate()	
+
+	if (game_platform==='YANDEX')
+		window.ysdk.features.LoadingAPI?.ready()	
 
 }
 
