@@ -6059,7 +6059,7 @@ main_loader={
 
 		//добавляем шрифт
 		loader.add('mfont2',git_src+'fonts/Bahnschrift/font.fnt');
-		loader.add('bcg',git_src+'bcg.jpg');
+		loader.add('bcg',git_src+'res/common/bcg.jpg');
 
 		//добавляем основной загрузочный манифест
 		loader.add('main_load_list',git_src+'load_list.txt');
