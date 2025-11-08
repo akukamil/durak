@@ -1,5 +1,5 @@
 var M_WIDTH=800, M_HEIGHT=450,SERVER_TM=0;
-var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, game_id=0, connected = 1, hidden=0, game_platform='',hidden_state_start = 0,fbs,room_name = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
+var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, game_id=0, connected = 1, hidden=0, game_platform='',hidden_state_start = 0,fbs,ROOM_NAME = '', pending_player='', opponent = {}, my_data={opp_id : ''},client_id, opp_data={}, some_process = {}, git_src = '', WIN = 1, DRAW = 0, LOSE = -1, NOSYNC = 2, MY_TURN = 1, OPP_TURN = 2, turn = 0,game_name='durak';
 const MAX_NO_AUTH_RATING=1950;
 const MAX_NO_REP_RATING=1900;
 const MAX_NO_CONF_RATING=1950;
@@ -3288,13 +3288,13 @@ keep_alive=()=>{
 		//убираем из списка если прошло время с момента перехода в скрытое состояние
 		let cur_ts = Date.now();
 		let sec_passed = (cur_ts - hidden_state_start)/1000;
-		if ( sec_passed > 100 )	fbs.ref(room_name+"/"+my_data.uid).remove();
+		if ( sec_passed > 100 )	fbs.ref(ROOM_NAME+"/"+my_data.uid).remove();
 		return;
 	}
 
 	fbs.ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
 	//fbs.ref("inbox/"+my_data.uid).onDisconnect().remove();
-	fbs.ref(room_name+"/"+my_data.uid).onDisconnect().remove();
+	fbs.ref(ROOM_NAME+"/"+my_data.uid).onDisconnect().remove();
 
 	set_state({});
 }
@@ -3302,7 +3302,7 @@ keep_alive=()=>{
 var kill_game = async function() {
 
 	await fbs.ref('inbox/'+my_data.uid).remove();
-	await fbs.ref(room_name+'/'+my_data.uid).remove();
+	await fbs.ref(ROOM_NAME+'/'+my_data.uid).remove();
 	firebase.app().delete();
 	document.body.innerHTML = 'CLIENT TURN OFF';
 }
@@ -4606,8 +4606,10 @@ lobby={
 	hide_inst_msg_timer:0,
 	sec_befor_bg:0,
 	INFO_MSG_ID:1,
+	state_listener_on:0,
+	state_listener_timeout:0,
 	
-	activate(room,bot_on) {
+	activate(room_to_go,bot_on) {
 
 		//первый запуск лобби
 		if (!this.activated){
@@ -4671,72 +4673,20 @@ lobby={
 		}
 
 
-		//убираем старое и подписываемся на новую комнату
-		if (room){
-			if(room_name){
-				fbs.ref(room_name).off('value');
-				fbs.ref(room_name+'/'+my_data.uid).remove();
-			}
-			room_name=room;
-		}
+		//определяем комнату
+		room_to_go=this.get_room_to_go()
+		if (ROOM_NAME!==room_to_go)
+			this.change_room(room_to_go)
+		
+		//включаем прослушивание если надо
+		if (!this.state_listener_on) this.connect()
 
-		fbs.ref(room_name).on('child_changed', snapshot => {
-			const val=snapshot.val()
-			//console.log('child_changed',snapshot.key,val,JSON.stringify(val).length)
-			this.global_players[snapshot.key]=val;
-			lobby.players_list_updated(this.global_players);
-		});
-		fbs.ref(room_name).on('child_added', snapshot => {
-			const val=snapshot.val()
-			//console.log('child_added',snapshot.key,val,JSON.stringify(val).length)
-			this.global_players[snapshot.key]=val;
-			lobby.players_list_updated(this.global_players);
-		});
-		fbs.ref(room_name).on('child_removed', snapshot => {
-			const val=snapshot.val()
-			//console.log('child_removed',snapshot.key,val,JSON.stringify(val).length)
-			delete this.global_players[snapshot.key];
-			lobby.players_list_updated(this.global_players);
-		});
-
-
-		fbs.ref(room_name+'/'+my_data.uid).onDisconnect().remove();
-
-		set_state({state : 'o'});
-
-		//создаем заголовки
-		const room_desc='КОМНАТА #'+room_name.slice(6)
-		objects.t_room_name.text=room_desc
-
-	},
-
-	change_room(new_room){
-
-		//создаем заголовки
-		const room_desc='КОМНАТА #'+new_room.slice(6);
-		objects.t_room_name.text=room_desc;
-
-		//отписываемся от изменений текущей комнаты
-		fbs.ref(room_name).off('value');
-
-		//анимации разные
-		anim2.add(objects.cards_cont,{alpha:[0, 1]}, true, 0.1,'linear');
-		anim2.add(objects.lobby_footer_cont,{y:[450, objects.lobby_footer_cont.sy]}, true, 0.1,'linear');
-		anim2.add(objects.lobby_header_cont,{y:[-50, objects.lobby_header_cont.sy]}, true, 0.1,'linear');
-		objects.cards_cont.x=0;
-
-		//отключаем все карточки
-		objects.mini_cards.forEach(c=>c.visible=false);
-
-		room_name=new_room;
-
-		set_state ({state : 'o'});
-
-		//бота нету
-		this.bot_on=0;
-
-		//подписываемся на изменения состояний пользователей
-		fbs.ref(room_name).on('value', snapshot => {lobby.players_list_updated(snapshot.val());});
+		//удаляем таймаут слушателя комнаты
+		clearTimeout(this.state_listener_timeout)
+		
+		this.players_list_updated(this.global_players)
+		
+		set_state({state:'o'})
 
 	},
 
@@ -5412,13 +5362,16 @@ lobby={
 		anim2.add(objects.lobby_footer_cont,{y:[ objects.lobby_footer_cont.y,450]}, false, 0.2,'linear');
 		anim2.add(objects.lobby_header_cont,{y:[objects.lobby_header_cont.y,-50]}, false, 0.2,'linear');
 
-		this.on=0;
+
 
 		//больше ни ждем ответ ни от кого
 		pending_player="";
-
-		//отписываемся от изменений состояний пользователей
-		fbs.ref(room_name).off();
+		this.on=0;
+		
+		//отписываемся от изменений состояний пользователей через 30 секунд
+		this.state_listener_timeout=setTimeout(()=>{
+			this.disconnect();
+		},30000);
 
 	},
 
@@ -5462,6 +5415,56 @@ lobby={
 		}
 		return 'states1'
 
+	},
+
+	disconnect(){		
+		console.log('lobby disconnected')
+		this.global_players={}
+		if(ROOM_NAME)
+			fbs.ref(ROOM_NAME).off()
+		this.state_listener_on=0
+	},
+
+	connect(){
+
+		console.log('lobby connected');
+		fbs.ref(ROOM_NAME).on('child_changed', snapshot => {
+			const val=snapshot.val()
+			//console.log('child_changed',snapshot.key,val,JSON.stringify(val).length)
+			this.global_players[snapshot.key]=val;
+			lobby.players_list_updated(this.global_players);
+		});
+		fbs.ref(ROOM_NAME).on('child_added', snapshot => {
+			const val=snapshot.val()
+			//console.log('child_added',snapshot.key,val,JSON.stringify(val).length)
+			this.global_players[snapshot.key]=val;
+			lobby.players_list_updated(this.global_players);
+		});
+		fbs.ref(ROOM_NAME).on('child_removed', snapshot => {
+			const val=snapshot.val()
+			//console.log('child_removed',snapshot.key,val,JSON.stringify(val).length)
+			delete this.global_players[snapshot.key];
+			lobby.players_list_updated(this.global_players);
+		});
+
+		fbs.ref(ROOM_NAME+'/'+my_data.uid).onDisconnect().remove()
+		this.state_listener_on=1
+
+	},
+	
+	change_room(new_room){
+		
+		this.disconnect()
+		if(ROOM_NAME)
+			fbs.ref(ROOM_NAME+'/'+my_data.uid).remove()
+		ROOM_NAME=new_room
+		this.connect()
+		
+		//создаем заголовки
+		const room_desc='КОМНАТА #'+ROOM_NAME.slice(6)
+		objects.t_room_name.text=room_desc	
+		
+		set_state({state:'o'})
 	},
 
 	process(){
@@ -5978,8 +5981,8 @@ function set_state(params) {
 	if (opp_data.uid!==undefined)
 		small_opp_id=opp_data.uid.substring(0,10);
 
-	//fbs.ref(room_name+'/'+my_data.uid).set({state:state,name:my_data.name, rating:my_data.rating, hidden:hidden, opp_id:small_opp_id});
-	fbs.ref(room_name+'/'+my_data.uid).set({s:state, n:my_data.name, r:my_data.rating, h:hidden, opp_id:small_opp_id, g:game_id});
+	//fbs.ref(ROOM_NAME+'/'+my_data.uid).set({state:state,name:my_data.name, rating:my_data.rating, hidden:hidden, opp_id:small_opp_id});
+	fbs.ref(ROOM_NAME+'/'+my_data.uid).set({s:state, n:my_data.name, r:my_data.rating, h:hidden, opp_id:small_opp_id, g:game_id});
 }
 
 tabvis={
@@ -6456,11 +6459,7 @@ async function init_game_env(l) {
 	
 	//новогодняя акция снег
 	snow.init()
-		
-	//определение номера комнаты
-	room_name=lobby.get_room_to_go()
-	//my_data.rating=1999;
-	//room_name= 'states5';	
+
 	
 	//устанавливаем мой статус в онлайн
 	set_state({state:'o'})
@@ -6469,8 +6468,6 @@ async function init_game_env(l) {
 	client_id = irnd(10,999999)
 	fbs.ref('inbox/'+my_data.uid).set({client_id,tm:Date.now()})
 
-	//отключение от игры и удаление не нужного
-	fbs.ref(room_name+'/'+my_data.uid).onDisconnect().remove();
 
 	//это событие когда меняется видимость приложения
 	document.addEventListener('visibilitychange', function(){tabvis.change()})
