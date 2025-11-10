@@ -6050,7 +6050,7 @@ main_loader={
 
 	async load1(){
 				
-		const pre_load_list=eval(await(await fetch('res/common/load_list.txt')).text());
+		const pre_load_list=eval(await(await fetch(git_src+'res/common/load_list.txt')).text());
 
 		const loader=new PIXI.Loader();
 
@@ -6368,14 +6368,16 @@ async function init_game_env(l) {
 	await main_loader.load1()
 	await main_loader.load2()
 
-	//получаем данные авторизации игрока
-	await auth.init();
-
 	//запускаем лупную анимацию
 	some_process.loup_anim=function() {
 		objects.id_loup.x=20*Math.sin(game_tick*8)+90;
 		objects.id_loup.y=20*Math.cos(game_tick*8)+150;
 	}
+
+
+	//получаем данные авторизации игрока
+	await auth.init();
+
 
 	//смешные логи
 	const runScyfiLogs=async () => {

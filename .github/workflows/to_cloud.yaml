@@ -25,4 +25,6 @@ jobs:
         aws --endpoint-url=https://s3.twcstorage.ru/ s3 sync ./ s3://f2771470-durak/ \
             --exclude ".git/*" \
             --exclude ".github/*" \
-            --exclude ".gitignore"
+            --exclude ".gitignore" \
+            --exclude ".gitattributes"
+            
