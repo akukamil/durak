@@ -5400,7 +5400,7 @@ lobby={
 				
 		//московское время и ночная комната
 		if (SERVER_TM){
-			const msk_hour=+new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',hour:'numeric',hour12: false})
+			const msk_hour=+new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',hour:'numeric',hourCycle:'h23'})
 			if (msk_hour>=0&&msk_hour<6)
 				return 'statesNIGHT'		
 		}		
@@ -5477,7 +5477,7 @@ lobby={
 		if (!SERVER_TM) return
 
 		const card0=objects.mini_cards[0]
-		const msk_hour = +new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',hour:'numeric',hour12: false})
+		const msk_hour=+new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',hour:'numeric',hourCycle:'h23'})
 		const bg_time=msk_hour===18||msk_hour===19
 		
 		if (card0.type==='bot'&&bg_time){
