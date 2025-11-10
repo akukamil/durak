@@ -5407,7 +5407,7 @@ lobby={
 		}		
 		
 		//номер комнаты в зависимости от рейтинга игрока
-		const rooms_bins=[0,1396,1460,1600,9999]
+		const rooms_bins=[0,1376,1460,1600,9999]
 		for (let i=1;i<rooms_bins.length;i++){
 			const f=rooms_bins[i-1];
 			const t=rooms_bins[i];
