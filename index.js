@@ -3,6 +3,7 @@ var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, gam
 const MAX_NO_AUTH_RATING=1950;
 const MAX_NO_REP_RATING=1900;
 const MAX_NO_CONF_RATING=1950;
+const TW_PATH='https://f2771470-common.website.twcstorage.ru'
 
 my_log={
 	log_arr:[],
@@ -498,8 +499,8 @@ class chat_record_class extends PIXI.Container {
 
 		if (msg_data.msg.startsWith('GIF')){
 
-			const mp4BaseT=await new Promise((resolve, reject)=>{
-				const url='https://akukamil.github.io/common/gifs/'+msg_data.msg+'.mp4';
+			const mp4BaseT=await new Promise((resolve, reject)=>{				
+				const url=`${TW_PATH}/gifs/${msg_data.msg}.mp4`				
 				if(PIXI.utils.BaseTextureCache[url]&&!PIXI.utils.BaseTextureCache[url].valid) resolve(0);
 				const baseTexture = PIXI.BaseTexture.from(url);
 				if (baseTexture.width>1) resolve(baseTexture);
@@ -5848,7 +5849,7 @@ auth={
 
 			game_platform = 'VK';
 
-			await this.load_script('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')||await this.load_script('https://akukamil.github.io/common/vkbridge.js');
+			await this.load_script('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')||await this.load_script(TW_PATH+'/vkbridge.js');
 
 			let _player;
 
@@ -6143,10 +6144,10 @@ main_loader={
 		loader.add('top3',git_src+'sounds/top3.mp3');
 
 		//добавляем библиотеку аватаров
-		loader.add('multiavatar', 'https://akukamil.github.io/common/multiavatar.min.txt');
+		loader.add('multiavatar', TW_PATH+'/multiavatar.min.txt');
 
 		//добавляем смешные загрузки
-		loader.add('fun_logs', 'https://akukamil.github.io/common/fun_logs.txt');
+		loader.add('fun_logs', TW_PATH+'/fun_logs.txt');
 
 		//добавляем стили
 		for (let i=0;i<10;i++)
@@ -6391,7 +6392,7 @@ async function init_game_env(l) {
 	runScyfiLogs();
 
 	//загрузка библиотеки и подключение к серверу
-	await auth.load_script('https://akukamil.github.io/common/my_ws.js');
+	await auth.load_script(TW_PATH+'/my_ws.js');
 	await my_ws.init()
 	
 	//загружаем остальные данные
