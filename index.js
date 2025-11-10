@@ -6300,6 +6300,23 @@ async function init_game_env(l) {
 
 	await define_platform_and_language();
 
+	//убираем надпись
+	document.getElementById('loadingText').remove();
+	
+	//создаем приложение пикси и добавляем тень
+	const dw=M_WIDTH/document.body.clientWidth;
+	const dh=M_HEIGHT/document.body.clientHeight;
+	const resolution=Math.max(dw,dh,1);
+	const opts={width:800, height:450,antialias:false,resolution,autoDensity:true};
+	app = new PIXI.Application(opts);
+	document.body.appendChild(app.renderer.view).style.boxShadow = "0 0 15px rgba(255, 255, 255, 0.5)";
+
+	
+	
+	//изменение размера окна
+	resize()
+	window.addEventListener("resize", resize)	
+	
 	//инициируем файербейс
 	if (firebase.apps.length===0) {
 		firebase.initializeApp({
@@ -6315,18 +6332,6 @@ async function init_game_env(l) {
 
 	//короткое обращение к файербейс
 	fbs=firebase.database();
-
-	//создаем приложение пикси и добавляем тень
-	document.body.innerHTML='<style>html,body {margin: 0;padding: 0;height: 100%;}body {display: flex;align-items:center;justify-content: center;background-color: rgba(41,41,41,1)}</style>';
-
-	//создаем приложение пикси и добавляем тень
-	const dw=M_WIDTH/document.body.clientWidth;
-	const dh=M_HEIGHT/document.body.clientHeight;
-	const resolution=Math.max(dw,dh,1);
-	const opts={width:800, height:450,antialias:false,resolution,autoDensity:true};
-	app = new PIXI.Application(opts);
-	document.body.appendChild(app.renderer.view).style["boxShadow"] = "0 0 15px #000000";
-	document.body.style.backgroundColor = 'rgb(141,211,200)';
 
 	//доп функция для текста битмап
 	PIXI.BitmapText.prototype.set2=function(text,w){
@@ -6358,10 +6363,6 @@ async function init_game_env(l) {
 		this.endFill();
 	}
 
-	//изменение размера окна
-	resize()
-	window.addEventListener("resize", resize)
-
 	//запускаем главный цикл
 	main_loop()
 
@@ -6375,10 +6376,8 @@ async function init_game_env(l) {
 		objects.id_loup.y=20*Math.cos(game_tick*8)+150;
 	}
 
-
 	//получаем данные авторизации игрока
 	await auth.init();
-
 
 	//смешные логи
 	const runScyfiLogs=async () => {
@@ -6391,8 +6390,7 @@ async function init_game_env(l) {
 	};
 	runScyfiLogs();
 
-	//загрузка библиотеки и подключение к серверу
-	await auth.load_script(TW_PATH+'/my_ws.js');
+	//подключение сокета
 	await my_ws.init()
 	
 	//загружаем остальные данные
