@@ -6461,10 +6461,6 @@ async function init_game_env(l) {
 	//новогодняя акция снег
 	snow.init()
 
-	
-	//устанавливаем мой статус в онлайн
-	set_state({state:'o'})
-
 	//ИД моего клиента и сообщение для дубликатов (если не совпадет то выключаем)
 	client_id = irnd(10,999999)
 	fbs.ref('inbox/'+my_data.uid).set({client_id,tm:Date.now()})
@@ -6522,6 +6518,9 @@ async function init_game_env(l) {
 	//показыаем основное меню
 	main_menu.activate()	
 
+	//устанавливаем мой статус в онлайн
+	set_state({state:'o'})
+	
 	if (game_platform==='YANDEX')
 		window.ysdk.features.LoadingAPI?.ready()	
 
