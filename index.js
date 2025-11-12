@@ -3,7 +3,7 @@ var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, gam
 const MAX_NO_AUTH_RATING=1950;
 const MAX_NO_REP_RATING=1900;
 const MAX_NO_CONF_RATING=1950;
-const TW_PATH='https://f2771470-common.website.twcstorage.ru'
+const COM_URL='https://mtcom.website.yandexcloud.net'
 
 my_log={
 	log_arr:[],
@@ -500,7 +500,7 @@ class chat_record_class extends PIXI.Container {
 		if (msg_data.msg.startsWith('GIF')){
 
 			const mp4BaseT=await new Promise((resolve, reject)=>{				
-				const url=`${TW_PATH}/gifs/${msg_data.msg}.mp4`				
+				const url=`${COM_URL}/gifs/${msg_data.msg}.mp4`				
 				if(PIXI.utils.BaseTextureCache[url]&&!PIXI.utils.BaseTextureCache[url].valid) resolve(0);
 				const baseTexture = PIXI.BaseTexture.from(url);
 				if (baseTexture.width>1) resolve(baseTexture);
@@ -5849,7 +5849,7 @@ auth={
 
 			game_platform = 'VK';
 
-			await this.load_script('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')||await this.load_script(TW_PATH+'/vkbridge.js');
+			await this.load_script('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')||await this.load_script(COM_URL+'/vkbridge.js');
 
 			let _player;
 
@@ -6144,10 +6144,10 @@ main_loader={
 		loader.add('top3',git_src+'sounds/top3.mp3');
 
 		//добавляем библиотеку аватаров
-		loader.add('multiavatar', TW_PATH+'/multiavatar.min.txt');
+		loader.add('multiavatar', COM_URL+'/multiavatar.min.txt');
 
 		//добавляем смешные загрузки
-		loader.add('fun_logs', TW_PATH+'/fun_logs.txt');
+		loader.add('fun_logs', COM_URL+'/fun_logs.txt');
 
 		//добавляем стили
 		for (let i=0;i<10;i++)
@@ -6272,7 +6272,7 @@ async function define_platform_and_language() {
 
 	let s = window.location.href;
 
-	if (s.includes('yandex.')||s.includes('app-id=194151')) {
+	if (s.includes('app-id=194151')) {
 		game_platform = 'YANDEX';
 		return;
 	}
