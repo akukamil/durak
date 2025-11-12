@@ -6143,9 +6143,6 @@ main_loader={
 		loader.add('inst_msg',git_src+'sounds/inst_msg.mp3');
 		loader.add('top3',git_src+'sounds/top3.mp3');
 
-		//добавляем библиотеку аватаров
-		loader.add('multiavatar', COM_URL+'/multiavatar.min.txt');
-
 		//добавляем смешные загрузки
 		loader.add('fun_logs', COM_URL+'/fun_logs.txt');
 
@@ -6197,12 +6194,6 @@ main_loader={
 				assets['cards_symbols'+s][card_data]=new PIXI.Texture(bt_values, rect);
 			}
 		}
-
-
-		//добавялем библиотеку аватаров
-		const script = document.createElement('script');
-		script.textContent = assets.multiavatar;
-		document.head.appendChild(script);
 
 		anim2.add(objects.load_bar_cont,{alpha:[1,0]}, false, 0.5,'linear');
 
@@ -6310,8 +6301,6 @@ async function init_game_env(l) {
 	const opts={width:800, height:450,antialias:false,resolution,autoDensity:true};
 	app = new PIXI.Application(opts);
 	document.body.appendChild(app.renderer.view).style.boxShadow = "0 0 15px rgba(255, 255, 255, 0.5)";
-
-	
 	
 	//изменение размера окна
 	resize()
