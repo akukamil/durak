@@ -1668,7 +1668,7 @@ big_msg={
 		objects.big_msg_t2.text=params.t2||''
 		objects.big_msg_t3.text=params.t3||''
 
-		objects.big_msg_fb_btn.visible = (!my_data.blocked)&&params.fb
+		objects.big_msg_fb_btn.visible = (!my_data.blocked)&&params.fb&&(my_data.games>=200)
 		anim2.add(objects.big_msg_cont,{y:[-180,objects.big_msg_cont.sy]}, true, 0.6,'easeOutBack');
 		
 		this.show_bonus_anim(objects.big_msg_lights,params.energy_bonus||0)
