@@ -564,23 +564,34 @@ class feedback_record_class extends PIXI.Container {
 	constructor() {
 
 		super();
-		this.text=new PIXI.BitmapText('Николай: хорошая игра', {fontName: 'mfont',fontSize: 23,align: 'left',lineSpacing:42});
-		this.text.maxWidth=290;
-		this.text.tint=0xFFFF00;
+		this.text=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 19,align: 'left',lineSpacing:42})
+		this.text.maxWidth=290
+		this.text.tint=0xFFFF00
 
-		this.name_text=new PIXI.BitmapText('Николай:', {fontName: 'mfont',fontSize: 23,align: 'left'});
-		this.name_text.tint=0xFFFFFF;
+		this.name_text=new PIXI.BitmapText('', {fontName: 'mfont',fontSize: 19,align: 'left'})
+		this.name_text.tint=0xFFFFFF
 
 
 		this.addChild(this.text,this.name_text)
 	}
 
 	set(fb){		
+	
+		//метка что отзывов нет
+		if (fb.nofb){
+			this.text.visible=false
+			this.name_text.text='Нет отзывов'
+			this.name_text.tint=0x558899
+			return
+		}
 		
 		let sender_name = fb.name || 'Неизв.'
 		if (sender_name.length > 10) sender_name = sender_name.substring(0, 10)
 				
+		this.text.visible=true
 		this.text.text=sender_name+': '+fb.f
+		
+		this.name_text.tint=0xFFFFFF
 		this.name_text.text=sender_name+':'
 
 	}
@@ -5295,7 +5306,7 @@ lobby={
 			if (fb_obj){
 				this.fb_cache[uid].fb_obj=fb_obj;
 			}else{
-				fb_obj=[{uid:'12345',name:'admin',f:'***нет отзывов***',tm:999}];
+				fb_obj=[{nofb:1}];
 				this.fb_cache[uid].fb_obj=fb_obj;
 			}
 
@@ -5322,7 +5333,7 @@ lobby={
 			//устанаваем отзыв
 			fb_place.set(fb_obj[i])
 
-			const fb_height=fb_place.text.textHeight*0.85
+			const fb_height=fb_place.text.textHeight*0.95
 			const fb_end=prv_fb_bottom+fb_height
 
 			//если отзыв будет выходить за экран то больше ничего не отображаем
