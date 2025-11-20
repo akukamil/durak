@@ -6019,22 +6019,20 @@ main_loader={
 
 	preload_assets:0,
 
-	spritesheet_to_tex(t,xframes,yframes,total_w,total_h,xoffset,yoffset){
-
-
-		const frame_width=xframes?total_w/xframes:0;
-		const frame_height=yframes?total_h/yframes:0;
-
-		const textures=[];
-		for (let y=0;y<yframes;y++){
-			for (let x=0;x<xframes;x++){
-
-				const rect = new PIXI.Rectangle(xoffset+x*frame_width, yoffset+y*frame_height, frame_width, frame_height);
-				const quadTexture = new PIXI.Texture(t.baseTexture, rect);
-				textures.push(quadTexture);
+	divide_texture(t,frame_w,frame_h, names){
+		
+		const frames_x=t.width/frame_w
+		const frames_y=t.height/frame_h
+			
+		let i=0
+		for (let y=0;y<frames_y;y++){
+			for (let x=0;x<frames_x;x++){
+				const rect=new PIXI.Rectangle(x*frame_w, y*frame_h, frame_w, frame_h)
+				assets[names[i]]=new PIXI.Texture(t.baseTexture, rect)
+				i++
 			}
 		}
-		return textures;
+
 	},
 
 	async load1(){
@@ -6134,27 +6132,9 @@ main_loader={
 		//добавляем смешные загрузки
 		loader.add('fun_logs', COM_URL+'/fun_logs.txt');
 
-		//добавляем стили
-		for (let i=0;i<10;i++)
-			loader.add('cards_shirt'+i, git_src+'res/cards_designs/cards_shirt'+i+'.png');
-		for (let i=0;i<5;i++)
-			loader.add('cards_symbols_all'+i, git_src+'res/cards_designs/cards_symbols_all'+i+'.png');
-
-		loader.add('cards_bcg0', git_src+'res/cards_designs/cards_bcg0.png');
-		loader.add('cards_bcg2', git_src+'res/cards_designs/cards_bcg2.png');
-		loader.add('cards_bcg7', git_src+'res/cards_designs/cards_bcg7.png');
-
-		loader.add('cards_bcg5_1', git_src+'res/cards_designs/cards_bcg5_1.png');
-		loader.add('cards_bcg5_2', git_src+'res/cards_designs/cards_bcg5_2.png');
-
-		loader.add('cards_bcg6_1', git_src+'res/cards_designs/cards_bcg6_1.png');
-		loader.add('cards_bcg6_2', git_src+'res/cards_designs/cards_bcg6_2.png');
-
-		loader.add('cards_bcg8_1', git_src+'res/cards_designs/cards_bcg8_1.png');
-		loader.add('cards_bcg8_2', git_src+'res/cards_designs/cards_bcg8_2.png');
-
-		loader.add('cards_bcg9_1', git_src+'res/cards_designs/cards_bcg9_1.png');
-		loader.add('cards_bcg9_2', git_src+'res/cards_designs/cards_bcg9_2.png');
+		
+		loader.add('cards_symbols_pack', git_src+'res/cards_designs/cards_symbols_pack.png');
+		loader.add('cards_pack', git_src+'res/cards_designs/cards_pack.png');
 
 		//прогресс
 		loader.onProgress.add((l,res)=>{
@@ -6172,16 +6152,23 @@ main_loader={
 		}
 
 		//создаем ассеты стилей карт - сразу загружаем и масти и значения
-		for (let s=0;s<5;s++){
-			const cards_data=['6','7','8','9','10','J','Q','K','T','c','h','s','d']
-			const bt_values=assets[`cards_symbols_all${s}`].baseTexture
+		const cards_data=['6','7','8','9','10','J','Q','K','T','c','h','s','d']
+		for (let s=0;s<5;s++){			
+			const bt_values=assets.cards_symbols_pack.baseTexture
 			assets['cards_symbols'+s]={};
 			for (let c = 0;c < 13;c++) {
 				const card_data=cards_data[c];
-				const rect = new PIXI.Rectangle(c*90, 0, 90, 90);
+				const rect = new PIXI.Rectangle(c*90, s*90, 90, 90);
 				assets['cards_symbols'+s][card_data]=new PIXI.Texture(bt_values, rect);
 			}
 		}
+		
+
+		this.divide_texture(assets.cards_pack,110,140,[
+		'cards_shirt3','cards_shirt4','cards_shirt5','cards_shirt6','cards_shirt7','cards_shirt8','cards_shirt9',
+		'cardss_shirt1','cards_bcg0','cards_bcg5_1','cards_bcg6_1','cards_bcg7','cards_bcg8_1','cards_bcg9_1',
+		'cardss_shirt0','cardss_shirt2','cards_bcg5_2','cards_bcg6_2','cards_bcg2','cards_bcg8_2','cards_bcg9_2'])
+
 
 		anim2.add(objects.load_bar_cont,{alpha:[1,0]}, false, 0.5,'linear');
 
@@ -6288,7 +6275,9 @@ async function init_game_env(l) {
 	const resolution=Math.max(dw,dh,1);
 	const opts={width:800, height:450,antialias:false,resolution,autoDensity:true};
 	app = new PIXI.Application(opts);
-	document.body.appendChild(app.renderer.view).style.boxShadow = "0 0 15px rgba(255, 255, 255, 0.5)";
+	document.body.appendChild(app.renderer.view).style.boxShadow = "0 0 25px rgba(255, 255, 255, 0.5)";
+	
+	
 	
 	//изменение размера окна
 	resize()
