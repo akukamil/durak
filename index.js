@@ -6166,8 +6166,8 @@ main_loader={
 
 		this.divide_texture(assets.cards_pack,110,140,[
 		'cards_shirt3','cards_shirt4','cards_shirt5','cards_shirt6','cards_shirt7','cards_shirt8','cards_shirt9',
-		'cardss_shirt1','cards_bcg0','cards_bcg5_1','cards_bcg6_1','cards_bcg7','cards_bcg8_1','cards_bcg9_1',
-		'cardss_shirt0','cardss_shirt2','cards_bcg5_2','cards_bcg6_2','cards_bcg2','cards_bcg8_2','cards_bcg9_2'])
+		'cards_shirt1','cards_bcg0','cards_bcg5_1','cards_bcg6_1','cards_bcg7','cards_bcg8_1','cards_bcg9_1',
+		'cards_shirt0','cards_shirt2','cards_bcg5_2','cards_bcg6_2','cards_bcg2','cards_bcg8_2','cards_bcg9_2'])
 
 
 		anim2.add(objects.load_bar_cont,{alpha:[1,0]}, false, 0.5,'linear');
