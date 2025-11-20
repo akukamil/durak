@@ -6277,7 +6277,7 @@ async function init_game_env(l) {
 	app = new PIXI.Application(opts);
 	const pixi_obj=document.body.appendChild(app.renderer.view)
 	pixi_obj.style.boxShadow = "0 0 25px rgb(140, 150,150)";
-
+	pixi_obj.style.outline = '1px solid rgb(165, 165, 185)';
 	
 	
 	//изменение размера окна
