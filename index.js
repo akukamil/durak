@@ -6131,7 +6131,6 @@ main_loader={
 
 		//добавляем смешные загрузки
 		loader.add('fun_logs', COM_URL+'/fun_logs.txt');
-
 		
 		loader.add('cards_symbols_pack', git_src+'res/cards_designs/cards_symbols_pack.png');
 		loader.add('cards_pack', git_src+'res/cards_designs/cards_pack.png');
@@ -6162,13 +6161,11 @@ main_loader={
 				assets['cards_symbols'+s][card_data]=new PIXI.Texture(bt_values, rect);
 			}
 		}
-		
 
 		this.divide_texture(assets.cards_pack,110,140,[
 		'cards_shirt3','cards_shirt4','cards_shirt5','cards_shirt6','cards_shirt7','cards_shirt8','cards_shirt9',
 		'cards_shirt1','cards_bcg0','cards_bcg5_1','cards_bcg6_1','cards_bcg7','cards_bcg8_1','cards_bcg9_1',
 		'cards_shirt0','cards_shirt2','cards_bcg5_2','cards_bcg6_2','cards_bcg2','cards_bcg8_2','cards_bcg9_2'])
-
 
 		anim2.add(objects.load_bar_cont,{alpha:[1,0]}, false, 0.5,'linear');
 
@@ -6243,7 +6240,7 @@ async function define_platform_and_language() {
 		return;
 	}
 
-	if (s.includes('vk.com')||s.includes('vk_app_id')) {
+	if (s.includes('vk.com')||s.includes('vk.ru')||s.includes('vk_app_id')||s.includes('ok.ru')) {
 		game_platform = 'VK';
 		return;
 	}
