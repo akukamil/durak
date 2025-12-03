@@ -4300,8 +4300,7 @@ lb={
 }
 
 snow={
-
-
+	prv_time:0,
 	init(){
 		fbs.ref('snow/on').on('value', d=>snow.snow_event(d.val()))
 	},
