@@ -2138,7 +2138,7 @@ mp_game={
 
 		if (result==='opp_timeout'&&my_data.rating>1800){
 			my_log.add({e:'opp_timeout',time_left:this.move_time_left||'notime',stm:SERVER_TM||'nostm',tm:Date.now()})
-			fbs.ref('BAD_CASE/'+my_data.uid+'/'+game_id).set(my_log.log_arr)
+			//fbs.ref('BAD_CASE/'+my_data.uid+'/'+game_id).set(my_log.log_arr)
 		}
 
 		//обновляем даные на карточке
@@ -4301,56 +4301,34 @@ lb={
 
 snow={
 
-	prv_time:0,
-	on:0,
-	snow_start_time:0,
 
 	init(){
-		fbs.ref('snow').on('value', function(data){snow.snow_event(data.val())});
-		this.check_snow_end()
+		fbs.ref('snow/on').on('value', d=>snow.snow_event(d.val()))
 	},
 
-	send_start(){
-
-		fbs.ref('snow').set({tm:firebase.database.ServerValue.TIMESTAMP,name:'q'});
-
-	},
-
-	snow_event(data){
-
-		if(data){
-			this.start();
-			this.snow_start_time=data.tm
+	send_start(minutes){
+		if(!SERVER_TM){
+			alert('NO SERVER_TM')
+			return
 		}
-		else{
+		fbs.ref('snow').set({tm:SERVER_TM+minutes*60000,on:1})
+
+	},
+
+	snow_event(on){
+		if(on)
+			this.start()
+		else
 			this.kill_snow()
-		}
-	},
-
-	async check_snow_end(){
-		
-		if (my_data.rating<1500) return
-
-		//ждем немного
-		await new Promise((resolve, reject) => setTimeout(resolve, 5000));
-
-		if (!this.on) return;
-
-		//если снег идет слишком много то выключаем его
-		if (SERVER_TM-this.snow_start_time>3600000)
-			fbs.ref('snow').set(0);
-
 	},
 
 	start(){
-		this.on=1;
-		objects.snowflakes.forEach(s=>s.visible=false);
-		anim2.add(objects.snow_cont,{alpha:[0, 1]}, true, 0.25,'linear',false);
-		some_process.snow=function(){snow.process()};
+		objects.snowflakes.forEach(s=>s.visible=false)
+		anim2.add(objects.snow_cont,{alpha:[0, 1]}, true, 0.25,'linear',false)
+		some_process.snow=function(){snow.process()}
 	},
 
 	kill_snow(){
-		this.on=0;
 		if (!objects.snow_cont.visible) return;
 		some_process.snow=function(){};
 		anim2.add(objects.snow_cont,{alpha:[1, 0]}, false, 3,'linear',false);
@@ -4390,8 +4368,6 @@ snow={
 
 			this.prv_time=cur_time;
 		}
-
-
 
 		for (let i=0;i<objects.snowflakes.length;i++){
 			const snowflake=objects.snowflakes[i];
@@ -6428,7 +6404,6 @@ async function init_game_env(l) {
 	//ИД моего клиента и сообщение для дубликатов (если не совпадет то выключаем)
 	client_id = irnd(10,999999)
 	fbs.ref('inbox/'+my_data.uid).set({client_id,tm:Date.now()})
-
 
 	//это событие когда меняется видимость приложения
 	document.addEventListener('visibilitychange', function(){tabvis.change()})
