@@ -4330,7 +4330,7 @@ snow={
 	kill_snow(){
 		if (!objects.snow_cont.visible) return;
 		some_process.snow=function(){};
-		anim2.add(objects.snow_cont,{alpha:[1, 0]}, false, 3,'linear',false);
+		anim2.add(objects.snow_cont,{alpha:[1, 0]}, false, 6,'linear',false);
 	},
 
 	change_dir(snowflake){
