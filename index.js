@@ -4300,12 +4300,15 @@ lb={
 }
 
 snow={
+	
+	on:0,
 	prv_time:0,
+	
 	init(){
 		fbs.ref('snow/on').on('value', d=>snow.snow_event(d.val()))
 	},
 
-	send_start(minutes){
+	send_start(minutes=3){
 		if(!SERVER_TM){
 			alert('NO SERVER_TM')
 			return
@@ -4318,19 +4321,14 @@ snow={
 		if(on)
 			this.start()
 		else
-			this.kill_snow()
+			this.on=0
 	},
 
 	start(){
+		this.on=1
 		objects.snowflakes.forEach(s=>s.visible=false)
-		anim2.add(objects.snow_cont,{alpha:[0, 1]}, true, 0.25,'linear',false)
+		objects.snow_cont.visible=true
 		some_process.snow=function(){snow.process()}
-	},
-
-	kill_snow(){
-		if (!objects.snow_cont.visible) return;
-		some_process.snow=function(){};
-		anim2.add(objects.snow_cont,{alpha:[1, 0]}, false, 6,'linear',false);
 	},
 
 	change_dir(snowflake){
@@ -4346,37 +4344,47 @@ snow={
 		const cur_time=Date.now();
 		if (cur_time-this.prv_time>300){
 
-			const snowflake=objects.snowflakes.find(s=>!s.visible);
+			this.prv_time=cur_time
+						
+			if(!this.on){				
+				const any_vis=objects.snowflakes.some(s=>s.visible)
+				if (!any_vis){
+					objects.snow_cont.visible=false
+					some_process.snow=function(){}
+				}				
+				return
+			}
 
-			if (snowflake){
+			//пытаемся добавить снежинку
+			const sf=objects.snowflakes.find(s=>!s.visible)
+			if (sf){
 
-				snowflake.x=irnd(0,800);
-				snowflake.y=-30;
-				snowflake.visible=true;
+				sf.x=irnd(0,800);
+				sf.y=-30;
+				sf.visible=true;
 
-				snowflake.d_ang=Math.random()*2-1;
-				snowflake.angle=irnd(0,360);
+				sf.d_ang=Math.random()*2-1;
+				sf.angle=irnd(0,360);
 				const size=Math.random()*2+1
-				snowflake.speed=size*0.4;
-				snowflake.scale_xy=size*0.25;
-				snowflake.alpha=size/4;
+				sf.speed=size*0.4;
+				sf.scale_xy=size*0.25;
+				sf.alpha=size/4;
 
-				this.change_dir(snowflake);
+				this.change_dir(sf);
 
 			}
 
-			this.prv_time=cur_time;
 		}
-
+		
+		//движение снежинок
 		for (let i=0;i<objects.snowflakes.length;i++){
-			const snowflake=objects.snowflakes[i];
-			if (!snowflake.visible) continue;
-
-			snowflake.x+=snowflake.dx*snowflake.speed;
-			snowflake.y+=snowflake.dy*snowflake.speed;
-			snowflake.angle+=snowflake.d_ang;
-			if (snowflake.y>480)
-				snowflake.visible=false;
+			const sf=objects.snowflakes[i];
+			if (!sf.visible) continue
+			sf.x+=sf.dx*sf.speed
+			sf.y+=sf.dy*sf.speed;
+			sf.angle+=sf.d_ang;
+			if (sf.y>480)
+				sf.visible=false;
 		}
 
 	}
