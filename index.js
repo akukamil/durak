@@ -3991,8 +3991,7 @@ pref={
 		objects.pref_conf_cards_btn.visible=false
 
 		//сохраняем обычные карты
-		if (my_data.cards_style_id<5)
-			safe_ls('durak_cards_style_id',my_data.cards_style_id)
+		safe_ls('durak_cards_style_id',my_data.cards_style_id)
 
 		sound.play('confirm_dialog');
 
@@ -4053,12 +4052,11 @@ pref={
 
 		//премиальные колоды
 		if (this.cur_style_id>=5){
-			const unique_games_needed={5:5,6:10,7:15,8:20,9:25}[this.cur_style_id]
-			const unique_opps=mp_game.unique_opps.length
+			const req_games=[0,0,0,0,0,1000,2000,3000,5000,10000][this.cur_style_id]
 
-			if (unique_opps<unique_games_needed){
+			if (my_data.games<req_games){
 				objects.pref_premium_info.visible=true;
-				objects.pref_premium_info.text=`Сыграйте ${unique_games_needed} онлайн игр с разными соперниками для получения доступа\n(сыграно: ${unique_opps}/${unique_games_needed})`;
+				objects.pref_premium_info.text=`Нужно сыграть ${req_games} онлайн игр для получения доступа`;
 				objects.pref_conf_cards_btn.visible=false;
 			}else{
 				objects.pref_premium_info.visible=false;
