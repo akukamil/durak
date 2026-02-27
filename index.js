@@ -3192,10 +3192,8 @@ ad={
 
 		}
 
-		if (game_platform==="VK") {
-
+		if (game_platform==='VK' || game_platform==='OK') {
 			await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
-
 		}
 
 		if (game_platform==="MY_GAMES") {
@@ -5814,7 +5812,7 @@ auth={
 			return;
 		}
 
-		if (game_platform === 'VK') {
+		if (game_platform === 'VK' || game_platform==='OK') {
 
 			game_platform = 'VK';
 
@@ -5829,7 +5827,7 @@ auth={
 
 			my_data.name = _player.first_name + ' ' + _player.last_name;
 			my_data.name=this.replace_bad_letter(my_data.name)
-			my_data.uid = 'vk'+_player.id;
+			my_data.uid = game_platform.toLowerCase()+_player.id;
 			my_data.orig_pic_url = _player.photo_100;
 			my_data.auth_mode=1;
 
@@ -6221,8 +6219,14 @@ async function define_platform_and_language() {
 		return;
 	}
 
-	if (s.includes('vk.com')||s.includes('vk.ru')||s.includes('vk_app_id')||s.includes('ok.ru')) {
-		game_platform = 'VK';
+	if (s.includes('vk_ok_app_id')||s.includes('vk_ok_user_id')) {
+		game_platform = 'OK';
+		return;
+	}
+
+
+	if (s.includes('vk.com')||s.includes('vk.ru')||s.includes('vk_app_id')) {
+		game_platform = 'VK';	
 		return;
 	}
 
