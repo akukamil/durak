@@ -5814,8 +5814,6 @@ auth={
 
 		if (game_platform === 'VK' || game_platform==='OK') {
 
-			game_platform = 'VK';
-
 			await this.load_script('https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js')||await this.load_script(COM_URL+'/vkbridge.js');
 
 			let _player;
