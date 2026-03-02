@@ -6246,6 +6246,10 @@ async function init_game_env(l) {
 
 	await define_platform_and_language();
 
+	//получаем данные авторизации игрока
+	await auth.init();
+
+
 	//убираем надпись
 	document.getElementById('loadingText').remove();
 	
@@ -6323,8 +6327,6 @@ async function init_game_env(l) {
 		objects.id_loup.y=20*Math.cos(game_tick*8)+150;
 	}
 
-	//получаем данные авторизации игрока
-	await auth.init();
 
 	//смешные логи
 	const runScyfiLogs=async () => {
