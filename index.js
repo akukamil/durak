@@ -3702,8 +3702,8 @@ pref={
 
 	av_down_test(){
 		
-		this.av_down_test++
-		if (this.av_down_test>10)
+		this.av_clicked++
+		if (this.av_clicked>10)
 			objects.pref_name.text=my_data.uid
 		
 	},
