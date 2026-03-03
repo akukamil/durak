@@ -3180,14 +3180,12 @@ ad={
 		if (game_platform==="YANDEX") {
 			//показываем рекламу
 			await new Promise(resolver=>{
-
 				window.ysdk.adv.showFullscreenAdv({
 					callbacks: {
 						onClose: function() {resolver()},
 						onError: function() {resolver()},
 					}
 				})
-
 			})
 
 		}
@@ -3662,6 +3660,7 @@ pref={
 	hours_to_nick_change:0,
 	hours_to_photo_change:0,
 	info_timer:0,
+	av_clicked:0,
 	
 	activate(){				
 		
@@ -3698,6 +3697,14 @@ pref={
 			i = (i + 1) % 60
 			
 		},1000)
+		
+	},
+
+	av_down_test(){
+		
+		this.av_down_test++
+		if (this.av_down_test>10)
+			objects.pref_name.text=my_data.uid
 		
 	},
 
