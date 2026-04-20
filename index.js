@@ -6367,6 +6367,8 @@ async function init_game_env(l) {
 	//загружаем ресурсы
 	await main_loader.load1()
 	await main_loader.load2()
+	
+	some_process.main_menu = main_menu.process;
 
 	//запускаем лупную анимацию
 	some_process.loup_anim=function(d) {
