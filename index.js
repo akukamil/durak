@@ -2951,7 +2951,7 @@ table={
 
 		card.unshirt();
 
-		await anim3.add(card,{x:[card.x, 400],y:[card.y, 400,'linear']}, true, 0.15);
+		await anim3.add(card,{x:[card.x, 400,'linear'],y:[card.y, 400,'linear']}, true, 0.15);
 		this.my_deck.push(card);
 
 
