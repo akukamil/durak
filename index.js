@@ -4383,7 +4383,7 @@ snow={
 		this.on=1
 		objects.snowflakes.forEach(s=>s.visible=false)
 		objects.snow_cont.visible=true
-		some_process.snow=function(){snow.process()}
+		some_process.snow=function(d){snow.process(d)}
 	},
 
 	change_dir(snowflake){
@@ -4394,7 +4394,7 @@ snow={
 
 	},
 
-	process(){
+	process(d){
 
 		const cur_time=Date.now();
 		if (cur_time-this.prv_time>300){
@@ -4418,10 +4418,10 @@ snow={
 				sf.y=-30;
 				sf.visible=true;
 
-				sf.d_ang=Math.random()*2-1;
+				sf.d_ang=(Math.random()*2-1)*0.15;
 				sf.angle=irnd(0,360);
 				const size=Math.random()*2+1
-				sf.speed=size*0.4;
+				sf.speed=size*0.02;
 				sf.scale_xy=size*0.25;
 				sf.alpha=size/4;
 
@@ -4435,9 +4435,9 @@ snow={
 		for (let i=0;i<objects.snowflakes.length;i++){
 			const sf=objects.snowflakes[i];
 			if (!sf.visible) continue
-			sf.x+=sf.dx*sf.speed
-			sf.y+=sf.dy*sf.speed;
-			sf.angle+=sf.d_ang;
+			sf.x+=sf.dx*sf.speed*d
+			sf.y+=sf.dy*sf.speed*d;
+			sf.angle+=sf.d_ang*d;
 			if (sf.y>480)
 				sf.visible=false;
 		}
