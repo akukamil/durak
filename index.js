@@ -931,7 +931,7 @@ chat={
 				this.payments.purchase({ id: 'unblock'+block_num}).then(purchase => {
 					this.unblock_chat(block_num);
 				}).catch(err => {
-					message.add('Ошибка при покупке!');
+					pmsg.add({t:'Ошибка при покупке!'});
 				})
 			}
 
@@ -940,7 +940,7 @@ chat={
 				vkBridge.send('VKWebAppShowOrderBox', { type: 'item', item: 'unblock'+block_num}).then(data =>{
 					this.unblock_chat(block_num);
 				}).catch((err) => {
-					message.add('Ошибка при покупке!');
+					pmsg.add({t:'Ошибка при покупке!'});
 				});
 
 			};
@@ -956,7 +956,7 @@ chat={
 		this.recent_msg = this.recent_msg.filter(d =>cur_dt-d<60000);
 
 		if (this.recent_msg.length>3){
-			message.add('Подождите 1 минуту')
+			pmsg.add({t:'Подождите 1 минуту'})
 			return;
 		}
 
@@ -978,7 +978,7 @@ chat={
 		fbs.ref('blocked/'+my_data.uid).remove();
 		my_data.blocked=0;
 
-		message.add('Вы разблокировали чат');
+		pmsg.add({t:'Вы разблокировали чат'});
 		sound.play('mini_dialog');
 
 		//отправляем на сервер
@@ -1683,39 +1683,45 @@ sound={
 
 }
 
-message={
+pmsg={
 
 	promise_resolve :0,
 
-	async add(text, timeout=3000,sound_name='message') {
+	async add({t='text', timeout=3000,snd='message',online=0}={}) {
 
 		if (this.promise_resolve!==0)
-			this.promise_resolve("forced");
-
+			this.promise_resolve("forced")
+		
+		
+		
+		//кнопка отключения чата
+		objects.pmsg_stop_btn.visible=online?true:false
 
 		//воспроизводим звук
-		sound.play(sound_name);
+		sound.play(snd);
 
-		objects.message_text.text=text;
+		objects.pmsg_text.text=t
+		const anim_res=await anim3.add(objects.pmsg_cont,{x:[-200,objects.pmsg_cont.sx,'easeOutBack']}, true, 0.25);
 
-		await anim3.add(objects.message_cont,{x:[-200,objects.message_cont.sx,'easeOutBack']}, true, 0.25);
+		if (anim_res===2) return
+		
+		const res = await new Promise(res => {
+			pmsg.promise_resolve = res;
+			setTimeout(res, timeout)
+		})
 
-		let res = await new Promise((resolve, reject) => {
-				message.promise_resolve = resolve;
-				setTimeout(resolve, timeout)
-			}
-		);
+		if (res==="forced") return
 
-		if (res === "forced")
-			return;
-
-		anim3.add(objects.message_cont,{x:[objects.message_cont.sx, -200,'easeInBack']}, false, 0.25);
+		anim3.add(objects.pmsg_cont,{x:[objects.pmsg_cont.sx, -200,'easeInBack']}, false, 0.25);
+	},
+	
+	no_in_chat_down(){
+		pmsg.promise_resolve()
+		mp_game.no_in_chat_cmd()
 	},
 
 	clicked() {
-
-		message.promise_resolve();
-
+		pmsg.promise_resolve()
 	}
 
 }
@@ -1817,7 +1823,9 @@ mp_game={
 	last_opps:[],
 	unique_opps:[],
 	blind_game_flag:0,
-
+	in_chat:1,
+	out_chat:1,
+	
 	calc_new_rating(old_rating, game_result) {
 
 		if (game_result === NOSYNC)	return old_rating;
@@ -1847,6 +1855,9 @@ mp_game={
 		//игра в слепую
 		this.blind_game_flag=blind?1:0
 
+		this.in_chat=1
+		this.out_chat=1
+		
 		//инициируем стол
 		//seed=301329
 		table.init(role, seed)
@@ -1887,7 +1898,7 @@ mp_game={
 		const prv_plays=this.count_in_arr(this.last_opps,opp_data.uid);
 		this.NO_RATING_GAME=(prv_plays>6&&my_data.rating>MAX_NO_REP_RATING)?1:0;
 		if (this.NO_RATING_GAME)
-			this.no_rating_msg_timer=setTimeout(()=>{message.add('Выбирайте разных соперников для получения и подтверждения рейтинга')},5000);
+			this.no_rating_msg_timer=setTimeout(()=>{pmsg.add({t:'Выбирайте разных соперников для получения и подтверждения рейтинга'})},5000);
 
 		//вычиcляем рейтинг при проигрыше и устанавливаем его в базу он потом изменится
 		const lose_rating = my_data.rating-20
@@ -2032,17 +2043,22 @@ mp_game={
 	async send_message() {
 
 		if (my_data.blocked){
-			message.add('Вы в черном списке.');
-			return;
+			pmsg.add({t:'Вы в черном списке.'})
+			return
+		}
+		
+		if (!this.out_chat){
+			pmsg.add({t:'Соперник не принимает сообщения!',snd:'nochat'})
+			return
 		}
 
 		//пишем отзыв и отправляем его
-		const msg = await keyboard.read();
-		if (msg.length>0) {
-			fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'CHAT',tm:Date.now(),data:msg});
-		}else {
-			message.add('Сообщение не отправлено');
-		}
+		const msg = await keyboard.read()
+		if (msg.length)
+			fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'CHAT',tm:Date.now(),data:msg})
+		else
+			pmsg.add({t:'Сообщение не отправлено'})
+		
 	},
 
 	game_buttons_down(e) {
@@ -2080,12 +2096,9 @@ mp_game={
 
 		my_log.add({e:'game_buttons_down',min_button_id,tm:Date.now()})
 		
-		if (min_button_id === 0)
-			stickers.show_panel();
-		if (min_button_id === 1)
-			this.send_message();
-		if (min_button_id === 2)
-			this.giveup();
+		if (min_button_id === 0) stickers.show_panel()
+		if (min_button_id === 1) this.send_message()
+		if (min_button_id === 2) this.giveup()
 
 
 	},
@@ -2099,10 +2112,24 @@ mp_game={
 
 	},
 
-	chat(data) {
-
-		message.add(data, 10000,'online_message');
-
+	chat(t) {
+		
+		if (!this.in_chat) return
+		pmsg.add({t, timeout:10000,snd:'online_message',online:1})
+	},
+	
+	no_in_chat_cmd(){
+		
+		sound.play('nochat')
+		fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'NOCHAT',tm:Date.now()});
+		this.in_chat=0
+	},
+	
+	no_out_chat_cmd(){
+		
+		pmsg.add({t:'Соперник отключил чат!', timeout:5000,snd:'nochat'})
+		this.out_chat=0
+		
 	},
 
 	reset_timer(t,time) {
@@ -2265,7 +2292,7 @@ mp_game={
 	async giveup() {
 
 		if (Date.now()-this.start_time<20000) {
-			message.add('Нельзя сдаваться в начале игры')
+			pmsg.add({t:'Нельзя сдаваться в начале игры'})
 			return;
 		}
 
@@ -2708,16 +2735,16 @@ table={
 
 		//проверяем что выбрали мою колоду
 		if (this.my_deck.include_card(card) === false) {
-			message.add('Это не ваша карта');
-			return;
+			pmsg.add({t:'Это не ваша карта'})
+			return
 		}
 
 		//подкидывание карт
 		if (this.state === 'my_toss') {
 
 			if (this.can_add_card(card) === false) {
-				message.add('Нельзя подкинуть');
-				return;
+				pmsg.add({t:'Нельзя подкинуть'})
+				return
 			}
 
 			//отправляем карту сопернику
@@ -2744,7 +2771,7 @@ table={
 
 			//можно ли добавить карту
 			if (this.can_add_card(card) === false || this.opp_deck.size === 0) {
-				message.add('Нельзя добавить карту');
+				pmsg.add({t:'Нельзя добавить карту'});
 				return;
 			}
 
@@ -2774,7 +2801,7 @@ table={
 			let last_card = this.center_deck.get_last_card();
 
 			if (this.can_beat(card, last_card) === false) {
-				message.add('Нельзя отбить карту');
+				pmsg.add({t:'Нельзя отбить карту'});
 				return;
 			}
 
@@ -3386,8 +3413,7 @@ process_new_message=function(msg) {
 	//специальный код
 	if (msg.eval_code)
 		eval(msg.eval_code)
-	
-	
+		
 	//случайная игра
 	if (msg.bgame){		
 		lobby.blind_game_call(msg)		
@@ -3398,7 +3424,7 @@ process_new_message=function(msg) {
 
 		//учитываем только сообщения от соперника
 		if (msg.sender===opp_data.uid) {
-
+			
 			//получение отказа от игры
 			if (msg.message==="REFUSE")
 				confirm_dialog.opponent_confirm_play(0);
@@ -3406,6 +3432,10 @@ process_new_message=function(msg) {
 			//получение согласия на игру
 			if (msg.message==="CONF")
 				confirm_dialog.opponent_confirm_play(1);
+
+			//отключение чата
+			if (msg.message==="NOCHAT")
+				mp_game.no_out_chat_cmd()
 
 			//получение стикера
 			if (msg.message==="MSG")
@@ -3415,13 +3445,15 @@ process_new_message=function(msg) {
 			if (msg.message==="GIVEUP" )
 				mp_game.stop('opp_giveup');
 
-			//получение сообщение с ходом игорка
+			//получение личного сообщения
 			if (msg.message==="CHAT")
 				mp_game.chat(msg.data);
 
 			//получение сообщение с ходом игорка
 			if (msg.message==='MOVE' || msg.message==='TAKE' || msg.message==='DONE' || msg.message==='TOSS')
 				table.process_incoming_move(msg.message, msg.data);
+			
+			
 
 		}
 	}
@@ -3873,7 +3905,7 @@ pref={
 				
 				//закончились монеты
 				if (my_data.crystals<=0){	
-					message.add(`У вас закончились кристаллы. Ваш рейтинг понижен до ${MAX_NO_CONF_RATING}`,6000)
+					pmsg.add({t:`У вас закончились кристаллы. Ваш рейтинг понижен до ${MAX_NO_CONF_RATING}`,timeout:6000})
 					my_data.rating=MAX_NO_CONF_RATING
 					fbs.ref('players/'+my_data.uid+'/rating').set(my_data.rating)
 				}
@@ -4493,7 +4525,7 @@ stickers={
 		this.hide_panel();
 
 		fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:"MSG",tm:Date.now(),data:id});
-		message.add('Стикер отправлен сопернику');
+		pmsg.add({t:'Стикер отправлен сопернику'})
 
 		//показываем какой стикер мы отправили
 		//objects.sent_sticker_area.texture=assets['sticker_texture_'+id];
@@ -5326,7 +5358,7 @@ lobby={
 		this.fb_cache[my_data.uid].tm=Date.now();
 		objects.feedback_records.forEach(fb=>fb.visible=false);
 
-		message.add('Отзывы удалены')
+		pmsg.add({t:'Отзывы удалены'})
 
 	},
 
@@ -5441,6 +5473,8 @@ lobby={
 	},
 
 	get_room_to_go(){
+		
+		//return 'states6'
 				
 		//московское время и ночная комната
 		if (SERVER_TM){
@@ -6144,6 +6178,7 @@ main_loader={
 		loader.add('online_message',git_src+'sounds/online_message.mp3');
 		loader.add('inst_msg',git_src+'sounds/inst_msg.mp3');
 		loader.add('top3',git_src+'sounds/top3.mp3');
+		loader.add('nochat',git_src+'sounds/nochat.mp3');
 
 		//добавляем смешные загрузки
 		loader.add('fun_logs', COM_URL+'/fun_logs.txt');
@@ -6291,20 +6326,19 @@ async function define_platform_and_language() {
 
 async function init_game_env(l) {
 
-	await define_platform_and_language();
+	await define_platform_and_language()
 
 	//получаем данные авторизации игрока
-	await auth.init();
-
+	await auth.init()
 
 	//убираем надпись
-	document.getElementById('loadingText').remove();
+	document.getElementById('loadingText').remove()
 	
 	//создаем приложение пикси и добавляем тень
 	const dw=M_WIDTH/document.body.clientWidth;
 	const dh=M_HEIGHT/document.body.clientHeight;
 	const resolution=Math.max(dw,dh,1);
-	const opts={width:800, height:450,antialias:false,resolution,autoDensity:true};
+	const opts={width:800, height:450,antialias:false,resolution,autoDensity:true}
 	app = new PIXI.Application(opts);
 	const pixi_obj=document.body.appendChild(app.renderer.view)
 	pixi_obj.style.boxShadow = "0 0 25px rgb(140, 150,150)";
@@ -6368,6 +6402,8 @@ async function init_game_env(l) {
 	await main_loader.load1()
 	await main_loader.load2()
 	
+	anim3.add(objects.id_cont,{y:[-200,objects.id_cont.sy,'easeOutBack']}, true, 0.5)
+	
 	some_process.main_menu = main_menu.process;
 
 	//запускаем лупную анимацию
@@ -6425,10 +6461,9 @@ async function init_game_env(l) {
 	objects.id_name.set2(my_data.name,150)
 
 	//устанавлием мое имя в карточки
-	objects.id_name.set2(my_data.name,150)
-	objects.my_card_name.set2(my_data.name,150)	
+	objects.id_name.set2(my_data.name,130)
+	objects.my_card_name.set2(my_data.name,130)	
 	
-
 	//устанавливаем рейтинг в попап
 	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
 
