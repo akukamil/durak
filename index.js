@@ -489,49 +489,43 @@ class chat_record_class extends PIXI.Container {
 		}
 
 		this.uid=msg_data.uid;
-		this.tm = msg_data.tm;
-
+		this.tm=msg_data.tm;
 
 		this.name.set2(msg_data.name,150);
 		this.name.tint=this.nameToColor(msg_data.name);
 		this.msg_tm.text = new Date(msg_data.tm).toLocaleString();
-		this.msg.text=msg_data.msg;
+		
 		this.visible = true;
 
-		if (msg_data.msg.startsWith('GIF')){
+		if (msg_data.gif_id){
 
-			const mp4BaseT=await new Promise((resolve, reject)=>{				
-				const url=`${COM_URL}/gifs/${msg_data.msg}.mp4`				
-				if(PIXI.utils.BaseTextureCache[url]&&!PIXI.utils.BaseTextureCache[url].valid) resolve(0);
-				const baseTexture = PIXI.BaseTexture.from(url);
-				if (baseTexture.width>1) resolve(baseTexture);
-				baseTexture.on('loaded', () => resolve(baseTexture));
-				baseTexture.on('error', (error) => resolve(null));
-			});
+			const base_t=await gif_sel.load_gif(`${COM_URL}/gifs/${msg_data.gif_id}.mp4`)
 
-			if (!mp4BaseT) {
+			if (!base_t) {
 				this.visible=false;
 				return 0;
 			}
 
-			mp4BaseT.resource.source.play();
-			mp4BaseT.resource.source.loop=true;
+			base_t.resource.source.play()
+			base_t.resource.source.loop=true
+			
+			this.msg.text=''
 
-			this.gif.texture=PIXI.Texture.from(mp4BaseT);
-			this.gif.visible=true;
-			const aspect_ratio=mp4BaseT.width/mp4BaseT.height;
-			this.gif.height=90;
-			this.gif.width=this.gif.height*aspect_ratio;
-			this.msg_bcg.visible=false;
-			this.msg.visible=false;
-			this.msg_tm.anchor.set(0,0);
-			this.msg_tm.y=this.gif.height+9;
-			this.msg_tm.x=this.gif.width+102;
+			this.gif.texture=PIXI.Texture.from(base_t)
+			this.gif.visible=true
+			const aspect_ratio=base_t.width/base_t.height
+			this.gif.height=90
+			this.gif.width=this.gif.height*aspect_ratio
+			this.msg_bcg.visible=false
+			this.msg.visible=false
+			this.msg_tm.anchor.set(0,0)
+			this.msg_tm.y=this.gif.height+9
+			this.msg_tm.x=this.gif.width+102
 
-			this.gif_bcg.visible=true;
-			this.gif_bcg.height=this.gif.height;
-			this.gif_bcg.width=	this.gif.width;
-			return this.gif.height+30;
+			this.gif_bcg.visible=true
+			this.gif_bcg.height=this.gif.height
+			this.gif_bcg.width=	this.gif.width
+			return this.gif.height+30
 
 		}else{
 
@@ -540,6 +534,8 @@ class chat_record_class extends PIXI.Container {
 			this.msg_bcg.visible=true;
 			this.msg.visible=true;
 
+			this.msg.text=msg_data.msg;
+			
 			//бэкграунд сообщения в зависимости от длины
 			const msg_bcg_width=Math.max(this.msg.width,100)+100;
 			this.msg_bcg.width=msg_bcg_width*1.5;
@@ -620,21 +616,24 @@ chat={
 
 		anim3.add(objects.chat_cont,{alpha:[0, 1,'linear']}, true, 0.1);
 		objects.bcg.texture=assets.bcg;
-		objects.chat_enter_button.visible=my_data.games>=this.games_to_chat;
+		
+		objects.chat_enter_btn.visible=my_data.games>=this.games_to_chat
+		objects.chat_gif_btn.visible=false
 
 		if(my_data.blocked)
-			objects.chat_enter_button.texture=assets.chat_blocked_img;
+			objects.chat_enter_btn.texture=assets.chat_blocked_img;
 		else
-			objects.chat_enter_button.texture=assets.chat_enter_img;
+			objects.chat_enter_btn.texture=assets.chat_enter_img;
+
 
 		objects.chat_rules.text='Правила чата!\n1. Будьте вежливы: Общайтесь с другими игроками с уважением. Избегайте угроз, грубых выражений, оскорблений, конфликтов.\n2. Отправлять сообщения в чат могут игроки сыгравшие более 200 онлайн партий.\n3. За нарушение правил игрок может попасть в черный список.'
 		if(my_data.blocked) objects.chat_rules.text='Вы не можете писать в чат, так как вы находитесь в черном списке';
 
 		//вопроизводитим гифки
-		objects.chat_records.forEach(r=>{
-			if(r.visible&&r.gif.texture.baseTexture.resource&&r.gif.visible)
-				r.gif.texture.baseTexture.resource.source.play();
-		})
+		//objects.chat_records.forEach(r=>{
+		//	if(r.visible&&r.gif.texture.baseTexture.resource&&r.gif.visible)
+		//		r.gif.texture.baseTexture.resource.source.play();
+		//})
 	},
 
 	async init(){
@@ -743,7 +742,7 @@ chat={
 	async chat_updated(data, first_load) {
 
 		//console.log('receive message',data)
-		if(data===undefined||!data.msg||!data.name||!data.uid) return;
+		if(data===undefined||!data.name||!data.uid) return
 
 		//ждем пока процессинг пройдет
 		for (let i=0;i<10;i++){
@@ -833,7 +832,12 @@ chat={
 
 	},
 
-	back_button_down(){
+	gif_btn_down(){
+		
+		gif_sel.activate()
+	},
+
+	back_btn_down(){
 
 		if (anim3.any_on()===true) {
 			sound.play('locked');
@@ -899,19 +903,12 @@ chat={
 
 	wheel_event(delta) {
 
-		objects.chat_msg_cont.y-=delta*50;
-		const chat_bottom = this.last_record_end;
-		const chat_top = this.last_record_end - objects.chat_records.filter(obj => obj.visible === true).length*70;
-
-		if (objects.chat_msg_cont.y+chat_bottom<430)
-			objects.chat_msg_cont.y = 430-chat_bottom;
-
-		if (objects.chat_msg_cont.y+chat_top>0)
-			objects.chat_msg_cont.y=-chat_top;
+		//objects.chat_msg_cont.y-=delta*50;
+		this.shift(-delta*50)
 
 	},
 
-	async write_button_down(){
+	async write_btn_down(){
 
 		if (anim3.any_on()===true) {
 			sound.play('locked');
@@ -965,16 +962,13 @@ chat={
 
 		//пишем сообщение в чат и отправляем его
 		const msg = await keyboard.read(70);
-		if (msg) {
-			const index=irnd(1,999);
+		if (msg)
 			my_ws.socket.send(JSON.stringify({cmd:'push',path:'chat',val:{uid:my_data.uid,name:my_data.name,msg,tm:'TMS'}}))
-		}
-
 	},
 
 	unblock_chat(block_num){
 		objects.chat_rules.text='Правила чата!\n1. Будьте вежливы: Общайтесь с другими игроками с уважением. Избегайте угроз, грубых выражений, оскорблений, конфликтов.\n2. Отправлять сообщения в чат могут игроки сыгравшие более 200 онлайн партий.\n3. За нарушение правил игрок может попасть в черный список.'
-		objects.chat_enter_button.texture=assets.chat_enter_img;
+		objects.chat_enter_btn.texture=assets.chat_enter_img;
 		fbs.ref('blocked/'+my_data.uid).remove();
 		my_data.blocked=0;
 
@@ -3729,6 +3723,113 @@ keyboard={
 
 }
 
+gif_sel={
+	
+	updating:0,
+	sel_id:-1,
+	prv_send:0,
+	
+	activate(){
+		
+		this.sel_id=-1
+		objects.gif_sel_hl.visible=false
+		objects.gif_sel_send_btn.visible=false
+		anim3.add(objects.gif_sel_cont,{x:[800, objects.gif_sel_cont.sx,'linear']}, true, 0.1);
+		this.update()
+		
+	},
+	
+	async update(){
+	
+		if (this.updating) return
+		this.updating=1
+		const ids=[110,114,115,116]
+	
+		for (let i=0;i<4;i++){
+			
+			const gif_id=ids[i]
+			const gif_sprite=objects.gifs[i]
+			const base_t=await this.load_gif(`${COM_URL}/gifs/${gif_id}.mp4`)
+			
+			if(!base_t) continue
+			base_t.resource.source.play();
+			base_t.resource.source.loop=true;
+
+			gif_sprite.texture=PIXI.Texture.from(base_t)
+			
+			const scaleX = 140 / base_t.width
+			const scaleY = 110 / base_t.height
+			const scale = Math.min(scaleX, scaleY)
+				
+			gif_sprite.width = base_t.width * scale;
+			gif_sprite.height = base_t.height * scale;
+		}
+		this.updating=0
+		
+	},
+	
+	load_gif(url){
+		
+		return new Promise(res=>{
+			
+			const timeout = setTimeout(()=>{res(0)},2500)
+
+			//если уже загружали неправильную текстуру
+			if(PIXI.utils.BaseTextureCache[url]&&!PIXI.utils.BaseTextureCache[url].valid) {
+				res(0)
+				clearTimeout(timeout)
+			}
+			const bt = PIXI.BaseTexture.from(url)
+			
+			if (bt.width) {res(bt);clearTimeout(timeout)}
+			bt.on('loaded', ()=>{res(bt);clearTimeout(timeout)})
+			bt.on('error', e=>{res(0);clearTimeout(timeout)})
+		});
+			
+	},
+	
+	close_btn_down(){
+		
+		this.close()
+		
+	},
+	
+	gif_down(id){
+		
+		if (this.sel_id===-1)
+			anim3.add(objects.gif_sel_send_btn,{alpha:[0,1,'linear']}, true, 0.1)
+		
+		this.sel_id=id
+		const gif_sprite=objects.gifs[id]
+		objects.gif_sel_hl.x=gif_sprite.x
+		objects.gif_sel_hl.y=gif_sprite.y
+		objects.gif_sel_hl.visible=true
+		
+	},
+	
+	send_btn_down(){
+
+		const sec_to_wait=Math.round(60-(TM.s-this.prv_send))
+
+		if (sec_to_wait>0){
+			pmsg.add({t:`Подождите\n${sec_to_wait} сек.`})
+			return
+		}
+
+		this.prv_send=TM.s
+		console.log(`чуть не отправили ${this.sel_id}`)
+		my_ws.socket.send(JSON.stringify({cmd:'push',path:'chat',val:{uid:my_data.uid,name:my_data.name,msg:'',gif_id:23,tm:'TMS'}}))
+	},
+	
+	close(){
+		
+		anim3.add(objects.gif_sel_cont,{x:[objects.gif_sel_cont.x,800,'linear']}, false, 0.1);
+	}
+	
+	
+	
+}
+
 pref={
 
 	cur_pic_url:'',
@@ -5480,7 +5581,7 @@ lobby={
 		if (SERVER_TM){
 			const msk_hour=+new Date(SERVER_TM).toLocaleString('en-US', {timeZone: 'Europe/Moscow',hour:'numeric',hourCycle:'h23'})
 			if (msk_hour>=0&&msk_hour<6)
-				return 'statesNIGHT'		
+				return 'statesNIGHT'
 		}		
 		
 		//номер комнаты в зависимости от рейтинга игрока
@@ -6094,15 +6195,27 @@ main_loader={
 		const frames_x=t.width/frame_w
 		const frames_y=t.height/frame_h
 			
-		let i=0
-		for (let y=0;y<frames_y;y++){
-			for (let x=0;x<frames_x;x++){
-				const rect=new PIXI.Rectangle(x*frame_w, y*frame_h, frame_w, frame_h)
-				assets[names[i]]=new PIXI.Texture(t.baseTexture, rect)
-				i++
-			}
+		if (typeof(names)==='string'){
+			assets[names]=[]
+			let i=0
+			for (let y=0;y<frames_y;y++){
+				for (let x=0;x<frames_x;x++){
+					const rect=new PIXI.Rectangle(x*frame_w, y*frame_h, frame_w, frame_h)
+					assets[names][i]=new PIXI.Texture(t.baseTexture, rect)
+					i++
+				}
+			}			
+		}else{
+			
+			let i=0
+			for (let y=0;y<frames_y;y++){
+				for (let x=0;x<frames_x;x++){
+					const rect=new PIXI.Rectangle(x*frame_w, y*frame_h, frame_w, frame_h)
+					assets[names[i]]=new PIXI.Texture(t.baseTexture, rect)
+					i++
+				}
+			}			
 		}
-
 	},
 
 	async load1(){
@@ -6217,6 +6330,10 @@ main_loader={
 		'cards_shirt3','cards_shirt4','cards_shirt5','cards_shirt6','cards_shirt7','cards_shirt8','cards_shirt9',
 		'cards_shirt1','cards_bcg0','cards_bcg5_1','cards_bcg6_1','cards_bcg7','cards_bcg8_1','cards_bcg9_1',
 		'cards_shirt0','cards_shirt2','cards_bcg5_2','cards_bcg6_2','cards_bcg2','cards_bcg8_2','cards_bcg9_2'])
+
+
+		this.divide_texture(assets.mini_cards_pack,300,135,['mini_player_card_ai','mini_player_card','mini_player_card_table','mini_player_card_bot','table_rating_hl'])
+
 
 		anim3.add(objects.load_bar_cont,{alpha:[1,0,'linear']}, false, 0.5);
 
