@@ -16,6 +16,26 @@ my_log={
 
 };
 
+hf={
+	
+	randIntInc(min,max){
+		min = Math.ceil(min)
+		max = Math.floor(max)
+		return Math.floor(Math.random() * (max - min + 1) + min)
+	},
+
+	hash(s){
+		
+		let h = 0;
+		for (let i = 0; i < s.length; i++) {
+			h = (h << 5) - h + s.charCodeAt(i)
+			h |= 0
+		}
+		return h
+	}	
+	
+}
+
 cards_styles={
 
 	0:{
@@ -141,12 +161,6 @@ cards_styles={
 fbs_once=async function(path){
 	let info=await fbs.ref(path).get();
 	return info.val();
-}
-
-irnd = function(min,max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 class player_mini_card_class extends PIXI.Container {
@@ -436,11 +450,7 @@ class chat_record_class extends PIXI.Container {
 
 	nameToColor(name) {
 		  // Create a hash from the name
-		  let hash = 0;
-		  for (let i = 0; i < name.length; i++) {
-			hash = name.charCodeAt(i) + ((hash << 5) - hash);
-			hash = hash & hash; // Convert to 32bit integer
-		  }
+		  let hash = hf.hash(name)
 
 		  // Generate a color from the hash
 		  let color = ((hash >> 24) & 0xFF).toString(16) +
@@ -502,6 +512,7 @@ class chat_record_class extends PIXI.Container {
 			const base_t=await gif_sel.load_gif(`${COM_URL}/gifs/${msg_data.gif_id}.mp4`)
 
 			if (!base_t) {
+				console.log(`Не получилось загрузить гифку ${msg_data.gif_id}`)
 				this.visible=false;
 				return 0;
 			}
@@ -609,6 +620,7 @@ chat={
 	kill_next_click:0,
 	delete_message_mode:0,
 	games_to_chat:200,
+	games_to_gif:1000,
 	payments:0,
 	processing:0,
 
@@ -617,8 +629,8 @@ chat={
 		anim3.add(objects.chat_cont,{alpha:[0, 1,'linear']}, true, 0.1);
 		objects.bcg.texture=assets.bcg;
 		
-		objects.chat_enter_btn.visible=my_data.games>=this.games_to_chat
-		objects.chat_gif_btn.visible=false
+		objects.chat_enter_btn.alpha=my_data.games>=this.games_to_chat?1:0.25
+		objects.chat_gif_btn.alpha=my_data.games>=this.games_to_gif?1:0.25
 
 		if(my_data.blocked)
 			objects.chat_enter_btn.texture=assets.chat_blocked_img;
@@ -834,12 +846,27 @@ chat={
 
 	gif_btn_down(){
 		
+		if (anim3.any_on()) {
+			sound.play('locked');
+			return
+		}
+		
+		if (my_data.games<this.games_to_gif){
+			const left_to_play=this.games_to_gif-my_data.games
+			pmsg.add({t:`Только для игроков сыгравших более ${this.games_to_gif} игр.\nОсталось сыграть: ${left_to_play}`,snd:'locked'})
+			return
+		}
+		
+		if (!SERVER_TM) {
+			pmsg.add({t:'Недотупно',snd:'locked'})
+			return
+		}
 		gif_sel.activate()
 	},
 
 	back_btn_down(){
 
-		if (anim3.any_on()===true) {
+		if (anim3.any_on()) {
 			sound.play('locked');
 			return
 		};
@@ -910,11 +937,16 @@ chat={
 
 	async write_btn_down(){
 
-		if (anim3.any_on()===true) {
-			sound.play('locked');
+		if (anim3.any_on()) {
+			sound.play('locked')
 			return
 		};
 
+		if (my_data.games<this.games_to_chat){
+			const left_to_play=this.games_to_chat-my_data.games
+			pmsg.add({t:`Только для игроков сыгравших более ${this.games_to_chat} игр.\nОсталось сыграть: ${left_to_play}`,snd:'locked'})
+			return
+		}
 
 		//оплата разблокировки чата
 		if (my_data.blocked){
@@ -984,8 +1016,9 @@ chat={
 	close() {
 
 		anim3.add(objects.chat_cont,{alpha:[1, 0,'linear']}, false, 0.1);
-		if (objects.chat_keyboard_cont.visible)
-			keyboard.close();
+		if (objects.chat_keyboard_cont.visible)	keyboard.close()
+		if (objects.gif_sel_cont.visible)	gif_sel.close()				
+		
 	}
 
 }
@@ -2328,7 +2361,7 @@ sp_game={
 		opp_data.uid='bot'
 
 		//инициируем стол
-		let seed2 = irnd(0,999999)
+		let seed2 = hf.randIntInc(0,999999)
 
 		table.init(role, seed2);
 
@@ -2628,7 +2661,7 @@ table={
 	top_zindex : 0,
 	last_cards : [],
 
-	init (role, seed) {
+	init(role, seed) {
 
 		//убираем все карты
 		objects.pcards.forEach(card => card.visible = false)
@@ -3532,7 +3565,7 @@ req_dialog={
 		game_id=~~(Math.random()*1999);
 
 		//раздаем карты мне и оппоненту
-		let seed = irnd(0,999999);
+		let seed = hf.randIntInc(0,999999);
 
 
 		//отправляем данные о начальных параметрах игры сопернику
@@ -3728,9 +3761,11 @@ gif_sel={
 	updating:0,
 	sel_id:-1,
 	prv_send:0,
+	ids:0,
 	
 	activate(){
 		
+		if (!this.ids) this.ids=this.get_unique_int(100,238,new Date(SERVER_TM).getDate(),my_data.uid)
 		this.sel_id=-1
 		objects.gif_sel_hl.visible=false
 		objects.gif_sel_send_btn.visible=false
@@ -3743,11 +3778,10 @@ gif_sel={
 	
 		if (this.updating) return
 		this.updating=1
-		const ids=[110,114,115,116]
 	
 		for (let i=0;i<4;i++){
 			
-			const gif_id=ids[i]
+			const gif_id=this.ids[i]
 			const gif_sprite=objects.gifs[i]
 			const base_t=await this.load_gif(`${COM_URL}/gifs/${gif_id}.mp4`)
 			
@@ -3790,6 +3824,7 @@ gif_sel={
 	
 	close_btn_down(){
 		
+		if (anim3.any_on()) return
 		this.close()
 		
 	},
@@ -3806,6 +3841,32 @@ gif_sel={
 		objects.gif_sel_hl.visible=true
 		
 	},
+		
+	get_unique_int(min, max,day,uid) {//inclusive
+		
+		let seed = hf.hash(`${day}-${uid}`);
+
+		function random() {
+			seed |= 0;
+			seed = seed + 0x6D2B79F5 | 0;
+			let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+			t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+			return ((t ^ t >>> 14) >>> 0) / 4294967296;
+		}
+
+		const size = max - min + 1;
+
+		// Build [min ... max]
+		const arr = Array.from({ length: size }, (_, i) => i + min);
+
+		// Partial Fisher–Yates (only 4 picks)
+		for (let i = 0; i < 4; i++) {
+			const j = i + Math.floor(random() * (size - i));
+			[arr[i], arr[j]] = [arr[j], arr[i]];
+		}
+
+		return arr.slice(0, 4);
+	},
 	
 	send_btn_down(){
 
@@ -3818,16 +3879,14 @@ gif_sel={
 
 		this.prv_send=TM.s
 		console.log(`чуть не отправили ${this.sel_id}`)
-		my_ws.socket.send(JSON.stringify({cmd:'push',path:'chat',val:{uid:my_data.uid,name:my_data.name,msg:'',gif_id:23,tm:'TMS'}}))
+		const gif_id=this.ids[this.sel_id]
+		my_ws.socket.send(JSON.stringify({cmd:'push',path:'chat',val:{uid:my_data.uid,name:my_data.name,msg:'',gif_id,tm:'TMS'}}))
 	},
 	
 	close(){
-		
 		anim3.add(objects.gif_sel_cont,{x:[objects.gif_sel_cont.x,800,'linear']}, false, 0.1);
-	}
-	
-	
-	
+	}	
+		
 }
 
 pref={
@@ -3862,7 +3921,7 @@ pref={
 		this.switch_shirt(0)
 		this.update_buttons()
 
-		this.avatar_switch_center=this.avatar_swtich_cur=irnd(9999,999999);
+		this.avatar_switch_center=this.avatar_swtich_cur=hf.randIntInc(9999,999999);
 	},
 
 	init(){
@@ -4250,8 +4309,8 @@ pref={
 			objects.pref_premium_info.visible=false;
 		}
 
-		const rand_suit = ['h','d','s','c'][irnd(0,3)];
-		const rand_val = ['6','7','8','9','10','J','Q','K','T'][irnd(0,8)];
+		const rand_suit = ['h','d','s','c'][hf.randIntInc(0,3)];
+		const rand_val = ['6','7','8','9','10','J','Q','K','T'][hf.randIntInc(0,8)];
 		objects.pref_open.set(rand_suit,rand_val);
 		objects.pref_open.unshirt(this.cur_style_id);
 
@@ -4521,7 +4580,7 @@ snow={
 
 	change_dir(snowflake){
 
-		const ang=180+irnd(-20,20);
+		const ang=180+hf.randIntInc(-20,20);
 		snowflake.dx=Math.sin(ang*0.01745);
 		snowflake.dy=-Math.cos(ang*0.01745);
 
@@ -4547,12 +4606,12 @@ snow={
 			const sf=objects.snowflakes.find(s=>!s.visible)
 			if (sf){
 
-				sf.x=irnd(0,800);
+				sf.x=hf.randIntInc(0,800);
 				sf.y=-30;
 				sf.visible=true;
 
 				sf.d_ang=(Math.random()*2-1)*0.15;
-				sf.angle=irnd(0,360);
+				sf.angle=hf.randIntInc(0,360);
 				const size=Math.random()*2+1
 				sf.speed=size*0.02;
 				sf.scale_xy=size*0.25;
@@ -5925,8 +5984,8 @@ auth={
 
 		} else {
 
-			let rnd_num = irnd(0, rnd_names.length - 1);
-			let rand_uid = irnd(0, 999999)+ 100;
+			let rnd_num = hf.randIntInc(0, rnd_names.length - 1);
+			let rand_uid = hf.randIntInc(0, 999999)+ 100;
 			let name_postfix = rand_uid.toString().substring(0, 3);
 			let name =	rnd_names[rnd_num] + name_postfix;
 			return name;
@@ -5937,7 +5996,7 @@ auth={
 	get_random_char() {
 
 		const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-		return chars[irnd(0,chars.length-1)];
+		return chars[hf.randIntInc(0,chars.length-1)];
 
 	},
 
@@ -6534,9 +6593,9 @@ async function init_game_env(l) {
 	const runScyfiLogs=async () => {
 		const scyfi_logs=JSON.parse(assets.fun_logs);
 		for (let i=0;i<10;i++){
-			const log_index=irnd(0,scyfi_logs.length-1);
+			const log_index=hf.randIntInc(0,scyfi_logs.length-1);
 			objects.scyfi_log.text=scyfi_logs[log_index];
-			await new Promise(resolve=>setTimeout(resolve, irnd(300,700)));
+			await new Promise(resolve=>setTimeout(resolve, hf.randIntInc(300,700)));
 		}
 	};
 	runScyfiLogs();
@@ -6612,7 +6671,7 @@ async function init_game_env(l) {
 	snow.init()
 
 	//ИД моего клиента и сообщение для дубликатов (если не совпадет то выключаем)
-	client_id = irnd(10,999999)
+	client_id = hf.randIntInc(10,999999)
 	fbs.ref('inbox/'+my_data.uid).set({client_id,tm:Date.now()})
 
 	//это событие когда меняется видимость приложения
