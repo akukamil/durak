@@ -642,10 +642,10 @@ chat={
 		if(my_data.blocked) objects.chat_rules.text='Вы не можете писать в чат, так как вы находитесь в черном списке';
 
 		//вопроизводитим гифки
-		//objects.chat_records.forEach(r=>{
-		//	if(r.visible&&r.gif.texture.baseTexture.resource&&r.gif.visible)
-		//		r.gif.texture.baseTexture.resource.source.play();
-		//})
+		objects.chat_records.forEach(r=>{
+			if(r.visible&&r.gif.texture.baseTexture.resource&&r.gif.visible)
+				r.gif.texture.baseTexture.resource.source.play();
+		})
 	},
 
 	async init(){
