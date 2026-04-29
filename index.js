@@ -728,7 +728,7 @@ chat={
 		fbs.ref('inbox/'+uid).set({message:'CHAT_BLOCK',tm:Date.now()});
 		const name=await fbs_once(`players/${uid}/name`);
 		const msg=`Игрок ${name} занесен в черный список.`;
-		my_ws.socket.send(JSON.stringify({cmd:'push',path:'chat',val:{uid:'admin',name:'Админ',msg,tm:'TMS'}}));
+		my_ws.safe_send({cmd:'push',path:'chat',val:{uid:'admin',name:'Админ',msg,tm:'TMS'}});
 
 		//увеличиваем количество блокировок
 		fbs.ref('players/'+uid+'/block_num').transaction(val=> {return (val || 0) + 1});
@@ -995,7 +995,7 @@ chat={
 		//пишем сообщение в чат и отправляем его
 		const msg = await keyboard.read(70);
 		if (msg)
-			my_ws.socket.send(JSON.stringify({cmd:'push',path:'chat',val:{uid:my_data.uid,name:my_data.name,msg,tm:'TMS'}}))
+			my_ws.safe_send({cmd:'push',path:'chat',val:{uid:my_data.uid,name:my_data.name,msg,tm:'TMS'}})
 	},
 
 	unblock_chat(block_num){
@@ -3880,7 +3880,7 @@ gif_sel={
 		this.prv_send=TM.s
 		console.log(`чуть не отправили ${this.sel_id}`)
 		const gif_id=this.ids[this.sel_id]
-		my_ws.socket.send(JSON.stringify({cmd:'push',path:'chat',val:{uid:my_data.uid,name:my_data.name,msg:'',gif_id,tm:'TMS'}}))
+		my_ws.safe_send({cmd:'push',path:'chat',val:{uid:my_data.uid,name:my_data.name,msg:'',gif_id,tm:'TMS'}})
 	},
 	
 	close(){
