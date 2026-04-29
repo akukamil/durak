@@ -3,7 +3,7 @@ var app ={stage:{},renderer:{}},assets={}, objects={}, state='',game_tick=0, gam
 const MAX_NO_AUTH_RATING=1950;
 const MAX_NO_REP_RATING=1900;
 const MAX_NO_CONF_RATING=1950;
-const COM_URL='https://mtcom.website.yandexcloud.net'
+const COM_URL='https://akukamil.github.io/common'
 const TM={s:0,ms:0}
 
 my_log={
