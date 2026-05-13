@@ -477,12 +477,14 @@ class chat_record_class extends PIXI.Container {
 		  return (r << 16) + (g << 8) + b;
 	}
 
-	async update_avatar(uid, tar_sprite) {
+	update_avatar(uid, tar_sprite) {
 
 		//определяем pic_url
-		await players_cache.update(uid);
-		await players_cache.update_avatar(uid);
-		tar_sprite.set_texture(players_cache.players[uid].texture);
+		const pdata=players_cache.get_pdata(uid)
+		if(pdata)
+			tar_sprite.set_texture(pdata.texture)
+		else
+			players_cache.update(uid)
 	}
 
 	async set(msg_data) {
@@ -495,7 +497,7 @@ class chat_record_class extends PIXI.Container {
 			this.avatar.set_texture(assets.pc_icon);
 		}else{
 			this.msg_bcg.tint=0xffffff;
-			await this.update_avatar(msg_data.uid, this.avatar);
+			this.update_avatar(msg_data.uid, this.avatar);
 		}
 
 		this.uid=msg_data.uid;
@@ -607,6 +609,7 @@ class feedback_record_class extends PIXI.Container {
 
 chat={
 
+	on:0,
 	last_record_end : 0,
 	drag : false,
 	data:[],
@@ -626,37 +629,45 @@ chat={
 
 	activate() {
 
-		anim3.add(objects.chat_cont,{alpha:[0, 1,'linear']}, true, 0.1);
-		objects.bcg.texture=assets.bcg;
+		this.on=1;
+		anim3.add(objects.chat_cont, {alpha: [0, 1, 'linear']}, true, 0.1);
 		
 		objects.chat_enter_btn.alpha=my_data.games>=this.games_to_chat?1:0.25
 		objects.chat_gif_btn.alpha=my_data.games>=this.games_to_gif?1:0.25
+
+		objects.bcg.interactive=true;
+		objects.bcg.pointermove=this.pointer_move.bind(this);
+		objects.bcg.pointerdown=this.pointer_down.bind(this);
+		objects.bcg.pointerup=this.pointer_up.bind(this);
+		objects.bcg.pointerupoutside=this.pointer_up.bind(this);
 
 		if(my_data.blocked)
 			objects.chat_enter_btn.texture=assets.chat_blocked_img;
 		else
 			objects.chat_enter_btn.texture=assets.chat_enter_img;
 
-
 		objects.chat_rules.text='Правила чата!\n1. Будьте вежливы: Общайтесь с другими игроками с уважением. Избегайте угроз, грубых выражений, оскорблений, конфликтов.\n2. Отправлять сообщения в чат могут игроки сыгравшие более 200 онлайн партий.\n3. За нарушение правил игрок может попасть в черный список.'
 		if(my_data.blocked) objects.chat_rules.text='Вы не можете писать в чат, так как вы находитесь в черном списке';
 
 		//вопроизводитим гифки
 		objects.chat_records.forEach(r=>{
-			if(r.visible&&r.gif.texture.baseTexture.resource&&r.gif.visible)
+			if(r.visible&&r.gif.visible)
 				r.gif.texture.baseTexture.resource.source.play();
 		})
+
+		this.shift(-2000);
+	},
+
+	new_message(data){
+
+		console.log('new_data',data);
+
 	},
 
 	async init(){
 
 		this.last_record_end = 0;
 		objects.chat_msg_cont.y = objects.chat_msg_cont.sy;
-		objects.bcg.interactive=true;
-		objects.bcg.pointermove=this.pointer_move.bind(this);
-		objects.bcg.pointerdown=this.pointer_down.bind(this);
-		objects.bcg.pointerup=this.pointer_up.bind(this);
-		objects.bcg.pointerupoutside=this.pointer_up.bind(this);
 
 		for(let rec of objects.chat_records) {
 			rec.visible = false;
@@ -664,12 +675,12 @@ chat={
 			rec.tm=0;
 		}
 
-		this.init_yandex_payments();
+		this.init_yandex_payments()
 
 		//загружаем чат
 		const chat_data=await my_ws.get('chat',25)
 
-		await this.chat_load(chat_data)
+		await this.chat_load(chat_data);
 
 		//подписываемся на новые сообщения
 		my_ws.ss_child_added('chat',chat.chat_updated.bind(chat))
@@ -689,11 +700,24 @@ chat={
 
 	},
 
-	fix_name(uid){
-
-		fbs.ref('players/'+uid+'/name').set(auth.get_random_name(uid));
-		fbs.ref('players/'+uid+'/nick_tm').set(2728556930444);
-
+	gif_btn_down(){
+		
+		if (anim3.any_on()) {
+			sound.play('locked');
+			return
+		}
+		
+		if (my_data.games<this.games_to_gif){
+			const left_to_play=this.games_to_gif-my_data.games
+			pmsg.add({t:`Только для игроков сыгравших более ${this.games_to_gif} игр.\nОсталось сыграть: ${left_to_play}`,snd:'locked'})
+			return
+		}
+		
+		if (!SERVER_TM) {
+			pmsg.add({t:'Недотупно',snd:'locked'})
+			return
+		}
+		gif_sel.activate()
 	},
 
 	get_oldest_index () {
@@ -728,7 +752,7 @@ chat={
 		fbs.ref('inbox/'+uid).set({message:'CHAT_BLOCK',tm:Date.now()});
 		const name=await fbs_once(`players/${uid}/name`);
 		const msg=`Игрок ${name} занесен в черный список.`;
-		my_ws.safe_send({cmd:'push',path:'chat',val:{uid:'admin',name:'Админ',msg,tm:'TMS'}});
+		my_ws.socket.send(JSON.stringify({cmd:'push',path:'chat',val:{uid:'admin',name:'Админ',msg,tm:'TMS'}}));
 
 		//увеличиваем количество блокировок
 		fbs.ref('players/'+uid+'/block_num').transaction(val=> {return (val || 0) + 1});
@@ -737,7 +761,7 @@ chat={
 
 	async chat_load(data) {
 
-		if (data === null) return;
+		if (!data) return;
 
 		//превращаем в массив
 		data = Object.keys(data).map((key) => data[key]);
@@ -748,12 +772,11 @@ chat={
 		//покаываем несколько последних сообщений
 		for (let c of data)
 			await this.chat_updated(c,true);
-
 	},
 
 	async chat_updated(data, first_load) {
 
-		//console.log('receive message',data)
+		//console.log('chat_updated:',JSON.stringify(data).length);
 		if(data===undefined||!data.name||!data.uid) return
 
 		//ждем пока процессинг пройдет
@@ -779,12 +802,20 @@ chat={
 
 		//смещаем на одно сообщение (если чат не видим то без твина)
 		if (objects.chat_cont.visible)
-			await anim3.add(objects.chat_msg_cont,{y:[objects.chat_msg_cont.y,objects.chat_msg_cont.y-y_shift,'linear']},true, 0.05);
+			await anim3.add(objects.chat_msg_cont, {y: [objects.chat_msg_cont.y, objects.chat_msg_cont.y-y_shift, 'linear']}, true, 0.05);
 		else
 			objects.chat_msg_cont.y-=y_shift
 
 		this.processing=0;
 
+	},
+
+	cache_updated(uid,pdata){
+
+		//if (!this.on) return
+		for(let rec of objects.chat_records)
+			if (rec.visible&&rec.uid===uid)
+				rec.avatar.set_texture(pdata.texture)
 	},
 
 	avatar_down(player_data){
@@ -809,11 +840,6 @@ chat={
 			fbs.ref('inbox/'+player_data.uid).set({message:'CLIEND_ID',tm:Date.now(),client_id:999999});
 			console.log('Игрок убит: ',player_data.uid);
 			this.kill_next_click=0;
-		}
-
-		if(this.delete_message_mode){
-			fbs.ref(`${chat_path}/${player_data.index}`).remove();
-			console.log(`сообщение ${player_data.index} удалено`)
 		}
 
 
@@ -844,34 +870,14 @@ chat={
 
 	},
 
-	gif_btn_down(){
-		
-		if (anim3.any_on()) {
-			sound.play('locked');
-			return
-		}
-		
-		if (my_data.games<this.games_to_gif){
-			const left_to_play=this.games_to_gif-my_data.games
-			pmsg.add({t:`Только для игроков сыгравших более ${this.games_to_gif} игр.\nОсталось сыграть: ${left_to_play}`,snd:'locked'})
-			return
-		}
-		
-		if (!SERVER_TM) {
-			pmsg.add({t:'Недотупно',snd:'locked'})
-			return
-		}
-		gif_sel.activate()
-	},
-
 	back_btn_down(){
 
-		if (anim3.any_on()) {
+		if (anim3.any_on()===true) {
 			sound.play('locked');
 			return
 		};
 
-		sound.play('click');
+		sound.play('close_it');
 		this.close();
 		lobby.activate();
 
@@ -930,8 +936,7 @@ chat={
 
 	wheel_event(delta) {
 
-		//objects.chat_msg_cont.y-=delta*50;
-		this.shift(-delta*50)
+		this.shift(-delta*30)
 
 	},
 
@@ -998,27 +1003,22 @@ chat={
 			my_ws.safe_send({cmd:'push',path:'chat',val:{uid:my_data.uid,name:my_data.name,msg,tm:'TMS'}})
 	},
 
-	unblock_chat(block_num){
+	unblock_chat(){
 		objects.chat_rules.text='Правила чата!\n1. Будьте вежливы: Общайтесь с другими игроками с уважением. Избегайте угроз, грубых выражений, оскорблений, конфликтов.\n2. Отправлять сообщения в чат могут игроки сыгравшие более 200 онлайн партий.\n3. За нарушение правил игрок может попасть в черный список.'
 		objects.chat_enter_btn.texture=assets.chat_enter_img;
 		fbs.ref('blocked/'+my_data.uid).remove();
 		my_data.blocked=0;
-
 		pmsg.add({t:'Вы разблокировали чат'});
 		sound.play('mini_dialog');
-
-		//отправляем на сервер
-		my_ws.safe_send({cmd:'log_inst',logger:'payments',data:{game_name,uid:my_data.uid,name:my_data.name,block_num}});
-
-
 	},
 
 	close() {
 
+		this.on=0;
 		anim3.add(objects.chat_cont,{alpha:[1, 0,'linear']}, false, 0.1);
 		if (objects.chat_keyboard_cont.visible)	keyboard.close()
-		if (objects.gif_sel_cont.visible)	gif_sel.close()				
-		
+		if (objects.gif_sel_cont.visible) gif_sel.close()	
+
 	}
 
 }
@@ -1889,18 +1889,14 @@ mp_game={
 		//seed=301329
 		table.init(role, seed)
 
+		//заполняем и показываем карточки
+		this.update_opp_card()
+		this.update_my_card()
+		
 		//показыаем карточки
 		anim3.add(objects.my_card_cont,{x:[-100,objects.my_card_cont.sx,'easeOutBack']}, true, 0.6);
-				
-		//заполняем и показываем карточку соперника
-		const player_data=players_cache.players[opp_data.uid]
-		opp_data.rating=player_data.rating
-		objects.opp_card_name.set2(player_data.name,160)
-		objects.opp_card_rating.text=player_data.rating
-		objects.opp_avatar.texture=player_data.texture		
-		anim3.add(objects.opp_card_cont,{x:[900,objects.opp_card_cont.sx,'easeOutBack']}, true, 0.6)
-
-
+		anim3.add(objects.opp_card_cont,{x:[900,objects.opp_card_cont.sx,'easeOutBack']}, true, 0.6)				
+		
 		objects.game_buttons.visible = true;
 
 		//сколько сделано ходов
@@ -1920,7 +1916,10 @@ mp_game={
 
 		//фиксируем врему начала игры для статистики
 		this.start_time = Date.now();
-
+		
+		//фиксируем рейтинг соперника из кэша
+		opp_data.rating=players_cache[opp_data.uid].rating||my_data.rating
+		
 		//сколько игрок играл с этим соперником
 		const prv_plays=this.count_in_arr(this.last_opps,opp_data.uid);
 		this.NO_RATING_GAME=(prv_plays>6&&my_data.rating>MAX_NO_REP_RATING)?1:0;
@@ -1937,6 +1936,23 @@ mp_game={
 
 		opponent = this;
 
+	},
+	
+	update_my_card(){
+		
+		objects.my_avatar.texture=players_cache[my_data.uid].texture
+		objects.my_card_name.set2(my_data.name,160)
+		objects.my_card_rating.text=my_data.rating
+		
+	},
+	
+	update_opp_card(){
+		
+		const pdata=players_cache[opp_data.uid]
+		objects.opp_avatar.texture=pdata.texture
+		objects.opp_card_name.set2(pdata.name,160)
+		objects.opp_card_rating.text=pdata.rating
+		
 	},
 
 	send_move (data) {
@@ -2245,7 +2261,7 @@ mp_game={
 		}
 
 		//обновляем даные на карточке
-		objects.my_card_rating.text=my_data.rating;
+		objects.my_card_rating.text=my_data.rating
 
 		//если диалоги еще открыты
 		if (objects.stickers_cont.visible===true) stickers.hide_panel()
@@ -2306,7 +2322,7 @@ mp_game={
 			//утверждаем бонусы
 			pref.change_crystals(crystals_bonus)
 			pref.change_energy(energy_bonus)
-			
+
 		}
 
 		await big_msg.show({t1:result_info, t2:'Рейтинг'+`: ${old_rating} > ${my_data.rating}`,t3:auth_msg, fb:true,energy_bonus,crystals_bonus})
@@ -2364,14 +2380,14 @@ sp_game={
 		let seed2 = hf.randIntInc(0,999999)
 
 		table.init(role, seed2);
-
+		
+		//заполняем и показываем карточки
+		mp_game.update_opp_card()
+		mp_game.update_my_card()
+		
 		//показыаем карточки
-		objects.opp_card_name.text='Бот';
-		objects.opp_card_rating.text='1400';
-		objects.opp_avatar.texture=assets.pc_icon;
-
 		anim3.add(objects.my_card_cont,{x:[-100,objects.my_card_cont.sx,'easeOutBack']}, true, 0.6);
-		anim3.add(objects.opp_card_cont,{x:[900,objects.opp_card_cont.sx,'easeOutBack']}, true, 0.6);
+		anim3.add(objects.opp_card_cont,{x:[900,objects.opp_card_cont.sx,'easeOutBack']}, true, 0.6)	
 
 		objects.sbg_button.visible = true;
 
@@ -3502,85 +3518,89 @@ process_new_message=function(msg) {
 		}
 		if (msg.message==="INV_REM") {
 			//запрос игры обновляет данные оппонента поэтому отказ обрабатываем только от актуального запроса
-			if (msg.sender === req_dialog._opp_data.uid)
+			if (msg.sender === req_dialog.uid)
 				req_dialog.hide(msg.sender);
 		}
 	}
 
 }
 
-req_dialog={
+req_dialog = {
 
-	_opp_data : {} ,
+	uid:0,
+	silent_mode_tm:0,
 
 	async show(uid) {
 
-		//если нет в кэше то загружаем из фб
-		await players_cache.update(uid);
-		await players_cache.update_avatar(uid);
 
-		const player=players_cache.players[uid];
-
-		sound.play('receive_sticker');
-
-		anim3.add(objects.req_cont,{y:[-260, objects.req_cont.sy,'easeOutElastic']}, true, 0.35);
-
-		//Отображаем  имя и фамилию в окне приглашения
-		req_dialog._opp_data.uid=uid;
-		req_dialog._opp_data.name=player.name;
-		req_dialog._opp_data.rating=player.rating;
-
-		objects.req_name.set2(player.name,200);
-		objects.req_rating.text=player.rating;
-
-		objects.req_avatar.set_texture(player.texture);
-
+		//если активен режим тишины
+		const tm=Date.now();
+		if(tm<this.silent_mode_tm){
+			fbs.ref('inbox/'+uid).set({sender:my_data.uid,message:'REJECT_ALL',tm:Date.now()});
+			return;
+		}
+		
+		//фиксируем UID
+		this.uid=uid
+		
+		//обновляем данные
+		await players_cache.update(uid,{rating:1})
+		const pdata=players_cache[uid]
+		if (uid!==this.uid) return
+		
+		sound.play('receive_sticker')
+		
+		objects.req_name.text=pdata.name
+		objects.req_rating.text=pdata.rating
+		objects.req_avatar.set_texture(pdata.texture)
+		
+		//анимация окна
+		anim3.add(objects.req_cont, {y: [-260, objects.req_cont.sy, 'easeOutElastic']}, true, 0.75)
 
 	},
-
+	
 	reject() {
 
 		if (objects.req_cont.ready===false || objects.req_cont.visible===false)
 			return;
 
-		sound.play('close');
+		sound.play('close_it');
 
+		//подсветка
+		//objects.req_btn_hl.x=objects.req_deny_btn.x;
+		//objects.req_btn_hl.y=objects.req_deny_btn.y;
+		//anim3.add(objects.req_btn_hl, {alpha: [0, 1, 'ease3peaks']}, false, 0.25, false);
 
-		anim3.add(objects.req_cont,{y:[objects.req_cont.sy, -260,'easeInBack']}, false, 0.25);
+		anim3.add(objects.req_cont, {y: [objects.req_cont.sy, -260, 'easeInBack']}, false, 0.25);
 
-		fbs.ref('inbox/'+req_dialog._opp_data.uid).set({sender:my_data.uid,message:"REJECT",tm:Date.now()});
+		fbs.ref("inbox/"+this.uid).set({sender:my_data.uid,message:'REJECT',tm:Date.now()});
 	},
 
 	accept() {
 
-		if (objects.req_cont.ready===false || objects.req_cont.visible===false ||  objects.confirm_cont.visible===true || objects.big_msg_cont.visible===true || anim3.any_on() === true)
+		if (anim3.any_on()||!objects.req_cont.visible) {
+			sound.play('locked');
 			return;
+		}
 
-		//устанавливаем окончательные данные оппонента
-		opp_data = JSON.parse(JSON.stringify(req_dialog._opp_data))
+		//фиксируем ИД соперника
+		opp_data.uid=this.uid
 
-		anim3.add(objects.req_cont,{y:[objects.req_cont.sy, -260,'easeInBack']}, false, 0.25);
+		anim3.add(objects.req_cont,{y:[objects.req_cont.sy, -260,'easeInBack']}, false, 0.5)
 
-		//отправляем информацию о согласии играть с идентификатором игры
-		game_id=~~(Math.random()*1999);
+		//я ответил на вызов
+		IAM_CALLED=0
 
-		//раздаем карты мне и оппоненту
-		let seed = hf.randIntInc(0,999999);
-
-
-		//отправляем данные о начальных параметрах игры сопернику
-		fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:"ACCEPT", tm:Date.now(), game_id, seed});
-
-		//заполняем карточку оппонента
-		objects.opp_card_name.set2(opp_data.name,150);
-		objects.opp_card_rating.text=objects.req_rating.text;
-		objects.opp_avatar.texture=players_cache.players[opp_data.uid].texture;
-
-		main_menu.close();
-		lobby.close();
+		//отправляем информацию о согласии играть с идентификатором игры и сидом
+		game_id=hf.randIntInc(2,999999)
+		const seed = hf.randIntInc(2,999999)
+		
+		fbs.ref('inbox/'+opp_data.uid).set({sender:my_data.uid,message:'ACCEPT',tm:Date.now(),game_id,seed})
+		
+		main_menu.close()
+		lobby.close()
 		sp_game.switch_close();
 		mp_game.activate('slave', seed);
-
 	},
 
 	hide() {
@@ -3589,7 +3609,7 @@ req_dialog={
 		if (objects.req_cont.ready === false || objects.req_cont.visible === false)
 			return;
 
-		anim3.add(objects.req_cont,{y:[objects.req_cont.sy, -260,'easeInBack']}, false, 0.5);
+		anim3.add(objects.req_cont,{y:[objects.req_cont.sy, -280,'easeInBack']}, false, 0.5);
 
 	}
 
@@ -3905,7 +3925,7 @@ pref={
 		
 		//заполняем имя и аватар
 		objects.pref_name.set2(my_data.name,260);
-		objects.pref_avatar.set_texture(players_cache.players[my_data.uid].texture);
+		objects.pref_avatar.set_texture(players_cache[my_data.uid].texture);
 		objects.pref_rating.text='Рейтинг: '+my_data.rating;
 		objects.pref_games.text='Игры: '+my_data.games;
 
@@ -4172,7 +4192,7 @@ pref={
 		//перелистываем аватары
 		this.avatar_swtich_cur+=dir;
 		if (this.avatar_swtich_cur===this.avatar_switch_center){
-			this.cur_pic_url=players_cache.players[my_data.uid].pic_url
+			this.cur_pic_url=players_cache[my_data.uid].pic_url
 		}else{
 			this.cur_pic_url='mavatar'+this.avatar_swtich_cur;
 		}
@@ -4223,7 +4243,7 @@ pref={
 		//обновляем аватар в кэше
 		players_cache.update_avatar_forced(my_data.uid,this.cur_pic_url).then(()=>{
 			const my_card=objects.mini_cards.find(card=>card.uid===my_data.uid)
-			my_card.avatar.set_texture(players_cache.players[my_data.uid].texture)
+			my_card.avatar.set_texture(players_cache[my_data.uid].texture)
 		})
 
 	},
@@ -4486,7 +4506,7 @@ lb={
 		};
 
 
-		sound.play('click');
+		sound.play('close_it');
 		this.close();
 		main_menu.activate();
 
@@ -4537,8 +4557,8 @@ lb={
 		for (let place in top){
 			const target=top[place];
 			const leader=leaders_array[place];
-			await players_cache.update_avatar(leader.uid);
-			target.avatar.set_texture(players_cache.players[leader.uid].texture)
+			await players_cache.update(leader.uid,{rating:1});
+			target.avatar.set_texture(players_cache[leader.uid].texture)
 		}
 
 	}
@@ -4589,7 +4609,7 @@ snow={
 	process(d){
 
 		const cur_time=Date.now();
-		if (cur_time-this.prv_time>300){
+		if (cur_time-this.prv_time>500){
 
 			this.prv_time=cur_time
 						
@@ -4960,29 +4980,33 @@ lobby={
 
 	players_list_updated(players) {
 
-		//если мы в игре то пока не обновляем карточки
-		if (state==='p'||state==='b')
-			return;		
-		
-		//конвертируем сокращенные данные начали 25.06.2025, нужно позже перейти полностью на сокращенный режим
-		for (let uid in players){
-			const player=players[uid]
-			if (player.n)	player.name=player.n
-			if (player.r)	player.rating=player.r
-			if (player.s)	player.state=player.s
-			if (player.h)	player.hidden=player.h
-			if (player.g)	player.game_id=player.g
-		}		
-
 		//это столы
 		let tables = {};
 
 		//это свободные игроки
 		let single = {};
 
+		//конвертируем сокращенные данные начали 25.06.2025, нужно позже перейти полностью на сокращенный режим
+		for (let uid in players){
+
+			const player=players[uid]
+			if (player.n)
+				player.name=player.n
+			if (player.r)
+				player.rating=player.r
+			if (player.s)
+				player.state=player.s
+			if (player.h)
+				player.hidden=player.h||player.hidden //нужно изменить потом
+			if (player.g)
+				player.game_id=player.g
+		}
+
 		//удаляем инвалидных игроков
 		for (let uid in players){
-			if(!players[uid].name||!players[uid].rating||!players[uid].state)
+			const pdata=players[uid]
+
+			if(!pdata.name||!pdata.rating||!pdata.state)
 				delete players[uid];
 		}
 
@@ -4992,16 +5016,14 @@ lobby={
 		//создаем массив свободных игроков и обновляем кэш
 		for (let uid in players){
 
-			const player=players[uid];
+			const pdata=players[uid];
 
 			//обновляем кэш с первыми данными
-			players_cache.update(uid,{name:player.name,rating:player.rating,hidden:player.hidden});
+			players_cache.update_params(uid,pdata)
 
-			if (player.state!=='p'&&!player.hidden)
-				single[uid] = player.name;
+			if (pdata.state!=='p'&&!pdata.hidden)
+				single[uid] = pdata.name;
 		}
-
-		//console.table(single);
 
 		//оставляем только тех кто за столом
 		for (let uid in p_data)
@@ -5020,7 +5042,6 @@ lobby={
 				}
 			}
 		}
-
 
 		//определяем столы
 		for (let uid in p_data) {
@@ -5116,8 +5137,8 @@ lobby={
 			const rating1= players[uid].rating
 			const rating2= players[tables[uid]].rating
 
-			const _game_id=players[uid].game_id;
-			this.place_table({uid1:uid,uid2:tables[uid],name1, name2, rating1, rating2,_game_id});
+			const game_id=players[uid].game_id;
+			this.place_table({uid1:uid,uid2:tables[uid],name1, name2, rating1, rating2,game_id});
 		}
 
 	},
@@ -5146,11 +5167,11 @@ lobby={
 		card.avatar.set_texture(assets.pc_icon);
 
 		//также сразу включаем его в кэш
-		if(!players_cache.players.bot){
-			players_cache.players.bot={};
-			players_cache.players.bot.name='Бот';
-			players_cache.players.bot.rating=1400;
-			players_cache.players.bot.texture=assets.pc_icon;
+		if(!players_cache.bot){
+			players_cache.bot={};
+			players_cache.bot.name='Бот';
+			players_cache.bot.rating=1400;
+			players_cache.bot.texture=assets.pc_icon;
 		}
 	},
 
@@ -5185,57 +5206,64 @@ lobby={
 			const card=objects.mini_cards[i];
 
 			//это если есть вакантная карточка
-			if (!card.visible) {
+			if (card.visible) continue
 
-				//устанавливаем цвет карточки в зависимости от состояния
-				card.bcg.texture=this.get_state_texture(params.state);
-				card.state=params.state;
+			//устанавливаем цвет карточки в зависимости от состояния
+			card.bcg.texture=this.get_state_texture(params.state);
+			card.state=params.state;
 
-				card.type = "table";
+			card.type = "table";
 
-				card.bcg.texture = assets.mini_player_card_table;
+			card.bcg.texture = assets.mini_player_card_table;
 
-				//присваиваем карточке данные
-				//card.uid=params.uid;
-				card.uid1=params.uid1;
-				card.uid2=params.uid2;
+			//присваиваем карточке данные
+			//card.uid=params.uid;
+			card.uid1=params.uid1;
+			card.uid2=params.uid2;
 
-				//убираем элементы свободного стола
-				card.rating_text.visible = false;
-				card.avatar.visible = false;
-				card.avatar_frame.visible = false;
-				card.avatar1_frame.visible = false;
-				card.avatar2_frame.visible = false;
-				card.name_text.visible = false;
+			//убираем элементы свободного стола
+			card.rating_text.visible = false;
+			card.avatar.visible = false;
+			card.avatar_frame.visible = false;
+			card.avatar1_frame.visible = false;
+			card.avatar2_frame.visible = false;
+			card.name_text.visible = false;
 
-				//Включаем элементы стола
-				card.table_rating_hl.visible=true;
-				card.rating_text1.visible = true;
-				card.rating_text2.visible = true;
-				card.avatar1.visible = true;
-				card.avatar2.visible = true;
-				card.avatar1_frame.visible = true;
-				card.avatar2_frame.visible = true;
-				//card.rating_bcg.visible = true;
+			//Включаем элементы стола
+			card.table_rating_hl.visible=true;
+			card.rating_text1.visible = true;
+			card.rating_text2.visible = true;
+			card.avatar1.visible = true;
+			card.avatar2.visible = true;
+			card.avatar1_frame.visible = true;
+			card.avatar2_frame.visible = true;
+			//card.rating_bcg.visible = true;
 
-				card.rating_text1.text = params.rating1;
-				card.rating_text2.text = params.rating2;
+			card.rating_text1.text = params.rating1
+			card.rating_text2.text = params.rating2
 
-				card.name1 = params.name1;
-				card.name2 = params.name2;
-
-				//получаем аватар и загружаем его
-				this.load_avatar2({uid:params.uid1, tar_obj:card.avatar1});
-
-				//получаем аватар и загружаем его
-				this.load_avatar2({uid:params.uid2, tar_obj:card.avatar2});
+			card.name1 = params.name1;
+			card.name2 = params.name2;
 
 
-				card.visible=true;
-				card.game_id=params.game_id;
+			const a_tex1=players_cache[card.uid1].texture
+			if (a_tex1)
+				card.avatar1.set_texture(a_tex1)
+			else
+				players_cache.update(card.uid1)
 
-				break;
-			}
+
+			const a_tex2=players_cache[card.uid2].texture
+			if (a_tex2)
+				card.avatar2.set_texture(a_tex2)
+			else
+				players_cache.update(card.uid2)
+
+
+			card.visible=true;
+			card.game_id=params.game_id;
+
+			return
 		}
 
 	},
@@ -5260,60 +5288,73 @@ lobby={
 			//ссылка на карточку
 			const card=objects.mini_cards[i];
 
-			//это если есть вакантная карточка
-			if (!card.visible) {
+			if (card.visible) continue
 
-				//устанавливаем цвет карточки в зависимости от состояния
-				card.bcg.texture=this.get_state_texture(params.state,params.uid);
-				card.state=params.state;
+			//устанавливаем цвет карточки в зависимости от состояния
+			card.bcg.texture=this.get_state_texture(params.state,params.uid);
+			card.state=params.state;
 
-				card.type = 'single';
+			card.type = 'single';
 
-				//присваиваем карточке данные
-				card.uid=params.uid;
+			//присваиваем карточке данные
+			card.uid=params.uid;
 
-				//убираем элементы стола так как они не нужны
-				card.rating_text1.visible = false;
-				card.rating_text2.visible = false;
-				card.avatar1.visible = false;
-				card.avatar2.visible = false;
-				card.avatar1_frame.visible = false;
-				card.avatar2_frame.visible = false;
-				card.table_rating_hl.visible=false;
+			//убираем элементы стола так как они не нужны
+			card.rating_text1.visible = false
+			card.rating_text2.visible = false
+			card.avatar1.visible = false
+			card.avatar2.visible = false
+			card.avatar1_frame.visible = false
+			card.avatar2_frame.visible = false
+			card.table_rating_hl.visible=false
 
-				//включаем элементы одиночной карточки
-				card.rating_text.visible = true;
-				card.avatar.visible = true;
-				card.avatar_frame.visible = true;
-				card.name_text.visible = true;
+			//включаем элементы одиночной карточки
+			card.rating_text.visible = true
+			card.avatar.visible = true
+			card.avatar_frame.visible = true
+			card.name_text.visible = true
 
-				card.name=params.name;
-				card.name_text.set2(params.name,105);
-				card.rating=params.rating;
-				card.rating_text.text=params.rating;
+			card.name=params.name
+			card.name_text.set2(params.name,105)
+			card.rating=params.rating
+			card.rating_text.text=params.rating
 
-				card.visible=true;
+			card.visible=true
 
-				//стираем старые данные
-				card.avatar.set_texture();
+			const a_tex=players_cache[card.uid].texture
+			if (a_tex)
+				card.avatar.set_texture(a_tex)
+			else
+				players_cache.update(card.uid)
 
-				//получаем аватар и загружаем его
-				this.load_avatar2({uid:params.uid, tar_obj:card.avatar});
-
-				//console.log(`новая карточка ${i} ${params.uid}`)
-				return;
-			}
+			//console.log(`новая карточка ${i} ${params.uid}`)
+			return;
 		}
 
 	},
 
-	async load_avatar2 (params={}) {
+	cache_updated(uid,pdata){
 
-		//обновляем или загружаем аватарку
-		await players_cache.update_avatar(params.uid);
+		for (const card of objects.mini_cards){
+			if (!card.visible) continue
 
-		//устанавливаем если это еще та же карточка
-		params.tar_obj.set_texture(players_cache.players[params.uid].texture);
+			if (card.type==='single')
+				if (card.uid===uid)
+					card.avatar.set_texture(pdata.texture)
+
+			if (card.type==='table'){
+				if (card.uid1===uid)
+					card.avatar1.set_texture(pdata.texture)
+
+				if (card.uid2===uid)
+					card.avatar2.set_texture(pdata.texture)
+			}
+		}
+		
+		
+		//обновляем сообщение
+		if(objects.inst_msg_cont.visible&&objects.inst_msg_cont.uid===uid)
+			objects.inst_msg_avatar.set_texture(pdata.texture||PIXI.Texture.WHITE)
 	},
 
 	card_down(card_id) {
@@ -5389,7 +5430,7 @@ lobby={
 			objects.invite_btn.texture=assets.invite_blind_img
 			
 			//проверка штрафа за отказ в игре
-			const bg_next_time=safe_ls('durak_bg_stop')||0
+			const bg_next_time=safe_ls('domino_bg_stop')||0
 			const tm=Date.now()
 			if (tm<bg_next_time){
 				objects.invite_btn.visible=false
@@ -5416,9 +5457,9 @@ lobby={
 		
 		if(uid){
 			
-			objects.invite_avatar.set_texture(players_cache.players[uid].texture)
-			objects.invite_name.text=players_cache.players[uid].name
-			objects.invite_rating.text=players_cache.players[uid].rating
+			objects.invite_avatar.set_texture(players_cache[uid].texture)
+			objects.invite_name.text=players_cache[uid].name
+			objects.invite_rating.text=players_cache[uid].rating
 			this.show_feedbacks(uid)
 			objects.invite_feedback.visible=true
 			objects.invite_waiting_anim.visible=false		
@@ -5493,8 +5534,8 @@ lobby={
 
 		objects.td_cont.card=card;
 
-		objects.td_avatar1.set_texture(players_cache.players[card.uid1].texture);
-		objects.td_avatar2.set_texture(players_cache.players[card.uid2].texture);
+		objects.td_avatar1.set_texture(players_cache[card.uid1].texture);
+		objects.td_avatar2.set_texture(players_cache[card.uid2].texture);
 
 		objects.td_rating1.text = card.rating_text1.text;
 		objects.td_rating2.text = card.rating_text2.text;
@@ -5598,11 +5639,9 @@ lobby={
 		anim3.add(objects.lobby_footer_cont,{y:[ objects.lobby_footer_cont.y,450,'linear']}, false, 0.2);
 		anim3.add(objects.lobby_header_cont,{y:[objects.lobby_header_cont.y,-50,'linear']}, false, 0.2);
 
-
-
 		//больше ни ждем ответ ни от кого
-		pending_player="";
-		this.on=0;
+		pending_player=""
+		this.on=0
 		
 		//отписываемся от изменений состояний пользователей через 30 секунд
 		this.state_listener_timeout=setTimeout(()=>{
@@ -5616,14 +5655,13 @@ lobby={
 		clearTimeout(this.hide_inst_msg_timer)
 
 		//когда ничего не видно не принимаем сообщения
-		if(!objects.cards_cont.visible) return;
+		if(!objects.cards_cont.visible) return
 
-		await players_cache.update(data.uid);
-		await players_cache.update_avatar(data.uid);
+		await players_cache.update(data.uid)
 
 		sound.play('inst_msg');
 		anim3.add(objects.inst_msg_cont,{alpha:[0, 1,'linear']},true,0.4,false);
-		objects.inst_msg_avatar.texture=players_cache.players[data.uid].texture||PIXI.Texture.WHITE;
+		objects.inst_msg_avatar.texture=players_cache[data.uid].texture||PIXI.Texture.WHITE;
 		objects.inst_msg_text.set2(data.msg,290);
 		objects.inst_msg_cont.tm=Date.now()
 		
@@ -5741,11 +5779,11 @@ lobby={
 		//закрываем меню и начинаем игру
 		await lobby.close();
 
-		opp_data.uid=data.opp_uid		
+		opp_data.uid=data.opp_uid
 		
-		//устанаваем окончательные данные оппонента
+		//обновляем данные соперника
 		await players_cache.update(data.opp_uid)
-		await players_cache.update_avatar(data.opp_uid)
+		
 		game_id=+data.s
 		mp_game.activate(data.r?'master':'slave',data.s,1)
 		
@@ -5887,61 +5925,113 @@ lobby={
 
 players_cache={
 
-	players:{},
+	on:0,
+	loading:{},
+
+	async update(uid,params={}){
+
+		//ссылка на игрока
+		this[uid]||={}
+		const player=this[uid]
+
+		if (this.loading[uid]) return
+
+
+		while(Object.keys(this.loading).length>5){
+			console.log('Много загрузок, ждем...')
+			await new Promise(r => setTimeout(r, irnd(400,800)));
+		}
+
+		this.loading[uid]=1
+
+		//загружаем имя если нет данных
+		if (!player.name) {
+			console.log(`загружаем name для ${uid}`)
+			player.name=await fbs_once('players/'+uid+'/name')
+		}
+
+		//загружаем картинку если нет данных
+		if (!player.pic_url) {
+			console.log(`загружаем pic_url для ${uid} ${player.name}`)
+			player.pic_url=await fbs_once('players/'+uid+'/pic_url')
+		}
+
+		//загружаем рейтинг если нет данных
+		if (!player.rating||params.rating) {
+			console.log(`загружаем rating для ${uid} ${player.name}`)
+			player.rating=await fbs_once('players/'+uid+'/rating')
+		}
+
+		//загружаем аватар если нет данных
+		if (!player.texture) {
+			console.log(`загружаем texture для ${uid} ${player.name}`)
+			player.texture=await this.my_texture_from(player.pic_url)
+		}
+
+		//переносим в req_dialog
+		//req_dialog.cache_updated(uid,player)
+
+		//переносим в чат
+		chat.cache_updated(uid,player)
+
+		//переносим в чат
+		lobby.cache_updated(uid,player)
+
+		//в турнир
+		//trnm.cache_updated(uid,player)
+
+		//в игру
+		//game.cache_updated(uid,player)
+
+		delete this.loading[uid]
+
+	},
+
+	get_pdata(uid){
+
+		if (!this[uid]) return 0
+		if (!this[uid].texture) return 0
+		return this[uid]
+	},
+
+	update_params(uid,params){
+
+		//ссылка на игрока
+		this[uid]||={}
+		const player=this[uid]
+
+		//загружаем картинку если нет данных
+		if (params.pic_url)
+			player.pic_url=params.pic_url
+
+		//загружаем имя если нет данных
+		if (params.name)
+			player.name=params.name
+
+		//загружаем рейтинг если нет данных
+		if (params.rating)
+			player.rating=params.rating
+
+	},
 
 	async my_texture_from(pic_url){
 
+		if(!pic_url) return PIXI.Texture.WHITE
+		
 		//если это мультиаватар
 		if(pic_url.includes('mavatar')) pic_url=multiavatar(pic_url);
 
 		try{
-			const texture = await PIXI.Texture.fromURL(pic_url);
-			return texture;
+			return await PIXI.Texture.fromURL(pic_url);
 		}catch(er){
 			return PIXI.Texture.WHITE;
 		}
 
 	},
 
-	async update(uid,params={}){
-
-		//если игрока нет в кэше то создаем его
-		if (!this.players[uid]) this.players[uid]={}
-
-		//ссылка на игрока
-		const player=this.players[uid]
-
-		//заполняем параметры которые дали
-		for (let param in params) player[param]=params[param]
-
-		if (!player.name) player.name=await fbs_once('players/'+uid+'/name')
-		if (!player.rating) player.rating=await fbs_once('players/'+uid+'/rating')
-
-
-	},
-
-	async update_avatar(uid){
-
-		const player=this.players[uid];
-		if(!player) alert('Не загружены базовые параметры '+uid);
-
-		//если текстура уже есть
-		if (player.texture) return;
-
-		//если нет URL
-		if (!player.pic_url) player.pic_url=await fbs_once('players/'+uid+'/pic_url');
-
-		if(player.pic_url==='https://vk.com/images/camera_100.png')
-			player.pic_url='https://akukamil.github.io/domino/vk_icon.png';
-
-		//загружаем и записываем текстуру
-		if (player.pic_url) player.texture=await this.my_texture_from(player.pic_url);
-
-	},
-
 	async update_avatar_forced(uid, pic_url){
 
-		const player=this.players[uid];
+		const player=this[uid];
 		if(!player) alert('Не загружены базовые параметры '+uid);
 
 		if(pic_url==='https://vk.com/images/camera_100.png')
@@ -6109,65 +6199,61 @@ auth={
 }
 
 top3={
-	
+
 	async activate(path){
-		
+
 		const top3=await my_ws.get(path||'day_top3')
 		if(!top3) return
 		const uids=Object.keys(top3)
 		if (uids.length!==3) return
-		
+
 		const sorted_top3 = Object.entries(top3).sort((a, b) => b[1] - a[1])
 		const ordered_uids = [sorted_top3[1][0], sorted_top3[0][0], sorted_top3[2][0]]
-		
-		await players_cache.update(ordered_uids[0])		
-		objects.day_top3_name1.set2(players_cache.players[ordered_uids[0]].name,145)
-		
-		await players_cache.update(ordered_uids[1])		
-		objects.day_top3_name2.set2(players_cache.players[ordered_uids[1]].name,145)
-		
+
+		await players_cache.update(ordered_uids[0])
+		objects.day_top3_name1.set2(players_cache[ordered_uids[0]].name,145)
+
+		await players_cache.update(ordered_uids[1])
+		objects.day_top3_name2.set2(players_cache[ordered_uids[1]].name,145)
+
 		await players_cache.update(ordered_uids[2])
-		objects.day_top3_name3.set2(players_cache.players[ordered_uids[2]].name,145)
-			
-				
-		await players_cache.update_avatar(ordered_uids[0])		
-		objects.day_top3_avatar1.set_texture(players_cache.players[ordered_uids[0]].texture)
-		
-		await players_cache.update_avatar(ordered_uids[1])		
-		objects.day_top3_avatar2.set_texture(players_cache.players[ordered_uids[1]].texture)
-		
-		await players_cache.update_avatar(ordered_uids[2])
-		objects.day_top3_avatar3.set_texture(players_cache.players[ordered_uids[2]].texture)
-		
+		objects.day_top3_name3.set2(players_cache[ordered_uids[2]].name,145)
+
+
+		objects.day_top3_avatar1.set_texture(players_cache[ordered_uids[0]].texture)
+		objects.day_top3_avatar2.set_texture(players_cache[ordered_uids[1]].texture)
+		objects.day_top3_avatar3.set_texture(players_cache[ordered_uids[2]].texture)
+
 		objects.day_top3_lights1.text=top3[ordered_uids[0]]
 		objects.day_top3_lights2.text=top3[ordered_uids[1]]
 		objects.day_top3_lights3.text=top3[ordered_uids[2]]
-		
-		some_process.top3_anim=(d)=>{this.process(d)}
+
+		some_process.top3_anim=()=>{this.process()}
 		sound.play('top3')
-		anim3.add(objects.day_top3_cont,{alpha:[0, 1,'linear']}, true, 0.5);
-		
-						
+		anim3.add(objects.day_top3_cont, {alpha: [0, 1, 'linear']}, true, 0.5);
+
+
 	},
-	
-	process(d){
-		
-		objects.day_top3_sunrays.rotation=TM.s
-		
+
+	process(){
+
+		objects.day_top3_sunrays.rotation+=0.01
+
 	},
-	
+
 	close(){
-		
+
 		if (anim3.any_on()) {
 			sound.play('locked')
 			return
 		}
 		
-		anim3.add(objects.day_top3_cont,{alpha:[1, 0,'linear']}, false, 0.5);
-		
-		
-	}	
-	
+		sound.play('close_it')
+		anim3.add(objects.day_top3_cont, {alpha: [1, 0, 'linear']}, false, 0.25);
+
+
+	}
+
 }
 
 function resize() {
@@ -6351,9 +6437,6 @@ main_loader={
 		loader.add('inst_msg',git_src+'sounds/inst_msg.mp3');
 		loader.add('top3',git_src+'sounds/top3.mp3');
 		loader.add('nochat',git_src+'sounds/nochat.mp3');
-
-		//добавляем смешные загрузки
-		loader.add('fun_logs', COM_URL+'/fun_logs.txt');
 		
 		loader.add('cards_symbols_pack', git_src+'res/cards_designs/cards_symbols_pack.png');
 		loader.add('cards_pack', git_src+'res/cards_designs/cards_pack.png');
@@ -6588,22 +6671,12 @@ async function init_game_env(l) {
 		objects.id_loup.y=20*Math.cos(TM.s*10)+150;
 	}
 
-
-	//смешные логи
-	const runScyfiLogs=async () => {
-		const scyfi_logs=JSON.parse(assets.fun_logs);
-		for (let i=0;i<10;i++){
-			const log_index=hf.randIntInc(0,scyfi_logs.length-1);
-			objects.scyfi_log.text=scyfi_logs[log_index];
-			await new Promise(resolve=>setTimeout(resolve, hf.randIntInc(300,700)));
-		}
-	};
-	runScyfiLogs();
-
 	//подключение сокета
+	objects.id_log.text='Подключение к серверу my_ws...'
 	await my_ws.init()
 	
 	//загружаем остальные данные
+	objects.id_log.text='Запрос к Google... '
 	const other_data = await fbs_once('players/'+my_data.uid)
 
 	//это защита от неправильных данных
@@ -6627,21 +6700,20 @@ async function init_game_env(l) {
 	else
 		my_data.pic_url=my_data.orig_pic_url
 
-	//загружаем мои данные в кэш
-	await players_cache.update(my_data.uid,{pic_url:my_data.pic_url,name:my_data.name,rating:my_data.rating});
-	await players_cache.update_avatar(my_data.uid)
+	//загружаем и получаем мои данные из кэша
+	objects.id_log.text='Загрузка данных игрока... '
+	players_cache.update_params(my_data.uid,{pic_url:my_data.pic_url,rating:my_data.rating,name:my_data.name});
+	await players_cache.update(my_data.uid);
 
 	//устанавливаем фотки в попап
-	objects.my_avatar.texture=players_cache.players[my_data.uid].texture
-	objects.id_avatar.set_texture(players_cache.players[my_data.uid].texture)
+	objects.id_avatar.set_texture(players_cache[my_data.uid].texture)
 	objects.id_name.set2(my_data.name,150)
 
 	//устанавлием мое имя в карточки
 	objects.id_name.set2(my_data.name,130)
-	objects.my_card_name.set2(my_data.name,130)	
 	
 	//устанавливаем рейтинг в попап
-	objects.id_rating.text=objects.my_card_rating.text=my_data.rating;
+	objects.id_rating.text=my_data.rating;
 
 	//подписываемся на почтовый ящик
 	fbs.ref('inbox/'+my_data.uid).set({tm:Date.now()})
@@ -6685,6 +6757,7 @@ async function init_game_env(l) {
 	window.addEventListener('keydown',function(event){keyboard.keydown(event.key)});
 
 	//проверяем блокировку
+	objects.id_log.text='Проверка ЧС... '
 	my_data.blocked=await fbs_once('blocked/'+my_data.uid)||0
 
 	//keep-alive сервис
@@ -6707,10 +6780,8 @@ async function init_game_env(l) {
 	mp_game.read_last_opps()
 
 	//ждем загрузки чата
-	await Promise.race([
-		chat.init(),
-		new Promise(resolve=> setTimeout(() => {console.log('chat is not loaded!');resolve()}, 5000))
-	]);
+	objects.id_log.text='Загрузка общего чата... '
+	await chat.init()
 		
 	//отображаем лидеров вчерашнего дня
 	top3.activate()
