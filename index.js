@@ -484,7 +484,7 @@ class chat_record_class extends PIXI.Container {
 		if(pdata)
 			tar_sprite.set_texture(pdata.texture)
 		else
-			players_cache.update(uid)
+			players_cache.update(uid,{source:'chat'})
 	}
 
 	async set(msg_data) {
@@ -4532,18 +4532,27 @@ lb={
 
 		//создаем сортированный массив лидеров
 		const leaders_array=[];
-		Object.keys(leaders).forEach(uid => {
+		for (const uid in leaders){
 
 			const leader_data=leaders[uid];
 			const leader_params={uid,name:leader_data.name, rating:leader_data.rating, pic_url:leader_data.pic_url};
 			leaders_array.push(leader_params);
-
-			//добавляем в кэш
-			players_cache.update(uid,leader_params);
-		});
+		};
+		
 
 		//сортируем....
 		leaders_array.sort(function(a,b) {return b.rating - a.rating});
+
+		//обновляем данные
+		const load_promises=[]
+		for (let i=0;i<10;i++){
+			const leader_data=leaders_array[i];
+			players_cache.update_params(leader_data.uid,leader_data);
+			const p=players_cache.update(leader_data.uid,{source:'lb'});
+			load_promises.push(p)
+		}
+		
+		await Promise.allSettled(load_promises)
 
 		//заполняем имя и рейтинг
 		for (let place in top){
@@ -4557,7 +4566,6 @@ lb={
 		for (let place in top){
 			const target=top[place];
 			const leader=leaders_array[place];
-			await players_cache.update(leader.uid,{rating:1});
 			target.avatar.set_texture(players_cache[leader.uid].texture)
 		}
 
@@ -5946,25 +5954,25 @@ players_cache={
 
 		//загружаем имя если нет данных
 		if (!player.name) {
-			console.log(`загружаем name для ${uid}`)
+			console.log(`загружаем name для ${uid}, заявитель ${params.source}`)
 			player.name=await fbs_once('players/'+uid+'/name')
 		}
 
 		//загружаем картинку если нет данных
 		if (!player.pic_url) {
-			console.log(`загружаем pic_url для ${uid} ${player.name}`)
+			console.log(`загружаем pic_url для ${uid} ${player.name}, заявитель ${params.source}`)
 			player.pic_url=await fbs_once('players/'+uid+'/pic_url')
 		}
 
 		//загружаем рейтинг если нет данных
 		if (!player.rating||params.rating) {
-			console.log(`загружаем rating для ${uid} ${player.name}`)
+			console.log(`загружаем rating для ${uid} ${player.name}, заявитель ${params.source}`)
 			player.rating=await fbs_once('players/'+uid+'/rating')
 		}
 
 		//загружаем аватар если нет данных
 		if (!player.texture) {
-			console.log(`загружаем texture для ${uid} ${player.name}`)
+			console.log(`загружаем texture для ${uid} ${player.name}, заявитель ${params.source}`)
 			player.texture=await this.my_texture_from(player.pic_url)
 		}
 
