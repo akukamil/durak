@@ -3785,7 +3785,7 @@ gif_sel={
 	
 	activate(){
 		
-		if (!this.ids) this.ids=this.get_unique_int(100,364,new Date(SERVER_TM).getDate(),my_data.uid)
+		if (!this.ids) this.ids=this.get_unique_int(window.MIN_GIF_ID_INC||100,window.MAX_GIF_ID_INC||200,new Date(SERVER_TM).getDate(),my_data.uid)
 		this.sel_id=-1
 		objects.gif_sel_hl.visible=false
 		objects.gif_sel_send_btn.visible=false
@@ -4865,7 +4865,6 @@ bg={
 lobby={
 
 	state_tint :{},
-	_opp_data : {},
 	activated:false,
 	rejected_invites:{},
 	fb_cache:{},
@@ -5208,7 +5207,6 @@ lobby={
 	},
 
 	place_table(params={uid1:0,uid2:0,name1: 'X',name2:'X', rating1: 1400, rating2: 1400,game_id:0}) {
-
 
 		for(let i=this.starting_card;i<objects.mini_cards.length;i++) {
 
@@ -5806,7 +5804,6 @@ lobby={
 
 		this.rejected_invites[pending_player]=Date.now();
 		pending_player="";
-		lobby._opp_data={};
 		this.close_invite_dialog();
 		if(msg==='REJECT_ALL')
 			big_msg.show({t1:'Соперник пока не принимает приглашения.'});
