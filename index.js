@@ -4449,7 +4449,7 @@ lb={
 		anim3.add(objects.lb_cards_cont,{x:[450, 0,'easeOutCubic']}, true, 0.5);
 
 		objects.lb_cards_cont.visible=true;
-		objects.lb_back_button.visible=true;
+		objects.lb_back_btn.visible=true;
 
 		for (let i=0;i<7;i++) {
 			objects.lb_cards[i].x=this.cards_pos[i][0];
@@ -4473,12 +4473,12 @@ lb={
 		objects.lb_2_cont.visible=false;
 		objects.lb_3_cont.visible=false;
 		objects.lb_cards_cont.visible=false;
-		objects.lb_back_button.visible=false;
+		objects.lb_back_btn.visible=false;
 		objects.bcg.texture=assets.bcg;
 
 	},
 
-	back_button_down() {
+	back_btn_down() {
 
 		if (anim3.any_on()===true) {
 			sound.play('locked');
@@ -4486,7 +4486,7 @@ lb={
 		};
 
 
-		sound.play('close');
+		sound.play('close_it');
 		this.close();
 		main_menu.activate();
 
@@ -4523,30 +4523,21 @@ lb={
 		//сортируем....
 		leaders_array.sort(function(a,b) {return b.rating - a.rating});
 
-		//обновляем данные
-		const load_promises=[]
-		for (let i=0;i<10;i++){
-			const leader_data=leaders_array[i];
-			players_cache.update_params(leader_data.uid,leader_data);
-			const p=players_cache.update(leader_data.uid,{source:'lb'});
-			load_promises.push(p)
-		}
-		
 		
 		//заполняем имя и рейтинг
 		for (let place in top){
 			const target=top[place];
 			const leader=leaders_array[place];
+			players_cache.update_params(leader.uid,leader);
 			target.t_name.set2(leader.name,place>2?190:130);
 			target.t_rating.text=leader.rating;
-		}		
+		}	
 		
-		await Promise.allSettled(load_promises)
-
-		//заполняем аватар
-		for (let place in top){
-			const target=top[place];
-			const leader=leaders_array[place];
+		//заполняем аватар		
+		for (let i=0;i<10;i++){
+			const leader=leaders_array[i];
+			await players_cache.update(leader.uid,{source:'lb'});
+			const target=top[i];
 			target.avatar.set_texture(players_cache[leader.uid].texture)
 		}
 
