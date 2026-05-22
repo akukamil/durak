@@ -5993,17 +5993,29 @@ players_cache={
 
 	async my_texture_from(pic_url){
 
-		if(!pic_url) return PIXI.Texture.WHITE
+		const white_tex = PIXI.Texture.WHITE;
+
+		if (!pic_url) return white_tex
 		
-		//если это мультиаватар
-		if(pic_url.includes('mavatar')) pic_url=multiavatar(pic_url);
+		// Handle multiavatar
+		if (pic_url.includes('mavatar')) pic_url = multiavatar(pic_url)
+		
+		return new Promise(res => {
+			const timeout = setTimeout(() => {
+			console.log('Timeout to load: ', pic_url);
+			res(white_tex);
+		}, 3000);
 
-		try{
-			return await PIXI.Texture.fromURL(pic_url);
-		}catch(er){
-			return PIXI.Texture.WHITE;
-		}
-
+		PIXI.Texture.fromURL(pic_url).then(t => {
+				clearTimeout(timeout);
+				res(t||white_tex);
+			})
+			.catch((error) => {
+				clearTimeout(timeout);
+				console.error('Failed to load texture:', error);
+				res(white_tex);
+			});
+		});
 	},
 
 	async update_avatar_forced(uid, pic_url){
