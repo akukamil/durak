@@ -5991,7 +5991,7 @@ players_cache={
 
 	},
 
-	async my_texture_from(pic_url){
+	my_texture_from(pic_url){
 
 		const white_tex = PIXI.Texture.WHITE;
 
