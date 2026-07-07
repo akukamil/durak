@@ -1862,7 +1862,7 @@ mp_game={
 		opponent = this;
 
 		//если открыт лидерборд то закрываем его
-		if (objects.lb_1_cont.visible===true)
+		if (objects.lbCont.visible===true)
 			lb.close();
 
 		//если открыт чат то закрываем его
