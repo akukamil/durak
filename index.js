@@ -252,6 +252,10 @@ class lb_player_card_class extends PIXI.Container{
 		this.bcgFrame.interactive=true
 		this.bcgFrame.pointerover=function(){this.tint=0x55ffff}
 		this.bcgFrame.pointerout=function(){this.tint=0xffffff}
+		const t=this
+		this.bcgFrame.pointerdown=()=>{
+			anim3.add(t,{x:[t.x, t.x+5,'shake']},true,0.15);
+		}
 		this.bcgFrame.width = 390
 		this.bcgFrame.height = 80
 
