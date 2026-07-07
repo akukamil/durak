@@ -281,6 +281,8 @@ class lb_player_card_class extends PIXI.Container{
 		this.rating.x=315
 		this.rating.tint=0xFFFF00
 		this.rating.y=25
+		
+		this.alpha=0.8
 
 		this.addChild(this.avatar, this.bcgFrame,this.place, this.name, this.rating)
 	}
