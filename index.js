@@ -4470,7 +4470,9 @@ lb={
 			objects.lb_cards[i].x=this.cards_pos[i][0];
 			objects.lb_cards[i].y=i*62-3;
 			objects.lb_cards[i].place.text=(i+4);
-			objects.lb_cards[i].bcgFrame.tint=this.getRandomBrightTint(180)
+			const randTint=this.getRandomBrightTint(180)
+			objects.lb_cards[i].bcgFrame.tint=randTint
+			objects.lb_cards[i].name.tint=randTint
 		}
 
 		if (Date.now()-this.last_update>120000){
