@@ -248,35 +248,37 @@ class lb_player_card_class extends PIXI.Container{
 	constructor(x,y,place) {
 		super();
 
-		this.bcg=new PIXI.Sprite(assets.lb_player_card_bcg)
-		this.bcg.interactive=true
-		this.bcg.pointerover=function(){this.tint=0x55ffff}
-		this.bcg.pointerout=function(){this.tint=0xffffff}
-		this.bcg.width = 370
-		this.bcg.height = 70
+		this.bcgFrame=new PIXI.Sprite(assets.lbCardFrame)
+		this.bcgFrame.interactive=true
+		this.bcgFrame.pointerover=function(){this.tint=0x55ffff}
+		this.bcgFrame.pointerout=function(){this.tint=0xffffff}
+		this.bcgFrame.width = 390
+		this.bcgFrame.height = 80
 
 		this.place=new PIXI.BitmapText('', {fontName: 'bahnschrift48',fontSize: 25,align: 'center'})
 		this.place.tint=0xffffff
-		this.place.x=20
-		this.place.y=22
+		this.place.x=38
+		this.place.y=40
+		this.place.anchor.set(0.5,0.5)
 
 		this.avatar=new PIXI.Graphics()
-		this.avatar.x=43
-		this.avatar.y=13
-		this.avatar.w=this.avatar.h=44
-		this.avatar.width=this.avatar.height=44
+		this.avatar.x=50
+		this.avatar.y=14
+		this.avatar.w=this.avatar.h=54
+		this.avatar.width=this.avatar.height=54	
+		
 
-		this.name=new PIXI.BitmapText('', {fontName: 'bahnschrift48',fontSize: 25,align: 'center'})
-		this.name.tint=0xcceeff
-		this.name.x=105
-		this.name.y=22
+		this.name=new PIXI.BitmapText('', {fontName: 'bahnschrift48',fontSize: 22,align: 'center'})
+		this.name.tint=0xccffff
+		this.name.x=115
+		this.name.y=30
 
-		this.rating=new PIXI.BitmapText('', {fontName: 'bahnschrift48',fontSize: 25,align: 'center'})
-		this.rating.x=303
+		this.rating=new PIXI.BitmapText('', {fontName: 'bahnschrift48',fontSize: 30,align: 'center'})
+		this.rating.x=315
 		this.rating.tint=0xFFFF00
-		this.rating.y=22
+		this.rating.y=25
 
-		this.addChild(this.bcg,this.place, this.avatar, this.name, this.rating)
+		this.addChild(this.avatar, this.bcgFrame,this.place, this.name, this.rating)
 	}
 
 
@@ -4442,24 +4444,33 @@ lb={
 	cards_pos: [[370,10],[380,70],[390,130],[380,190],[360,250],[330,310],[290,370]],
 	last_update:0,
 
+	getRandomBrightTint(minBrightness = 200) {
+		const range = 255 - minBrightness;
+		const r = Math.floor(Math.random() * range) + minBrightness;
+		const g = Math.floor(Math.random() * range) + minBrightness;
+		const b = Math.floor(Math.random() * range) + minBrightness;
+		
+		return (r << 16) | (g << 8) | b;
+	},
+
 	show() {
 
 		objects.bcg.texture=assets.lb_bcg;
-		anim3.add(objects.bcg,{alpha:[0,1,'linear']}, true, 0.5);
+		anim3.add(objects.lbCont,{alpha:[0,1,'linear']}, true, 0.5);
 
-		anim3.add(objects.lb_1_cont,{x:[-150, objects.lb_1_cont.sx,'easeOutBack']}, true, 0.5);
-		anim3.add(objects.lb_2_cont,{x:[-150, objects.lb_2_cont.sx,'easeOutBack']}, true, 0.5);
-		anim3.add(objects.lb_3_cont,{x:[-150, objects.lb_3_cont.sx,'easeOutBack']}, true, 0.5);
-		anim3.add(objects.lb_cards_cont,{x:[450, 0,'easeOutCubic']}, true, 0.5);
+		//anim3.add(objects.lb_1_cont,{x:[-150, objects.lb_1_cont.sx,'easeOutBack']}, true, 0.5);
+		//anim3.add(objects.lb_2_cont,{x:[-150, objects.lb_2_cont.sx,'easeOutBack']}, true, 0.5);
+		//anim3.add(objects.lb_3_cont,{x:[-150, objects.lb_3_cont.sx,'easeOutBack']}, true, 0.5);
+		//anim3.add(objects.lb_cards_cont,{x:[450, 0,'easeOutCubic']}, true, 0.5);
 
-		objects.lb_cards_cont.visible=true;
-		objects.lb_back_btn.visible=true;
+		//objects.lb_cards_cont.visible=true;
+		//objects.lb_back_btn.visible=true;
 
 		for (let i=0;i<7;i++) {
 			objects.lb_cards[i].x=this.cards_pos[i][0];
-			objects.lb_cards[i].y=this.cards_pos[i][1];
-			objects.lb_cards[i].place.text=(i+4)+".";
-
+			objects.lb_cards[i].y=i*62-3;
+			objects.lb_cards[i].place.text=(i+4);
+			objects.lb_cards[i].bcgFrame.tint=this.getRandomBrightTint(180)
 		}
 
 		if (Date.now()-this.last_update>120000){
@@ -4472,25 +4483,20 @@ lb={
 
 	close() {
 
-
-		objects.lb_1_cont.visible=false;
-		objects.lb_2_cont.visible=false;
-		objects.lb_3_cont.visible=false;
-		objects.lb_cards_cont.visible=false;
-		objects.lb_back_btn.visible=false;
+		objects.lbCont.visible=false
 		objects.bcg.texture=assets.bcg;
 
 	},
 
 	back_btn_down() {
 
-		if (anim3.any_on()===true) {
+		if (anim3.any_on()) {
 			sound.play('locked');
 			return
 		};
 
 
-		sound.play('close_it');
+		sound.play('close');
 		this.close();
 		main_menu.activate();
 
@@ -4508,10 +4514,10 @@ lb={
 		}
 
 		for (let i=0;i<7;i++){
-			top[i+3]={};
-			top[i+3].t_name=objects.lb_cards[i].name;
-			top[i+3].t_rating=objects.lb_cards[i].rating;
-			top[i+3].avatar=objects.lb_cards[i].avatar;
+			top[i+3]={}
+			top[i+3].t_name=objects.lb_cards[i].name
+			top[i+3].t_rating=objects.lb_cards[i].rating
+			top[i+3].avatar=objects.lb_cards[i].avatar
 		}
 
 		//создаем сортированный массив лидеров
