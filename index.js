@@ -4478,7 +4478,7 @@ lb={
 			objects.lb_cards[i].place.text=(i+4);
 			const randTint=this.getRandomBrightTint(180)
 			objects.lb_cards[i].bcgFrame.tint=randTint
-			objects.lb_cards[i].name.tint=randTint
+			objects.lb_cards[i].name.tint=0xffffcc
 		}
 
 		if (Date.now()-this.last_update>120000){
