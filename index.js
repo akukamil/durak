@@ -643,7 +643,8 @@ chat={
 				r.gif.texture.baseTexture.resource.source.play();
 		})
 
-		this.shift(-2000);
+		this.shift(-2000);	
+		
 	},
 
 	new_message(data){
@@ -674,6 +675,8 @@ chat={
 		my_ws.ss_child_added('chat',chat.chat_updated.bind(chat))
 
 		console.log('Чат загружен!')
+		
+		//this.checkPurchases()
 	},
 
 	init_yandex_payments(){
@@ -682,7 +685,7 @@ chat={
 
 		if(this.payments) return;
 
-		ysdk.getPayments({ signed: true }).then(_payments => {
+		ysdk.getPayments({signed:true}).then(_payments => {
 			chat.payments = _payments;
 		}).catch(err => {})
 
@@ -949,12 +952,12 @@ chat={
 			block_num=Math.min(9,block_num);
 			const item_id='unblock'+block_num
 			
-			if(game_platform==='YANDEX'){
-				
+			if(game_platform==='YANDEX'){				
 				
 				this.payments.purchase({id:item_id}).then(purchase => {
 					this.unblock_chat(block_num)
-					my_ws.safe_send({cmd:'log_inst',logger:'payments',data:{game_name,uid:my_data.uid,name:my_data.name,item_id}});
+					chat.payments.consumePurchase(purchase.purchaseToken)
+					my_ws.safe_send({cmd:'log_inst',logger:'payments',data:{game_name,uid:my_data.uid,name:my_data.name,item_id}})
 				}).catch(err => {
 					pmsg.add({t:'Ошибка при покупке!'});
 				})
@@ -993,6 +996,21 @@ chat={
 		const msg = await keyboard.read(70);
 		if (msg)
 			my_ws.safe_send({cmd:'push',path:'chat',val:{uid:my_data.uid,name:my_data.name,msg,tm:'TMS'}})
+	},
+
+	async checkPurchases(){
+	
+		if (game_platform!=='YANDEX') return
+		
+		const pendingPurchases=await this.payments.getPurchases()
+		if (pendingPurchases.length){
+			this.unblock_chat()
+		}		
+		
+		for (const item of pendingPurchases){
+			this.payments.consumePurchase(item)			
+		}
+
 	},
 
 	unblock_chat(){
