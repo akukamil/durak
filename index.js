@@ -1007,8 +1007,8 @@ chat={
 			this.unblock_chat()
 		}		
 		
-		for (const item of pendingPurchases){
-			this.payments.consumePurchase(item)			
+		for (const purchase of pendingPurchases){
+			this.payments.consumePurchase(purchase.purchaseToken)			
 		}
 
 	},
