@@ -676,7 +676,7 @@ chat={
 
 		console.log('Чат загружен!')
 		
-		//this.checkPurchases()
+		this.checkPurchases()
 	},
 
 	init_yandex_payments(){
