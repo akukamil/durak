@@ -1004,12 +1004,13 @@ chat={
 		
 		const pendingPurchases=await this.payments.getPurchases()
 		if (pendingPurchases.length){
+			
 			this.unblock_chat()
+			
+			for (const purchase of pendingPurchases){
+				this.payments.consumePurchase(purchase.purchaseToken)			
+			}			
 		}		
-		
-		for (const purchase of pendingPurchases){
-			this.payments.consumePurchase(purchase.purchaseToken)			
-		}
 
 	},
 
@@ -3560,7 +3561,7 @@ req_dialog = {
 		
 		sound.play('receive_sticker')
 		
-		objects.req_name.text=pdata.name
+		objects.req_name.set2(pdata.name,200)
 		objects.req_rating.text=pdata.rating
 		objects.req_avatar.set_texture(pdata.texture)
 		
