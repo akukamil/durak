@@ -5941,22 +5941,25 @@ players_cache={
 
 	on:0,
 	loading:{},
-
+	pending:{},
+	
 	async update(uid,params={}){
 
 		//ссылка на игрока
 		this[uid]||={}
 		const player=this[uid]
 
-		if (this.loading[uid]) return
-
-
-		while(Object.keys(this.loading).length>5){
+		if (this.loading[uid] || this.pending[uid]) return
+		
+		this.pending[uid] = 1
+	
+		while(Object.keys(this.loading).length>6){
 			console.log('Много загрузок, ждем...')
 			await new Promise(r => setTimeout(r, hf.randIntInc(400,800)));
 		}
-
-		this.loading[uid]=1
+	
+		delete this.pending[uid];
+		this.loading[uid]=1		
 
 		//загружаем имя если нет данных
 		if (!player.name) {
