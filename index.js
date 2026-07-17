@@ -612,6 +612,7 @@ chat={
 	delete_message_mode:0,
 	games_to_chat:200,
 	games_to_gif:1000,
+	energy_to_gif:150,
 	payments:0,
 	processing:0,
 
@@ -701,6 +702,12 @@ chat={
 		if (my_data.games<this.games_to_gif){
 			const left_to_play=this.games_to_gif-my_data.games
 			pmsg.add({t:`Только для игроков сыгравших более ${this.games_to_gif} игр.\nОсталось сыграть: ${left_to_play}`,snd:'locked'})
+			return
+		}
+		
+		if (my_data.energy<this.energy_to_gif){
+			const left_to_play=this.energy_to_gif-my_data.energy
+			pmsg.add({t:`Только для игроков набравших более ${this.energy_to_gif} молний.\nОсталось набрать: ${left_to_play}`,snd:'locked'})
 			return
 		}
 		
