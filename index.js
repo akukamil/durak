@@ -154,7 +154,6 @@ class player_mini_card_class extends PIXI.Container {
 		this.x=x;
 		this.y=y;
 
-
 		this.bcg=new PIXI.Sprite(assets.mini_player_card);
 		this.bcg.width=200;
 		this.bcg.height=90;
