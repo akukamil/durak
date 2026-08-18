@@ -6444,7 +6444,7 @@ main_loader={
 
 		//добавляем текстуры стикеров
 		for (let i=0;i<16;i++)
-			loader.add('sticker_texture_'+i, git_src+'stickers/'+i+'.png');
+			loader.add('sticker_texture_'+i, COM_URL+'/stickers/'+i+'.png');
 
 
 		//добавляем из основного листа загрузки
