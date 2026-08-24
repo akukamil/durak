@@ -1566,7 +1566,7 @@ anim3={
 		
 		if(document.hidden){
 			this.finish_obj(obj,inp_params,vis_on_end)
-			return
+			return Promise.resolve(1)
 		}
 		
 
