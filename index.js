@@ -2371,10 +2371,11 @@ mp_game={
 	close() {
 
 		table.close();
-		anim3.add(objects.my_card_cont,{x:[objects.my_card_cont.x, -100,'easeInBack']}, false, 0.6);
-		anim3.add(objects.opp_card_cont,{x:[objects.opp_card_cont.x,900,'easeInBack']}, false, 0.6);
-		objects.timer_cont.visible = false;
-		objects.game_buttons.visible = false;
+		anim3.add(objects.my_card_cont,{x:[objects.my_card_cont.x, -100,'easeInBack']}, false, 0.6)
+		anim3.add(objects.opp_card_cont,{x:[objects.opp_card_cont.x,900,'easeInBack']}, false, 0.6)
+		objects.timer_cont.visible = false
+		objects.game_buttons.visible = false
+		objects.bcg.texture=assets.bcg
 	}
 
 }
@@ -2392,6 +2393,8 @@ sp_game={
 		opponent = this
 		
 		opp_data.uid='bot'
+		
+		objects.bcg.texture=assets.gameBcg;
 
 		//инициируем стол
 		let seed2 = hf.randIntInc(0,999999)
@@ -2663,13 +2666,13 @@ sp_game={
 
 	async close() {
 
-		table.close();
+		table.close()
 
-
-		anim3.add(objects.my_card_cont,{x:[objects.my_card_cont.x, -100,'easeInBack']}, false, 0.6);
-		anim3.add(objects.opp_card_cont,{x:[objects.opp_card_cont.x,900,'easeInBack']}, false, 0.6);
-		objects.timer_cont.visible = false;
-		objects.sbg_button.visible = false;
+		anim3.add(objects.my_card_cont,{x:[objects.my_card_cont.x, -100,'easeInBack']}, false, 0.6)
+		anim3.add(objects.opp_card_cont,{x:[objects.opp_card_cont.x,900,'easeInBack']}, false, 0.6)
+		objects.timer_cont.visible = false
+		objects.sbg_button.visible = false
+		objects.bcg.texture=assets.bcg
 
 	},
 
@@ -6479,6 +6482,7 @@ main_loader={
 		
 		loader.add('cards_symbols_pack', git_src+'res/cards_designs/cards_symbols_pack.png');
 		loader.add('cards_pack', git_src+'res/cards_designs/cards_pack.png');
+		loader.add('gameBcg', git_src+'res/common/gameBcg.jpg');
 
 		//прогресс
 		loader.onProgress.add((l,res)=>{
@@ -6526,7 +6530,7 @@ main_loader={
 		
 		//создаем спрайты и массивы спрайтов и запускаем первую часть кода
 		
-		for (var i = 0; i < load_list.length; i++) {
+		for (let i = 0; i < load_list.length; i++) {
 			const obj_class = load_list[i].class;
 			const obj_name = load_list[i].name;
 			console.log('Processing: ' + obj_name)
@@ -6557,7 +6561,7 @@ main_loader={
 		}
 
 		//обрабатываем вторую часть кода в объектах
-		for (var i = 0; i < load_list.length; i++) {
+		for (let i = 0; i < load_list.length; i++) {
 			const obj_class = load_list[i].class;
 			const obj_name = load_list[i].name;
 			console.log('Processing: ' + obj_name)
